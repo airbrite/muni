@@ -428,7 +428,6 @@ module.exports = Backbone.Model.extend({
     if (this.debug) {
       console.log("Sync called with method: %s", method);
     }
-
     // Force all `update` to actually be `patch` if configured
     if (this.updateUsingPatch && method === 'update') {
       method = 'patch';
@@ -468,6 +467,9 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
+    if (model.has(this.userIdAttribute) && !options.god) {
+      query[this.userIdAttribute] = model.get(this.userIdAttribute);
+    }
 
     return this.db.findAndModify(this.urlRoot, query, model.toJSON(), this.wrapResponse(options)).return(this);
   },
@@ -485,6 +487,9 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
+    if (model.has(this.userIdAttribute) && !options.god) {
+      query[this.userIdAttribute] = model.get(this.userIdAttribute);
+    }
 
     // Patch attributes with mongodb set
     var attrs = model.toJSON();
@@ -532,13 +537,12 @@ module.exports = Backbone.Model.extend({
         return Promise.reject(err);
       }
 
-      // Build query against the model's id
+      // Build query against the model's id and user_id if it exists
       query[this.idAttribute] = model.id;
-      if (model.has(this.userIdAttribute)) {
+      if (model.has(this.userIdAttribute) && !options.god) {
         query[this.userIdAttribute] = model.get(this.userIdAttribute);
       }
     }
-
 
     var mongoOptions = _.pick(options, ["require"]) || {};
     return this.db.findOne(this.urlRoot, query, mongoOptions, this.wrapResponse(options)).return(this);

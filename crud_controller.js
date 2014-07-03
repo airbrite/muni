@@ -128,12 +128,12 @@ module.exports = Controller.extend({
   },
 
   findOne: function(req, res, next, options) {
-    var model = this.setupModel(req);
     options = options || {};
     _.merge(options, {
       require: true
     });
 
+    var model = this.setupModel(req);
     if (this.debug) {
       if (options.query) {
         console.log("Find with Query: %s and UserID: %s".verbose, JSON.stringify(options.query), model.get('user_id'));
@@ -141,7 +141,6 @@ module.exports = Controller.extend({
         console.log("Find with ID: %s and UserID: %s".verbose, model.id, model.get('user_id'));
       }
     }
-
     return model.fetch(options).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
@@ -151,10 +150,12 @@ module.exports = Controller.extend({
     return model.save().bind(this).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
-  update: function(req, res, next) {
+  update: function(req, res, next, options) {
+    options = options || {};
+
     var model = this.setupModel(req);
     model.setFromRequest(req.body);
-    return model.save().bind(this).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
+    return model.save(null, options).bind(this).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
   destroy: function(req, res, next) {
