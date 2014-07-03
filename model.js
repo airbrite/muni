@@ -121,8 +121,8 @@ module.exports = Backbone.Model.extend({
   // Do any request body sanitation here
   // TODO: support deep set
   setFromRequest: function(body) {
-    // TODO: Improve this
     var schema = _.result(this, 'schema');
+    _.merge(schema, _.result(this, 'baseSchema'));
     _.each(schema, function(val, key) {
       if (!_.has(body, key)) {
         return;
