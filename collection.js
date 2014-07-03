@@ -33,9 +33,6 @@ module.exports = Backbone.Collection.extend({
   // A `request` event is fired before with parameters (model, op, options)
   // A `sync` event is fired after with parameters (model, resp, options)
   sync: function(method, model, options) {
-    if (this.debug) {
-      console.log("Sync called with method: %s", method);
-    }
     var op = this[method].call(this, model, options);
     model.trigger("request", model, op, options);
     return op;
@@ -63,6 +60,9 @@ module.exports = Backbone.Collection.extend({
 
     // Build query with optional: limit, skip, sort
     var mongoOptions = _.pick(options, ["limit", "skip", "sort"]) || {};
+    if (this.debug) {
+      console.log("Collection [%s] read with query: %s and options: %s".verbose, this.model.prototype.urlRoot, JSON.stringify(query), JSON.stringify(mongoOptions));
+    }
     return this.db.find(this.model.prototype.urlRoot, query, mongoOptions, this.wrapResponse(options)).return(this);
   },
 

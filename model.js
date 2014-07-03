@@ -328,7 +328,7 @@ module.exports = Backbone.Model.extend({
 
 
   // Transactions
-  // Applies a boolean flag called `locked`
+  // Applies a boolean flag `locked`
   lock: function() {
     if (this.get('locked')) {
       var err = new Error("Model already locked.");
@@ -425,9 +425,6 @@ module.exports = Backbone.Model.extend({
   // A `request` event is fired before with parameters (model, op, options)
   // A `sync` event is fired after with parameters (model, resp, options)
   sync: function(method, model, options) {
-    if (this.debug) {
-      console.log("Sync called with method: %s", method);
-    }
     // Force all `update` to actually be `patch` if configured
     if (this.updateUsingPatch && method === 'update') {
       method = 'patch';
@@ -451,6 +448,10 @@ module.exports = Backbone.Model.extend({
 
   // Inserts a mongodb document
   create: function(model, options) {
+    if (this.debug) {
+      console.log("Model [%s] create called".verbose, this.urlRoot);
+    }
+
     return this.db.insert(this.urlRoot, model.toJSON(), this.wrapResponse(options)).return(this);
   },
 
@@ -467,8 +468,12 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
-    if (model.has(this.userIdAttribute) && !options.god) {
+    if (model.has(this.userIdAttribute)) {
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
+    }
+
+    if (this.debug) {
+      console.log("Model [%s] update with query: %s".verbose, this.urlRoot, JSON.stringify(query));
     }
 
     return this.db.findAndModify(this.urlRoot, query, model.toJSON(), this.wrapResponse(options)).return(this);
@@ -487,7 +492,7 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
-    if (model.has(this.userIdAttribute) && !options.god) {
+    if (model.has(this.userIdAttribute)) {
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
@@ -500,6 +505,10 @@ module.exports = Backbone.Model.extend({
     var obj = {
       "$set": this.objToPaths(attrs)
     };
+
+    if (this.debug) {
+      console.log("Model [%s] patch with query: %s".verbose, this.urlRoot, JSON.stringify(query));
+    }
 
     return this.db.findAndModify(this.urlRoot, query, obj, this.wrapResponse(options)).return(this);
   },
@@ -517,6 +526,10 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
+
+    if (this.debug) {
+      console.log("Model [%s] delete with query: %s".verbose, this.urlRoot, JSON.stringify(query));
+    }
 
     return this.db.remove(this.urlRoot, query, this.wrapResponse(options));
   },
@@ -539,9 +552,13 @@ module.exports = Backbone.Model.extend({
 
       // Build query against the model's id and user_id if it exists
       query[this.idAttribute] = model.id;
-      if (model.has(this.userIdAttribute) && !options.god) {
+      if (model.has(this.userIdAttribute)) {
         query[this.userIdAttribute] = model.get(this.userIdAttribute);
       }
+    }
+
+    if (this.debug) {
+      console.log("Model [%s] read with query: %s".verbose, this.urlRoot, JSON.stringify(query));
     }
 
     var mongoOptions = _.pick(options, ["require"]) || {};

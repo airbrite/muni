@@ -108,10 +108,6 @@ module.exports = Controller.extend({
       _.merge(qo.query, options.query);
     }
 
-    if (this.debug) {
-      console.log("Find with Query: %s".verbose, JSON.stringify(qo));
-    }
-
     return collection.fetch(qo).bind(this).then(function(resp) {
       return collection.count(qo).tap(function(resp) {
         res.paging = {
@@ -134,13 +130,6 @@ module.exports = Controller.extend({
     });
 
     var model = this.setupModel(req);
-    if (this.debug) {
-      if (options.query) {
-        console.log("Find with Query: %s and UserID: %s".verbose, JSON.stringify(options.query), model.get('user_id'));
-      } else {
-        console.log("Find with ID: %s and UserID: %s".verbose, model.id, model.get('user_id'));
-      }
-    }
     return model.fetch(options).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
