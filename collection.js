@@ -44,7 +44,7 @@ module.exports = Backbone.Collection.extend({
       if (err) {
         options.error(err);
       } else {
-        options.success(resp);
+        options.success(resp[0]);
       }
     };
   },

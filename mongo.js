@@ -220,17 +220,25 @@ _.extend(Mongo.prototype, {
     query = _.cloneDeep(query);
     query = this.cast(query);
 
+    // Keep a count of the cursor
+    var count = 0;
+
     return this.connect()
       .bind(this)
       .then(function() {
         return this._cursor(collectionName, query, options);
+      })
+      .tap(function(cursor) {
+        cursor.countAsync().then(function(resp) {
+          count = resp || 0;
+        });
       })
       .then(function(cursor) {
         return cursor.toArrayAsync();
       })
       .then(this.uncast)
       .then(function(obj) {
-        callback && callback(null, obj);
+        callback && callback(null, [obj, count]);
         return obj;
       })
       .catch(function(err) {

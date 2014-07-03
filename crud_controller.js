@@ -109,16 +109,15 @@ module.exports = Controller.extend({
     }
 
     return collection.fetch(qo).bind(this).then(function(resp) {
-      return collection.count(qo).tap(function(resp) {
-        res.paging = {
-          total: parseInt(resp),
-          count: parseInt(collection.models.length),
-          limit: parseInt(qo.limit),
-          offset: parseInt(qo.skip),
-          has_more: parseInt(collection.models.length) < parseInt(resp)
-        };
-      });
-    }).then(function(count) {
+      var count = resp[1];
+
+      res.paging = {
+        total: parseInt(count),
+        count: parseInt(collection.models.length),
+        limit: parseInt(qo.limit),
+        offset: parseInt(qo.skip),
+        has_more: parseInt(collection.models.length) < parseInt(count)
+      };
       return collection;
     }).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
