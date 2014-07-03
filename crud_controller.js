@@ -110,7 +110,6 @@ module.exports = Controller.extend({
 
     return collection.fetch(qo).bind(this).then(function(resp) {
       var count = resp[1];
-
       res.paging = {
         total: parseInt(count),
         count: parseInt(collection.models.length),
