@@ -21,6 +21,9 @@ module.exports = function(options) {
     router.url += "/" + options.version;
   }
 
+  // If this router should print out all routes
+  router.silent = options.silent ? options.silent : false;
+
   // Set of active routes
   var paths = {};
 
@@ -103,9 +106,10 @@ module.exports = function(options) {
   }
 
   _.each(router.routes, function(route) {
-    console.log("Route: [%s] %s", route.method, route.url + route.path);
-  });
-
+    if (!router.silent) {
+      console.log("Route: [%s] %s", route.method, route.url + route.path);
+    }
+  }.bind(this));
 
   return router;
 };
