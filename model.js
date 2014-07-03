@@ -473,7 +473,7 @@ module.exports = Backbone.Model.extend({
     }
 
     if (this.debug) {
-      console.log("Model [%s] update with query: %s".verbose, this.urlRoot, JSON.stringify(query));
+      console.log("Model [%s] update with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(model.toJSON()));
     }
 
     return this.db.findAndModify(this.urlRoot, query, model.toJSON(), this.wrapResponse(options)).return(this);
@@ -502,12 +502,14 @@ module.exports = Backbone.Model.extend({
 
     // Use mongodb set to only update explicit attributes
     // Convert all nested objects into paths so `$set` doesn't overwrite nested objects
+    // `$set -> this.objToPaths(attrs)` has issues with nested objects where the parent doesn't exist
+    // For example `metadata.foo.bar: true` will fail if `metadata.foo` !== {} in the database yet
     var obj = {
-      "$set": this.objToPaths(attrs)
+      "$set": attrs
     };
 
     if (this.debug) {
-      console.log("Model [%s] patch with query: %s".verbose, this.urlRoot, JSON.stringify(query));
+      console.log("Model [%s] update with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(obj));
     }
 
     return this.db.findAndModify(this.urlRoot, query, obj, this.wrapResponse(options)).return(this);
