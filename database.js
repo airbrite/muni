@@ -13,7 +13,7 @@ var Mongo = require('./mongo');
 
 // DatabaseManager is a singleton that maintains the databases
 module.exports = Backbone.Model.extend({
-  debug: true,
+  debug: false,
 
   defaults: function() {
     return {

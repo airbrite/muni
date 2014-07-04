@@ -141,8 +141,11 @@ module.exports = Controller.extend({
     options = options || {};
 
     var model = this.setupModel(req);
-    model.setFromRequest(req.body);
-    return model.save(null, options).bind(this).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
+    return model.fetch(options).bind(this).tap(function() {
+      model.setFromRequest(req.body);
+    }).then(function() {
+      return model.save(null, options);
+    }).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
   destroy: function(req, res, next) {

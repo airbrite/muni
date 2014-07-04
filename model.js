@@ -547,7 +547,7 @@ module.exports = Backbone.Model.extend({
     } else {
       if (model.isNew()) {
         // If no ID in query, error out
-        var err = new Error("No ID for Model");
+        var err = new Error("Trying to fetch a model with no `_id` attribute.");
         options.error(err);
         return Promise.reject(err);
       }
