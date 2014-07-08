@@ -92,7 +92,6 @@ module.exports = Backbone.Model.extend({
   },
 
   initialize: function() {
-    this.requestAttributes = {};
     this.changedFromRequest = {};
   },
 
@@ -238,20 +237,18 @@ module.exports = Backbone.Model.extend({
     return obj;
   },
 
-  // Do any request body sanitation here
-  // TODO: support deep set
+  // Used to set attributes from a request body
   setFromRequest: function(body) {
     var schema = _.result(this, 'combinedSchema');
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
     body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
 
     // Set new attributes
-    this.requestAttributes = body;
-    // this.set(body);
+    this.set(body);
 
     // At this point, we take a snapshot of the changed attributes
     // A copy of the `changed` attributes right after the request body is set
-    // this.changedFromRequest = _.cloneDeep(this.changed);
+    this.changedFromRequest = _.cloneDeep(this.changed);
 
     return this;
   },
