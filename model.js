@@ -85,7 +85,9 @@ module.exports = Backbone.Model.extend({
     // }.bind(this));
   },
 
-  initialize: function() {},
+  initialize: function() {
+    this.changedFromRequest = {};
+  },
 
   // Copied from Backbone
   parse: function(resp, options) {
@@ -145,6 +147,9 @@ module.exports = Backbone.Model.extend({
     // var attrs = {};
     // _.merge(attrs, this.previousAttributes(), this.attributes, body);
     // this.attributes = attrs;
+
+    // A copy of the `changed` attributes right after the request body is set
+    this.changedFromRequest = _.cloneDeep(this.changed);
 
     return this;
   },
