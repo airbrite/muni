@@ -142,12 +142,9 @@ module.exports = Backbone.Model.extend({
 
     // To support a `patch` operation
     // We're gonna `default/extend` all existing attributes after the `set`
-    var attrs = {};
-    _.merge(attrs, this.previousAttributes(), this.attributes, body);
-    this.attributes = attrs;
-
-    // An array of attributes that were set from the request body
-    this.attributesFromRequest = _.keys(body);
+    // var attrs = {};
+    // _.merge(attrs, this.previousAttributes(), this.attributes, body);
+    // this.attributes = attrs;
 
     return this;
   },
@@ -468,7 +465,7 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
-    if (model.has(this.userIdAttribute)) {
+    if (!!model.get(this.userIdAttribute)) {
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
@@ -492,7 +489,7 @@ module.exports = Backbone.Model.extend({
     // Build query against the model's id
     var query = {};
     query[this.idAttribute] = model.id;
-    if (model.has(this.userIdAttribute)) {
+    if (!!model.get(this.userIdAttribute)) {
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
@@ -554,7 +551,7 @@ module.exports = Backbone.Model.extend({
 
       // Build query against the model's id and user_id if it exists
       query[this.idAttribute] = model.id;
-      if (model.has(this.userIdAttribute)) {
+      if (!!model.get(this.userIdAttribute)) {
         query[this.userIdAttribute] = model.get(this.userIdAttribute);
       }
     }
