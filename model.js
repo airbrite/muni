@@ -145,7 +145,7 @@ module.exports = Backbone.Model.extend({
       // A schema key with a value of `[]` or `{}`
       // Direct set json value for this key
       if (_.isObject(val) && _.isEmpty(val)) {
-        obj[key] = jsonVal;
+        obj[key] = attrsVal || jsonVal;
         return;
       }
 
@@ -174,7 +174,7 @@ module.exports = Backbone.Model.extend({
         // Push results into an array
         obj[key] = [];
         _.each(jsonVal, function(jsonKeyVal) {
-          obj[key].push(this.buildAttributes(val[0], jsonKeyVal, null, ignoredAttrsVal));
+          obj[key].push(this.buildAttributes(val[0], jsonKeyVal, attrsVal, ignoredAttrsVal));
         }.bind(this));
       } else if (_.isObject(val)) {
         // No value in json, use current attribute value or default to `{}`
@@ -224,7 +224,7 @@ module.exports = Backbone.Model.extend({
 
           obj[key] = jsonVal;
         } else if (val === 'date') {
-          if (!_.isDate(jsonVal)) {
+          if (!_.isValidISO8601String(jsonVal) && !_.isDate(jsonVal)) {
             obj[key] = attrsVal || null;
             return;
           }
