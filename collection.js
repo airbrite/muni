@@ -63,7 +63,10 @@ module.exports = Backbone.Collection.extend({
     if (this.debug) {
       console.log("Collection [%s] read with query: %s and options: %s".verbose, this.model.prototype.urlRoot, JSON.stringify(query), JSON.stringify(mongoOptions));
     }
-    return this.db.find(this.model.prototype.urlRoot, query, mongoOptions, this.wrapResponse(options)).return(this);
+    return this.db.find(this.model.prototype.urlRoot, query, mongoOptions, this.wrapResponse(options)).bind(this).then(function(resp) {
+      this.total = resp[1] || 0;
+      return this;
+    });
   },
 
   set: function() {

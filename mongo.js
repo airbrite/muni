@@ -239,7 +239,7 @@ _.extend(Mongo.prototype, {
       .then(this.uncast)
       .then(function(obj) {
         callback && callback(null, [obj, count]);
-        return obj;
+        return [obj, count];
       })
       .catch(function(err) {
         callback && callback(err);

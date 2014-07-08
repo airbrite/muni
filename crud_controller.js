@@ -108,14 +108,13 @@ module.exports = Controller.extend({
       _.merge(qo.query, options.query);
     }
 
-    return collection.fetch(qo).bind(this).then(function(resp) {
-      var count = resp[1];
+    return collection.fetch(qo).bind(this).then(function() {
       res.paging = {
-        total: parseInt(count),
+        total: parseInt(collection.total),
         count: parseInt(collection.models.length),
         limit: parseInt(qo.limit),
         offset: parseInt(qo.skip),
-        has_more: parseInt(collection.models.length) < parseInt(count)
+        has_more: parseInt(collection.models.length) < parseInt(collection.total)
       };
       return collection;
     }).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
