@@ -92,6 +92,7 @@ module.exports = Backbone.Model.extend({
   },
 
   initialize: function() {
+    this.requestAttributes = {};
     this.changedFromRequest = {};
   },
 
@@ -237,7 +238,6 @@ module.exports = Backbone.Model.extend({
     return obj;
   },
 
-
   // Do any request body sanitation here
   // TODO: support deep set
   setFromRequest: function(body) {
@@ -246,10 +246,12 @@ module.exports = Backbone.Model.extend({
     body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
 
     // Set new attributes
-    this.set(body);
+    this.requestAttributes = body;
+    // this.set(body);
 
+    // At this point, we take a snapshot of the changed attributes
     // A copy of the `changed` attributes right after the request body is set
-    this.changedFromRequest = _.cloneDeep(this.changed);
+    // this.changedFromRequest = _.cloneDeep(this.changed);
 
     return this;
   },
@@ -516,7 +518,8 @@ module.exports = Backbone.Model.extend({
     }
 
     if (this.debug) {
-      console.log("Model [%s] update with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(model.toJSON()));
+      console.log("Model [%s] update with query: %s".verbose, this.urlRoot, JSON.stringify(query));
+      // console.log("Model [%s] update with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(model.toJSON()));
     }
 
     return this.db.findAndModify(this.urlRoot, query, model.toJSON(), this.wrapResponse(options)).return(this);
@@ -552,7 +555,8 @@ module.exports = Backbone.Model.extend({
     };
 
     if (this.debug) {
-      console.log("Model [%s] update with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(obj));
+      console.log("Model [%s] patch with query: %s".verbose, this.urlRoot, JSON.stringify(query));
+      // console.log("Model [%s] patch with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(obj));
     }
 
     return this.db.findAndModify(this.urlRoot, query, obj, this.wrapResponse(options)).return(this);
