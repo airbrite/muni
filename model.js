@@ -24,10 +24,10 @@ module.exports = Backbone.Model.extend({
   updateUsingPatch: true,
 
   // Attributes that are not settable from the request
-  readOnlyAttributes: [],
+  readOnlyAttributes: {},
 
   // Attributes that should be saved to the database but NOT rendered to JSON
-  hiddenAttributes: [],
+  hiddenAttributes: {},
 
   // The defaults hash (or function) can be used to specify the default attributes for your model.
   // When creating an instance of the model,
@@ -65,6 +65,12 @@ module.exports = Backbone.Model.extend({
   // Attributes that should be included in all responses
   // Object or Function
   baseSchema: function() {},
+
+  combinedSchema: function() {
+    var schema = _.result(this, 'schema');
+    _.merge(schema, _.result(this, 'baseSchema'));
+    return schema;
+  },
 
   // Instance properties
   // ---
@@ -120,33 +126,127 @@ module.exports = Backbone.Model.extend({
     }.bind(this));
   },
 
-  // Do any request body sanitation here
-  // TODO: support deep set
-  setFromRequest: function(body) {
-    var schema = _.result(this, 'schema');
-    _.merge(schema, _.result(this, 'baseSchema'));
+  // Validates attribute type
+  // Applies default attributes
+  // Omits readOnly and hidden attributes
+  buildAttributes: function(schema, json, attrs, ignoredAttrs) {
+    var obj = {};
+
     _.each(schema, function(val, key) {
-      if (!_.has(body, key)) {
+      var jsonVal = _.isObject(json) ? json[key] : null;
+      var attrsVal = _.isObject(attrs) ? attrs[key] : null;
+      var ignoredAttrsVal = _.isObject(ignoredAttrs) ? ignoredAttrs[key] : null;
+
+      // If this key should be ignored, don't set it at all
+      if (ignoredAttrsVal === true) {
         return;
       }
 
-      if (val === 'integer') {
-        // Perform `parseInt` on all integers
-        body[key] = _.parseInt(body[key]);
-      } else if (val === 'float') {
-        // Perform `parseFloat` on all integers
-        body[key] = _.parseFloat(body[key]);
+      // A schema key with a value of `[]` or `{}`
+      // Direct set json value for this key
+      if (_.isObject(val) && _.isEmpty(val)) {
+        obj[key] = jsonVal;
+        return;
+      }
+
+      // Schema value can be one of three types: `Array, Object, String`
+      // Arrays and Objects can have nested schemas
+      // Strings are a final type definition and can be: `integer, float, boolean, id, string, date`
+      if (_.isArray(val)) {
+        // No value in json, use current attribute value or default to `[]`
+        if (_.isNull(jsonVal) || _.isEmpty(jsonVal)) {
+          obj[key] = attrsVal || [];
+          return;
+        }
+
+        // No object inside array or the object inside is empty
+        // It is an array of strings/numbers/booleans/dates/ids
+        // A schema key with a vaue of `['string']` or `['date']` or `[{}]`
+        // Direct set json value for this key
+        if (_.isString(val[0]) || _.isEmpty(val[0])) {
+          obj[key] = jsonVal;
+          return;
+        }
+
+        // If first value inside schema value is an object
+        // For each json value for this key
+        // Recursively call `buildAttributes` for each json value (object)
+        // Push results into an array
+        obj[key] = [];
+        _.each(jsonVal, function(jsonKeyVal) {
+          obj[key].push(this.buildAttributes(val[0], jsonKeyVal, null, ignoredAttrsVal));
+        }.bind(this));
+      } else if (_.isObject(val)) {
+        // No value in json, use current attribute value or default to `{}`
+        if (_.isNull(jsonVal) || _.isEmpty(jsonVal)) {
+          obj[key] = attrsVal || {};
+          return;
+        }
+
+        // Recursively call `buildAttributes` for the json value (object)
+        obj[key] = this.buildAttributes(val, jsonVal, attrsVal, ignoredAttrsVal);
+      } else if (_.isString(val)) {
+        if (val === 'integer') {
+          var intNumber = _.parseInt(jsonVal);
+          if (_.isNaN(intNumber)) {
+            obj[key] = attrsVal || 0;
+            return;
+          }
+
+          obj[key] = intNumber;
+        } else if (val === 'float') {
+          var floatNumber = _.parseFloat(jsonVal);
+          if (_.isNaN(floatNumber)) {
+            obj[key] = attrsVal || 0;
+            return;
+          }
+
+          obj[key] = floatNumber;
+        } else if (val === 'boolean') {
+          if (!_.isBoolean(jsonVal)) {
+            obj[key] = attrsVal || false;
+            return;
+          }
+
+          obj[key] = jsonVal;
+        } else if (val === 'id') {
+          if (!_.isString(jsonVal)) {
+            obj[key] = attrsVal || null;
+            return;
+          }
+
+          obj[key] = jsonVal;
+        } else if (val === 'string') {
+          if (!_.isString(jsonVal)) {
+            obj[key] = attrsVal || null;
+            return;
+          }
+
+          obj[key] = jsonVal;
+        } else if (val === 'date') {
+          if (!_.isDate(jsonVal)) {
+            obj[key] = attrsVal || null;
+            return;
+          }
+
+          obj[key] = jsonVal;
+        }
       }
     }.bind(this));
 
-    // Set new attributes
-    this.set(_.omit(body, _.result(this, 'readOnlyAttributes')));
+    return obj;
+  },
 
-    // To support a `patch` operation
-    // We're gonna `default/extend` all existing attributes after the `set`
-    // var attrs = {};
-    // _.merge(attrs, this.previousAttributes(), this.attributes, body);
-    // this.attributes = attrs;
+
+  // Do any request body sanitation here
+  // TODO: support deep set
+  setFromRequest: function(body) {
+    var schema = _.result(this, 'combinedSchema');
+    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+    body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
+
+    // Set new attributes
+    this.set(body);
 
     // A copy of the `changed` attributes right after the request body is set
     this.changedFromRequest = _.cloneDeep(this.changed);
@@ -159,75 +259,16 @@ module.exports = Backbone.Model.extend({
     return this.render();
   },
 
-  // Builds a response based on `schema` and the model attributes
-  buildResponse: function(schema, json) {
-    var response = {};
-
-    if (_.isEmpty(schema)) {
-      return json;
-    }
-
-    _.each(json, function(val, key) {
-      // Don't render hidden attributes
-      if (_.contains(this.hiddenAttributes, key)) {
-        return;
-      }
-
-      // Schema does not have this key
-      if (!_.has(schema, key)) {
-        return;
-      }
-
-      if (_.isArray(val)) {
-        // Arrays
-        response[key] = [];
-        if (val.length === 0) {
-          // Empty array
-        } else if (_.isObject(val[0])) {
-          _.each(val, function(arrVal) {
-            // Recursively build response for object
-            response[key].push(this.buildResponse(schema[key][0], arrVal));
-          }.bind(this));
-        } else {
-          // Array of String, Number, or Boolean
-          response[key] = json[key];
-        }
-      } else if (_.isObject(val)) {
-        // Objects
-        if (schema[key] === 'date') {
-          // Date object
-          response[key] = json[key];
-        } else {
-          // Object
-          response[key] = this.buildResponse(schema[key], json[key]);
-        }
-      } else {
-        // String, Number (int or float), or Boolean
-        if (schema[key] === 'integer') {
-          response[key] = _.parseInt(json[key]);
-        } else if (schema[key] === 'float') {
-          response[key] = _.parseFloat(json[key]);
-        } else {
-          response[key] = json[key];
-        }
-      }
-    }.bind(this));
-
-    return response;
-  },
-
   render: function() {
     // If there is no schema defined, return all attributes
-    var schema = _.result(this, 'schema');
-    if (_.isEmpty(_.result(this, 'schema'))) {
+    var schema = _.result(this, 'combinedSchema');
+    if (_.isEmpty(schema)) {
       return this.toJSON();
     }
 
-    // Merge the `baseSchema` with the defined `schema`
-    _.merge(schema, _.result(this, 'baseSchema'));
-
     // Build the response
-    var response = this.buildResponse(schema, this.toJSON());
+    var hiddenAttributes = _.result(this, 'hiddenAttributes');
+    var response = this.buildAttributes(schema, this.toJSON(), null, hiddenAttributes);
     return response;
   },
 
