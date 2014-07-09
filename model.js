@@ -239,18 +239,20 @@ module.exports = Backbone.Model.extend({
 
   // Used to set attributes from a request body
   setFromRequest: function(body) {
-    var schema = _.result(this, 'combinedSchema');
-    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
+    return Promise.cast().bind(this).then(function() {
+      var schema = _.result(this, 'combinedSchema');
+      var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+      body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
 
-    // Set new attributes
-    this.set(body);
+      // Set new attributes
+      this.set(body);
 
-    // At this point, we take a snapshot of the changed attributes
-    // A copy of the `changed` attributes right after the request body is set
-    this.changedFromRequest = _.cloneDeep(this.changed);
+      // At this point, we take a snapshot of the changed attributes
+      // A copy of the `changed` attributes right after the request body is set
+      this.changedFromRequest = _.cloneDeep(this.changed);
 
-    return this;
+      return this;
+    });
   },
 
   // Alias for `render`
