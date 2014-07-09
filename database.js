@@ -60,12 +60,12 @@ module.exports = Backbone.Model.extend({
 
     // Catching this error event will prevent node from exiting
     this.caches[name].on('error', function(err) {
-      console.error("Redis %d connect error to url: %s - %s".error, process.pid, connString, err.message);
+      console.error("Redis %s %d connect error to url: %s - %s".error, name, process.pid, connString, err.message);
     }.bind(this));
 
     this.caches[name].on('ready', function() {
       if (this.debug) {
-        console.log("Redis %d connected to url: %s".info, process.pid, connString);
+        console.log("Redis %s %d connected to url: %s", name, process.pid, connString);
       }
     }.bind(this));
   },
@@ -76,12 +76,12 @@ module.exports = Backbone.Model.extend({
     // Events
     this.mongodbs[name].on("connect", function(url) {
       if (this.debug) {
-        console.log("Mongo %s (%d) connected to url: %s".info, name, process.pid, url);
+        console.log("Mongo %s %d connected to url: %s", name, process.pid, url);
       }
     }.bind(this));
 
     this.mongodbs[name].on("error", function(error) {
-      console.error("Mongo %s (%d) connect error to url: %s -> %s".error, name, process.pid, url, error.message);
+      console.error("Mongo %s %d connect error to url: %s -> %s".error, name, process.pid, url, error.message);
     }.bind(this));
 
     // Connect

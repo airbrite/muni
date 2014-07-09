@@ -147,7 +147,7 @@ module.exports = Backbone.Model.extend({
       // A schema key with a value of `[]` or `{}`
       // Direct set json value for this key
       if (_.isObject(val) && _.isEmpty(val)) {
-        obj[key] = attrsVal || jsonVal;
+        obj[key] = !_.isUndefined(attrsVal) ? attrsVal : jsonVal;
         return;
       }
 
@@ -158,7 +158,7 @@ module.exports = Backbone.Model.extend({
         // json value is null
         // use current attribute value or default to `[]`
         if (_.isNull(jsonVal)) {
-          obj[key] = attrsVal || [];
+          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : [];
           return;
         }
 
@@ -183,7 +183,7 @@ module.exports = Backbone.Model.extend({
         // json value is null
         // use current attribute value or default to `{}`
         if (_.isNull(jsonVal)) {
-          obj[key] = attrsVal || {};
+          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : {};
           return;
         }
 
@@ -193,7 +193,7 @@ module.exports = Backbone.Model.extend({
         if (val === 'integer') {
           var intNumber = _.parseInt(jsonVal);
           if (_.isNaN(intNumber)) {
-            obj[key] = attrsVal || 0;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : 0;
             return;
           }
 
@@ -201,35 +201,42 @@ module.exports = Backbone.Model.extend({
         } else if (val === 'float') {
           var floatNumber = _.parseFloat(jsonVal);
           if (_.isNaN(floatNumber)) {
-            obj[key] = attrsVal || 0;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : 0;
             return;
           }
 
           obj[key] = floatNumber;
         } else if (val === 'boolean') {
           if (!_.isBoolean(jsonVal)) {
-            obj[key] = attrsVal || false;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : false;
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'id') {
           if (!_.isString(jsonVal)) {
-            obj[key] = attrsVal || null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'string') {
           if (!_.isString(jsonVal)) {
-            obj[key] = attrsVal || null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
+            return;
+          }
+
+          obj[key] = jsonVal;
+        } else if (val === 'timestamp') {
+          if (!_.isNumber(jsonVal)) {
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'date') {
           if (!_.isValidISO8601String(jsonVal) && !_.isDate(jsonVal)) {
-            obj[key] = attrsVal || null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
 
