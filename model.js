@@ -155,8 +155,9 @@ module.exports = Backbone.Model.extend({
       // Arrays and Objects can have nested schemas
       // Strings are a final type definition and can be: `integer, float, boolean, id, string, date`
       if (_.isArray(val)) {
-        // No value in json, use current attribute value or default to `[]`
-        if (_.isNull(jsonVal) || _.isEmpty(jsonVal)) {
+        // json value is null
+        // use current attribute value or default to `[]`
+        if (_.isNull(jsonVal)) {
           obj[key] = attrsVal || [];
           return;
         }
@@ -179,8 +180,9 @@ module.exports = Backbone.Model.extend({
           obj[key].push(this.buildAttributes(val[0], jsonKeyVal, attrsVal, ignoredAttrsVal));
         }.bind(this));
       } else if (_.isObject(val)) {
-        // No value in json, use current attribute value or default to `{}`
-        if (_.isNull(jsonVal) || _.isEmpty(jsonVal)) {
+        // json value is null
+        // use current attribute value or default to `{}`
+        if (_.isNull(jsonVal)) {
           obj[key] = attrsVal || {};
           return;
         }
