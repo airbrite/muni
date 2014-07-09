@@ -92,7 +92,9 @@ module.exports = Backbone.Model.extend({
   },
 
   initialize: function() {
+    this.requestAttributes = {};
     this.changedFromRequest = {};
+    this.previousFromRequiest = {};
   },
 
   // Copied from Backbone
@@ -245,11 +247,13 @@ module.exports = Backbone.Model.extend({
       body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
 
       // Set new attributes
+      this.requestAttributes = _.cloneDeep(body);
       this.set(body);
 
       // At this point, we take a snapshot of the changed attributes
       // A copy of the `changed` attributes right after the request body is set
       this.changedFromRequest = _.cloneDeep(this.changed);
+      this.previousFromRequiest = _.cloneDeep(this.previousAttributes());
 
       return this;
     });
