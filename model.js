@@ -94,7 +94,7 @@ module.exports = Backbone.Model.extend({
   initialize: function() {
     this.requestAttributes = {};
     this.changedFromRequest = {};
-    this.previousFromRequiest = {};
+    this.previousFromRequest = {};
   },
 
   // Copied from Backbone
@@ -253,7 +253,7 @@ module.exports = Backbone.Model.extend({
       // At this point, we take a snapshot of the changed attributes
       // A copy of the `changed` attributes right after the request body is set
       this.changedFromRequest = _.cloneDeep(this.changed);
-      this.previousFromRequiest = _.cloneDeep(this.previousAttributes());
+      this.previousFromRequest = _.cloneDeep(this.previousAttributes());
 
       return this;
     });
