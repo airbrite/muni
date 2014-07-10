@@ -214,28 +214,30 @@ module.exports = Backbone.Model.extend({
 
           obj[key] = jsonVal;
         } else if (val === 'id') {
-          if (!_.isString(jsonVal)) {
+          if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
             obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'string') {
-          if (!_.isString(jsonVal)) {
+          if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
             obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'timestamp') {
-          if (!_.isNumber(jsonVal)) {
+          // a timestamp can be set explicitly to `null`
+          if (!_.isNumber(jsonVal) && !_.isNull(jsonVal)) {
             obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'date') {
-          if (!_.isValidISO8601String(jsonVal) && !_.isDate(jsonVal)) {
+          // a date can be set explicitly to `null`
+          if (!_.isValidISO8601String(jsonVal) && !_.isDate(jsonVal) && !_.isNull(jsonVal)) {
             obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
             return;
           }
