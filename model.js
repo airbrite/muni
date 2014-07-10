@@ -178,7 +178,7 @@ module.exports = Backbone.Model.extend({
         // Push results into an array
         obj[key] = [];
         _.each(jsonVal, function(jsonKeyVal) {
-          obj[key].push(this.buildAttributes(val[0], jsonKeyVal, attrsVal, ignoredAttrsVal));
+          obj[key].push(this.buildAttributes(val[0], defaultsVal, jsonKeyVal, attrsVal, ignoredAttrsVal));
         }.bind(this));
       } else if (_.isObject(val)) {
         // json value is null or undefined
@@ -189,7 +189,7 @@ module.exports = Backbone.Model.extend({
         }
 
         // Recursively call `buildAttributes` for the json value (object)
-        obj[key] = this.buildAttributes(val, jsonVal, attrsVal, ignoredAttrsVal);
+        obj[key] = this.buildAttributes(val, defaultsVal, jsonVal, attrsVal, ignoredAttrsVal);
       } else if (_.isString(val)) {
         if (val === 'integer') {
           if (jsonVal === '') {
