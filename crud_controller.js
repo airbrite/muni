@@ -132,9 +132,8 @@ module.exports = Controller.extend({
 
   create: function(req, res, next) {
     var model = this.setupModel(req);
-    return model.setFromRequest(req.body).bind(this).then(function() {
-      return model.save();
-    }).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
+    model.setFromRequest(req.body);
+    return model.save().bind(this).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
   update: function(req, res, next, options) {
