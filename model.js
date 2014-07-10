@@ -275,6 +275,11 @@ module.exports = Backbone.Model.extend({
 
   toJSON: function(options) {
     var json = _.cloneDeep(this.attributes);
+    return json;
+  },
+
+  render: function() {
+    var json = this.toJSON();
 
     var schema = _.result(this, 'combinedSchema');
 
@@ -285,11 +290,8 @@ module.exports = Backbone.Model.extend({
 
     var hiddenAttributes = _.result(this, 'hiddenAttributes');
     json = this.buildAttributes(schema, json, null, hiddenAttributes);
-    return json;
-  },
 
-  render: function() {
-    return this.toJSON();
+    return json;
   },
 
   optionsFromSave: function(key, val, options) {
