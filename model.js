@@ -147,7 +147,7 @@ module.exports = Backbone.Model.extend({
       // A schema key with a value of `[]` or `{}`
       // Direct set json value for this key
       if (_.isObject(val) && _.isEmpty(val)) {
-        obj[key] = !_.isUndefined(attrsVal) ? attrsVal : jsonVal;
+        obj[key] = jsonVal || attrsVal;
         return;
       }
 
@@ -167,7 +167,7 @@ module.exports = Backbone.Model.extend({
         // A schema key with a vaue of `['string']` or `['date']` or `[{}]`
         // Direct set json value for this key
         if (_.isString(val[0]) || _.isEmpty(val[0])) {
-          obj[key] = jsonVal;
+          obj[key] = jsonVal || attrsVal;
           return;
         }
 
@@ -271,17 +271,23 @@ module.exports = Backbone.Model.extend({
     return this.render();
   },
 
-  render: function() {
-    // If there is no schema defined, return all attributes
+  toJSON: function(options) {
+    var json = _.cloneDeep(this.attributes);
+
     var schema = _.result(this, 'combinedSchema');
+
+    // If there is no schema defined, return all attributes
     if (_.isEmpty(schema)) {
-      return this.toJSON();
+      return json;
     }
 
-    // Build the response
     var hiddenAttributes = _.result(this, 'hiddenAttributes');
-    var response = this.buildAttributes(schema, this.toJSON(), null, hiddenAttributes);
-    return response;
+    json = this.buildAttributes(schema, json, null, hiddenAttributes);
+    return json;
+  },
+
+  render: function() {
+    return this.toJSON();
   },
 
   optionsFromSave: function(key, val, options) {
