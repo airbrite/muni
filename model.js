@@ -131,11 +131,12 @@ module.exports = Backbone.Model.extend({
   // Validates attribute type
   // Applies default attributes
   // Omits readOnly and hidden attributes
-  buildAttributes: function(schema, json, attrs, ignoredAttrs) {
+  buildAttributes: function(schema, defaults, json, attrs, ignoredAttrs) {
     var obj = {};
 
     _.each(schema, function(val, key) {
       var jsonVal = _.isObject(json) ? json[key] : null;
+      var defaultsVal = _.isObject(defaults) ? defaults[key] : null;
       var attrsVal = _.isObject(attrs) ? attrs[key] : null;
       var ignoredAttrsVal = _.isObject(ignoredAttrs) ? ignoredAttrs[key] : null;
 
@@ -191,46 +192,59 @@ module.exports = Backbone.Model.extend({
         obj[key] = this.buildAttributes(val, jsonVal, attrsVal, ignoredAttrsVal);
       } else if (_.isString(val)) {
         if (val === 'integer') {
+          if (jsonVal === '') {
+            obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0;
+            return;
+          }
           var intNumber = _.parseInt(jsonVal);
           if (_.isNaN(intNumber)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : 0;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : 0);
             return;
           }
 
           obj[key] = intNumber;
         } else if (val === 'float') {
+          if (jsonVal === '') {
+            obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0.0;
+            return;
+          }
           var floatNumber = _.parseFloat(jsonVal);
           if (_.isNaN(floatNumber)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : 0;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : 0.0);
             return;
           }
 
           obj[key] = floatNumber;
         } else if (val === 'boolean') {
           if (!_.isBoolean(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : false;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : false);
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'id') {
           if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'string') {
           if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'timestamp') {
+          // Empty string means reset to default
+          if (jsonVal === '') {
+            obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : null;
+            return;
+          }
           // a timestamp can be set explicitly to `null`
           if (!_.isNumber(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
@@ -238,7 +252,7 @@ module.exports = Backbone.Model.extend({
         } else if (val === 'date') {
           // a date can be set explicitly to `null`
           if (!_.isValidISO8601String(jsonVal) && !_.isDate(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : null;
+            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
@@ -252,9 +266,10 @@ module.exports = Backbone.Model.extend({
 
   // Used to set attributes from a request body
   setFromRequest: function(body) {
+    var defaults = _.result(this, 'defaults');
     var schema = _.result(this, 'combinedSchema');
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
+    body = this.buildAttributes(schema, defaults, body, this.attributes, readOnlyAttributes);
 
     // Set new attributes
     this.requestAttributes = _.cloneDeep(body);
@@ -289,7 +304,8 @@ module.exports = Backbone.Model.extend({
     }
 
     var hiddenAttributes = _.result(this, 'hiddenAttributes');
-    json = this.buildAttributes(schema, json, null, hiddenAttributes);
+    var defaults = _.result(this, 'defaults');
+    json = this.buildAttributes(schema, defaults, json, this.attributes, hiddenAttributes);
 
     return json;
   },
