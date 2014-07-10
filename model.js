@@ -155,9 +155,9 @@ module.exports = Backbone.Model.extend({
       // Arrays and Objects can have nested schemas
       // Strings are a final type definition and can be: `integer, float, boolean, id, string, date`
       if (_.isArray(val)) {
-        // json value is null
+        // json value is null or undefined
         // use current attribute value or default to `[]`
-        if (_.isNull(jsonVal)) {
+        if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
           obj[key] = !_.isUndefined(attrsVal) ? attrsVal : [];
           return;
         }
@@ -180,9 +180,9 @@ module.exports = Backbone.Model.extend({
           obj[key].push(this.buildAttributes(val[0], jsonKeyVal, attrsVal, ignoredAttrsVal));
         }.bind(this));
       } else if (_.isObject(val)) {
-        // json value is null
+        // json value is null or undefined
         // use current attribute value or default to `{}`
-        if (_.isNull(jsonVal)) {
+        if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
           obj[key] = !_.isUndefined(attrsVal) ? attrsVal : {};
           return;
         }
@@ -250,22 +250,20 @@ module.exports = Backbone.Model.extend({
 
   // Used to set attributes from a request body
   setFromRequest: function(body) {
-    return Promise.cast().bind(this).then(function() {
-      var schema = _.result(this, 'combinedSchema');
-      var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-      body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
+    var schema = _.result(this, 'combinedSchema');
+    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+    body = this.buildAttributes(schema, body, this.attributes, readOnlyAttributes);
 
-      // Set new attributes
-      this.requestAttributes = _.cloneDeep(body);
-      this.set(body);
+    // Set new attributes
+    this.requestAttributes = _.cloneDeep(body);
+    this.set(body);
 
-      // At this point, we take a snapshot of the changed attributes
-      // A copy of the `changed` attributes right after the request body is set
-      this.changedFromRequest = _.cloneDeep(this.changed);
-      this.previousFromRequest = _.cloneDeep(this.previousAttributes());
+    // At this point, we take a snapshot of the changed attributes
+    // A copy of the `changed` attributes right after the request body is set
+    this.changedFromRequest = _.cloneDeep(this.changed);
+    this.previousFromRequest = _.cloneDeep(this.previousAttributes());
 
-      return this;
-    });
+    return this;
   },
 
   // Alias for `render`
