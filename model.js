@@ -214,7 +214,7 @@ module.exports = Backbone.Model.extend({
             return;
           }
 
-          obj[key] = val === 'ufloat' ? Math.Max(floatNumber, 0.0) : floatNumber;
+          obj[key] = val === 'ufloat' ? Math.max(floatNumber, 0.0) : floatNumber;
         } else if (val === 'boolean') {
           if (!_.isBoolean(jsonVal)) {
             obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : false);
