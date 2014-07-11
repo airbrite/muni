@@ -191,7 +191,7 @@ module.exports = Backbone.Model.extend({
         // Recursively call `buildAttributes` for the json value (object)
         obj[key] = this.buildAttributes(val, defaultsVal, jsonVal, attrsVal, ignoredAttrsVal);
       } else if (_.isString(val)) {
-        if (val === 'integer') {
+        if (val === 'integer' || val === 'uinteger') {
           if (jsonVal === '') {
             obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0;
             return;
@@ -202,8 +202,8 @@ module.exports = Backbone.Model.extend({
             return;
           }
 
-          obj[key] = intNumber;
-        } else if (val === 'float') {
+          obj[key] = val === 'uinteger' ? Math.max(intNumber, 0) : intNumber;
+        } else if (val === 'float' || val === 'ufloat') {
           if (jsonVal === '') {
             obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0.0;
             return;
@@ -214,7 +214,7 @@ module.exports = Backbone.Model.extend({
             return;
           }
 
-          obj[key] = floatNumber;
+          obj[key] = val === 'ufloat' ? Math.Max(floatNumber, 0.0) : floatNumber;
         } else if (val === 'boolean') {
           if (!_.isBoolean(jsonVal)) {
             obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : false);
@@ -256,6 +256,8 @@ module.exports = Backbone.Model.extend({
             return;
           }
 
+          obj[key] = jsonVal;
+        } else {
           obj[key] = jsonVal;
         }
       }
