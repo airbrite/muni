@@ -72,8 +72,10 @@ module.exports = Backbone.Collection.extend({
   set: function() {
     var ret = Backbone.Collection.prototype.set.apply(this, arguments);
 
-    // Pass `collection.user` to all models in the collection
     this.each(function(model) {
+      // Pass `db` to all models in the collection
+      model.db = this.db;
+      // Pass `collection.user` to all models in the collection
       if (this.user) {
         model.user = this.user;
       }
