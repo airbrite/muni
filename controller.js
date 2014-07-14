@@ -268,6 +268,9 @@ module.exports = Backbone.Model.extend({
 
     // Hard limit at 100
     limit = Math.min(limit, 100);
+    if (limit === 0) {
+      limit = 100;
+    }
 
     // Build created, updated objects into the query string if sent in as dot notation
     _.each(req.query, function(obj, key) {
