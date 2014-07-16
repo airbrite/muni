@@ -159,7 +159,7 @@ module.exports = Backbone.Model.extend({
         // json value is null or undefined
         // use current attribute value or default to `[]`
         if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
-          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : [];
+          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : []);
           return;
         }
 
@@ -184,7 +184,7 @@ module.exports = Backbone.Model.extend({
         // json value is null or undefined
         // use current attribute value or default to `{}`
         if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
-          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : {};
+          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : {});
           return;
         }
 
