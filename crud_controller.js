@@ -30,7 +30,7 @@ module.exports = Controller.extend({
   collection: Collection,
 
   // Available controller actions (see `setupRoutes` for more info)
-  crud: ["C", "R", "O", "U", "D"],
+  crud: ["T", "C", "R", "O", "U", "D"],
 
   initialize: function() {
     // Make sure to call `super` as a best practice when overriding
@@ -55,6 +55,13 @@ module.exports = Controller.extend({
     // Setup CRUD routes
     _.each(this.crud, function(action) {
       switch (action) {
+        case 'T':
+          // Create
+          this.routes.get[basePath + "/count"] = {
+            action: this.count,
+            middleware: this.getRouteMiddleware('count')
+          };
+          break;
         case 'C':
           // Create
           this.routes.post[basePath] = {
@@ -98,6 +105,22 @@ module.exports = Controller.extend({
 
   // CRUD functions
   // ---
+
+  count: function(req, res, next, options) {
+    var qo = this.parseQueryString(req);
+
+    // Merge `options.query` with the query string query and filters
+    if (options && options.query) {
+      _.merge(qo.query, options.query);
+    }
+
+    return this.get('db').count(this.urlRoot, qo.query).bind(this).then(function(total) {
+      res.data = {
+        total: total
+      };
+      return next();
+    }).catch(this.nextCatch(req, res, next));
+  },
 
   find: function(req, res, next, options) {
     var qo = this.parseQueryString(req);
