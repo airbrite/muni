@@ -84,7 +84,7 @@ _.extend(_, {
   },
 
   sanitizeEmail: function(email) {
-    return email.trim().toLowerCase();
+    return email.trim().toLowerCase().replace(/\s/g, '');
   },
 
   isValidEmail: function(email) {
