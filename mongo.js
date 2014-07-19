@@ -393,13 +393,18 @@ _.extend(Mongo.prototype, {
   findAndModify: function(collectionName, query, obj) {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = typeof args[args.length - 1] == 'object' && args.pop();
     var options = args.length > 3 && typeof args[args.length - 1] == 'object' && args.pop();
 
     options = _.extend({
       new: true,
       safe: true
     }, options || {}); // force new mode, safe mode
+
+    var require = false;
+    if (_.isBoolean(options.require)) {
+      require = options.require;
+      delete options.require;
+    }
 
     var sort = options.sort || {};
     delete options.sort;
@@ -419,14 +424,14 @@ _.extend(Mongo.prototype, {
         // mongodb gives the response as the object [0] and updateObject[1]
         response.pop(); // pop off updateObject
 
-        // it could also be a multiupdate -- if it is, return response as array
-        if (options.multi) {
-          return this.uncast(response);
-        } else {
-          // if not, what eves
-          return this.uncast(response[0]);
-        }
+        return this.uncast(response[0]);
       }).then(function(data) {
+        if (!data && require) {
+          var requireErr = new Error("Document not found for query: " + JSON.stringify(query) + ".")
+          requireErr.code = 404;
+          throw requireErr;
+        }
+
         callback && callback(null, data);
         return data;
       })
