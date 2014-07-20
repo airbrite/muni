@@ -172,6 +172,12 @@ module.exports = Backbone.Model.extend({
           return;
         }
 
+        // Setting an empty array will reset to defaults
+        if (_.isEmpty(jsonVal)) {
+          obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : [];
+          return;
+        }
+
         // If first value inside schema value is an object
         // For each json value for this key
         // Recursively call `buildAttributes` for each json value (object)
@@ -185,6 +191,12 @@ module.exports = Backbone.Model.extend({
         // use current attribute value or default to `{}`
         if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
           obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : {});
+          return;
+        }
+
+        // Setting an empty object will reset to defaults
+        if (_.isEmpty(jsonVal)) {
+          obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : {};
           return;
         }
 
