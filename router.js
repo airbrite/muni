@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var express = require('express');
+var logger = require('./logger');
 
 // Exposes 2 additional attributes
 // routes - an array of mapped routes
@@ -107,7 +108,7 @@ module.exports = function(options) {
 
   _.each(router.routes, function(route) {
     if (!router.silent) {
-      console.log("Route: [%s] %s", route.method, route.url + route.path);
+      logger.info("Route: [%s] %s", route.method, route.url + route.path);
     }
   }.bind(this));
 

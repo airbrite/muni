@@ -2,13 +2,14 @@
 
 // References
 // ---
-// https://github.com/jsantell/backbone-promised/blob/master/index.js
+// https://github.om/jsantell/backbone-promised/blob/master/index.js
 
 // Dependencies
 // ---
 var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
+var logger = require('./logger');
 
 module.exports = Backbone.Model.extend({
   debug: false,
@@ -543,10 +544,7 @@ module.exports = Backbone.Model.extend({
 
   // Inserts a mongodb document
   create: function(model, options) {
-    if (this.debug) {
-      console.log("Model [%s] create called".verbose, this.urlRoot);
-    }
-
+    logger.data("Model [%s] create called", this.urlRoot);
     return this.db.insert(this.urlRoot, model.toJSON(), this.wrapResponse(options)).return(this);
   },
 
@@ -567,11 +565,7 @@ module.exports = Backbone.Model.extend({
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
-    if (this.debug) {
-      console.log("Model [%s] update with query: %s".verbose, this.urlRoot, JSON.stringify(query));
-      // console.log("Model [%s] update with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(model.toJSON()));
-    }
-
+    logger.data("Model [%s] update with query: %s", this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(this.urlRoot, query, model.toJSON(), this.wrapResponse(options)).return(this);
   },
 
@@ -604,11 +598,7 @@ module.exports = Backbone.Model.extend({
       "$set": attrs
     };
 
-    if (this.debug) {
-      console.log("Model [%s] patch with query: %s".verbose, this.urlRoot, JSON.stringify(query));
-      // console.log("Model [%s] patch with query: %s and object: %s".verbose, this.urlRoot, JSON.stringify(query), JSON.stringify(obj));
-    }
-
+    logger.data("Model [%s] patch with query: %s", this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(this.urlRoot, query, obj, this.wrapResponse(options)).return(this);
   },
 
@@ -626,10 +616,7 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    if (this.debug) {
-      console.log("Model [%s] delete with query: %s".verbose, this.urlRoot, JSON.stringify(query));
-    }
-
+    logger.data("Model [%s] delete with query: %s", this.urlRoot, JSON.stringify(query));
     return this.db.remove(this.urlRoot, query, this.wrapResponse(options));
   },
 
@@ -656,11 +643,8 @@ module.exports = Backbone.Model.extend({
       }
     }
 
-    if (this.debug) {
-      console.log("Model [%s] read with query: %s".verbose, this.urlRoot, JSON.stringify(query));
-    }
-
     var mongoOptions = _.pick(options, ["require"]) || {};
+    logger.data("Model [%s] read with query: %s", this.urlRoot, JSON.stringify(query));
     return this.db.findOne(this.urlRoot, query, mongoOptions, this.wrapResponse(options)).return(this);
   }
 

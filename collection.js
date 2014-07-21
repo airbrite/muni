@@ -5,6 +5,7 @@
 var _ = require('lodash');
 var Backbone = require('backbone');
 var Model = require("./model");
+var logger = require('./logger');
 
 module.exports = Backbone.Collection.extend({
   debug: false,
@@ -60,9 +61,7 @@ module.exports = Backbone.Collection.extend({
 
     // Build query with optional: limit, skip, sort
     var mongoOptions = _.pick(options, ["limit", "skip", "sort"]) || {};
-    if (this.debug) {
-      console.log("Collection [%s] read with query: %s and options: %s".verbose, this.model.prototype.urlRoot, JSON.stringify(query), JSON.stringify(mongoOptions));
-    }
+    logger.data("Collection [%s] read with query: %s and options: %s", this.model.prototype.urlRoot, JSON.stringify(query), JSON.stringify(mongoOptions));
     return this.db.find(this.model.prototype.urlRoot, query, mongoOptions, this.wrapResponse(options)).bind(this).then(function(resp) {
       this.total = resp[1] || 0;
       return this;

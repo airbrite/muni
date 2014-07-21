@@ -16,7 +16,7 @@ describe("Models", function() {
 
   before(function(done) {
     Model.prototype.urlRoot = "tests";
-    
+
     Model.prototype.validate = function(attributes, options) {
       if (attributes.name === "Jack Dagnels") {
         return new Error("You Shall Not Pass!");
@@ -83,7 +83,6 @@ describe("Models", function() {
     model.save().bind(this).then(function() {
       // should not be called
     }).catch(function(err) {
-      // console.log(err);
       (err instanceof Error).should.be.true;
       done();
     });
@@ -142,7 +141,6 @@ describe("Models", function() {
     });
     model.fetch({
       success: function(model, resp, options) {
-        // console.log(resp)
         model.get("name").should.equal("Hugh Bowner");
         model.get("email").should.equal("hughbowner@gmail.com");
         done();
@@ -157,7 +155,6 @@ describe("Models", function() {
     model.fetch({
       // require: true,
       success: function(model, resp, options) {
-        // console.log(resp)
         model.get("name").should.equal("Hugh Bowner");
         model.get("email").should.equal("hughbowner@gmail.com");
         done();
@@ -236,7 +233,6 @@ describe("Models", function() {
         email: "hughbowner@gmail.com"
       },
       success: function(model, resp, options) {
-        // console.log(resp)
         model.get("name").should.equal("Hugh Bowner");
         model.get("email").should.equal("hughbowner@gmail.com");
         done();
