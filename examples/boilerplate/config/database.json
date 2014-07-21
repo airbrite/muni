@@ -1,6 +1,0 @@
-{
-  "mongodbs": {
-    "primary": "mongodb://localhost:27017/test",
-    "secondary": "mongodb://localhost:27017/test"
-  }
-}
