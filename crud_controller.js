@@ -114,7 +114,7 @@ module.exports = Controller.extend({
       _.merge(qo.query, options.query);
     }
 
-    return this.get('db').count(this.urlRoot, qo.query).bind(this).then(function(total) {
+    return this.get('db').count(this.urlRoot, qo.query).then(function(total) {
       res.data = {
         total: total
       };
@@ -131,7 +131,7 @@ module.exports = Controller.extend({
       _.merge(qo.query, options.query);
     }
 
-    return collection.fetch(qo).bind(this).then(function() {
+    return collection.fetch(qo).then(function() {
       res.paging = {
         total: parseInt(collection.total),
         count: parseInt(collection.models.length),
@@ -155,15 +155,16 @@ module.exports = Controller.extend({
 
   create: function(req, res, next) {
     var model = this.setupModel(req);
-    model.setFromRequest(req.body);
-    return model.save().bind(this).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
+    return model.setFromRequest(req.body).then(function() {
+      return model.save();
+    }).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
   },
 
   update: function(req, res, next, options) {
     options = options || {};
 
     var model = this.setupModel(req);
-    return model.fetch(options).bind(this).then(function() {
+    return model.fetch(options).then(function() {
       return model.setFromRequest(req.body);
     }).then(function() {
       return model.save(null, options);
