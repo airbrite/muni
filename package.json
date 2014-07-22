@@ -6,10 +6,10 @@
   "scripts": {
     "test": "mocha -R spec test"
   },
-  "homepage": "https://github.com/ptshih/bootie",
+  "homepage": "https://github.com/airbrite/bootie",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ptshih/bootie.git"
+    "url": "https://github.com/airbrite/bootie.git"
   },
   "keywords": [
     "bootie"
