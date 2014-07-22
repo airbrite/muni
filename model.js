@@ -112,6 +112,7 @@ module.exports = Backbone.Model.extend({
     resp = this.buildAttributes(
       schema,
       defaults,
+      resp,
       resp
     );
     return resp;
