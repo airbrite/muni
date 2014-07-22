@@ -1,0 +1,25 @@
+{
+  "name": "bootie",
+  "main": "index.js",
+  "version": "0.2.73",
+  "homepage": "https://github.com/airbrite/bootie",
+  "authors": [
+    "Peter Shih <ptshih@gmail.com>"
+  ],
+  "description": "Bootie Bootie Bootie!",
+  "moduleType": [
+    "amd",
+    "node"
+  ],
+  "keywords": [
+    "bootie"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
