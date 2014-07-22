@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 // References
 // ---
@@ -34,6 +34,7 @@ Bootie.colors.setTheme({
 Bootie.uuid = require('uuid');
 
 Bootie.mixin = require('./mixin');
+
 
 // All external libraries
 // ---
@@ -77,24 +78,13 @@ Bootie.Adapter = require('./adapter');
 // [Annotated Source](error.html)
 Bootie.Error = require('./error');
 
-// Queue processor (iron.io)
-// [Annotated Source](queue.html)
-Bootie.Queue = require('./queue');
-
-// Queue jobs
-// [Annotated Source](job.html)
-Bootie.Job = require('./job');
-
-
-// PeeGee is the Postgres database driver.
-// [Annotated Source](peegee.html)
-// Bootie.PeeGee = PeeGee;
-
 
 // Mixin Backbone.Events so that Bootie can be a pubsub bus
-Bootie._.extend(Bootie.prototype, Bootie.Backbone.Events, {
-  VERSION: '0.1.5'
+var pjson = require('./package.json');
+Bootie._.extend(Bootie, Bootie.Backbone.Events, {
+  VERSION: pjson.version
 });
+
 
 // Export to the world
 module.exports = Bootie;

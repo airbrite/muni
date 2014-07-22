@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 // References
 // ---
@@ -15,11 +15,11 @@ module.exports = Backbone.Model.extend({
   debug: false,
 
   // mongodb id attribute, usually `_id`
-  idAttribute: "_id",
-  userIdAttribute: "user_id",
+  idAttribute: '_id',
+  userIdAttribute: 'user_id',
 
   // The mongodb collection name
-  urlRoot: "models",
+  urlRoot: 'models',
 
   // Flag to force all updates to be patches on `sync`
   updateUsingPatch: true,
@@ -30,7 +30,8 @@ module.exports = Backbone.Model.extend({
   // Attributes that should be saved to the database but NOT rendered to JSON
   hiddenAttributes: {},
 
-  // The defaults hash (or function) can be used to specify the default attributes for your model.
+  // The defaults hash (or function) can be used
+  // to specify the default attributes for your model.
   // When creating an instance of the model,
   // any unspecified attributes will be set to their default value.
   //
@@ -85,7 +86,7 @@ module.exports = Backbone.Model.extend({
     _.defaults(this.attributes, _.result(this, 'baseDefaults'));
 
     // Whenever a model gets assigned a value for `idAttribute`
-    // We clear out defaults because we assume this is an existing model in the db
+    // Clear out defaults because we assume this is an existing model in the db
     // this.listenTo(this, 'change:' + this.idAttribute, function() {
     //   // Clear out all defaults
     //   this.clearDefaults();
@@ -155,12 +156,15 @@ module.exports = Backbone.Model.extend({
 
       // Schema value can be one of three types: `Array, Object, String`
       // Arrays and Objects can have nested schemas
-      // Strings are a final type definition and can be: `integer, float, boolean, id, string, date`
+      // Strings are a final type definition
+      // and can be: `integer, float, boolean, id, string, date`
       if (_.isArray(val)) {
         // json value is null or undefined
         // use current attribute value or default to `[]`
         if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
-          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : []);
+          obj[key] = !_.isUndefined(attrsVal) ?
+            attrsVal :
+            (!_.isUndefined(defaultsVal) ? defaultsVal : []);
           return;
         }
 
@@ -185,13 +189,21 @@ module.exports = Backbone.Model.extend({
         // Push results into an array
         obj[key] = [];
         _.each(jsonVal, function(jsonKeyVal) {
-          obj[key].push(this.buildAttributes(val[0], defaultsVal, jsonKeyVal, attrsVal, ignoredAttrsVal));
+          obj[key].push(this.buildAttributes(
+            val[0],
+            defaultsVal,
+            jsonKeyVal,
+            attrsVal,
+            ignoredAttrsVal
+          ));
         }.bind(this));
       } else if (_.isObject(val)) {
         // json value is null or undefined
         // use current attribute value or default to `{}`
         if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
-          obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : {});
+          obj[key] = !_.isUndefined(attrsVal) ?
+            attrsVal :
+            (!_.isUndefined(defaultsVal) ? defaultsVal : {});
           return;
         }
 
@@ -202,7 +214,13 @@ module.exports = Backbone.Model.extend({
         }
 
         // Recursively call `buildAttributes` for the json value (object)
-        obj[key] = this.buildAttributes(val, defaultsVal, jsonVal, attrsVal, ignoredAttrsVal);
+        obj[key] = this.buildAttributes(
+          val,
+          defaultsVal,
+          jsonVal,
+          attrsVal,
+          ignoredAttrsVal
+        );
       } else if (_.isString(val)) {
         if (val === 'integer' || val === 'uinteger') {
           if (jsonVal === '') {
@@ -211,7 +229,9 @@ module.exports = Backbone.Model.extend({
           }
           var intNumber = _.parseInt(jsonVal);
           if (_.isNaN(intNumber)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : 0);
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : 0);
             return;
           }
 
@@ -223,28 +243,36 @@ module.exports = Backbone.Model.extend({
           }
           var floatNumber = _.parseFloat(jsonVal);
           if (_.isNaN(floatNumber)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : 0.0);
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : 0.0);
             return;
           }
 
           obj[key] = val === 'ufloat' ? Math.max(floatNumber, 0.0) : floatNumber;
         } else if (val === 'boolean') {
           if (!_.isBoolean(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : false);
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : false);
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'id') {
           if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'string') {
           if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
@@ -257,15 +285,21 @@ module.exports = Backbone.Model.extend({
           }
           // a timestamp can be set explicitly to `null`
           if (!_.isNumber(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
           obj[key] = jsonVal;
         } else if (val === 'date') {
           // a date can be set explicitly to `null`
-          if (!_.isValidISO8601String(jsonVal) && !_.isDate(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ? attrsVal : (!_.isUndefined(defaultsVal) ? defaultsVal : null);
+          if (!_.isValidISO8601String(jsonVal) &&
+            !_.isDate(jsonVal) &&
+            !_.isNull(jsonVal)) {
+            obj[key] = !_.isUndefined(attrsVal) ?
+              attrsVal :
+              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
             return;
           }
 
@@ -284,7 +318,12 @@ module.exports = Backbone.Model.extend({
     var defaults = _.result(this, 'defaults');
     var schema = _.result(this, 'combinedSchema');
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    body = this.buildAttributes(schema, defaults, body, this.attributes, readOnlyAttributes);
+    body = this.buildAttributes(
+      schema,
+      defaults,
+      body,
+      this.attributes, readOnlyAttributes
+    );
 
     // Set new attributes
     this.requestAttributes = _.cloneDeep(body);
@@ -320,7 +359,13 @@ module.exports = Backbone.Model.extend({
 
     var hiddenAttributes = _.result(this, 'hiddenAttributes');
     var defaults = _.result(this, 'defaults');
-    json = this.buildAttributes(schema, defaults, json, this.attributes, hiddenAttributes);
+    json = this.buildAttributes(
+      schema,
+      defaults,
+      json,
+      this.attributes,
+      hiddenAttributes
+    );
 
     return json;
   },
@@ -427,7 +472,7 @@ module.exports = Backbone.Model.extend({
   // Applies a boolean flag `locked`
   lock: function() {
     if (this.get('locked')) {
-      var err = new Error("Model already locked.");
+      var err = new Error('Model already locked.');
       return Promise.reject(err);
     }
 
@@ -527,7 +572,7 @@ module.exports = Backbone.Model.extend({
     }
 
     var op = this[method].call(this, model, options);
-    model.trigger("request", model, op, options);
+    model.trigger('request', model, op, options);
     return op;
   },
 
@@ -544,8 +589,12 @@ module.exports = Backbone.Model.extend({
 
   // Inserts a mongodb document
   create: function(model, options) {
-    logger.data("Model [%s] create called", this.urlRoot);
-    return this.db.insert(this.urlRoot, model.toJSON(), this.wrapResponse(options)).return(this);
+    logger.data('Model [%s] create called', this.urlRoot);
+    return this.db.insert(
+      this.urlRoot,
+      model.toJSON(),
+      this.wrapResponse(options)
+    ).return(this);
   },
 
   // Updates a mongodb document
@@ -553,7 +602,7 @@ module.exports = Backbone.Model.extend({
   update: function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new Error("No ID for Model");
+      var err = new Error('No ID for Model');
       options.error(err);
       return Promise.reject(err);
     }
@@ -565,8 +614,14 @@ module.exports = Backbone.Model.extend({
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
-    logger.data("Model [%s] update with query: %s", this.urlRoot, JSON.stringify(query));
-    return this.db.findAndModify(this.urlRoot, query, model.toJSON(), this.wrapResponse(options)).return(this);
+    logger.data('Model [%s] update with query: %s',
+      this.urlRoot, JSON.stringify(query));
+    return this.db.findAndModify(
+      this.urlRoot,
+      query,
+      model.toJSON(),
+      this.wrapResponse(options)
+    ).return(this);
   },
 
   // Updates a mongodb document
@@ -574,7 +629,7 @@ module.exports = Backbone.Model.extend({
   patch: function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new Error("No ID for Model");
+      var err = new Error('No ID for Model');
       options.error(err);
       return Promise.reject(err);
     }
@@ -591,15 +646,24 @@ module.exports = Backbone.Model.extend({
     delete attrs[this.idAttribute];
 
     // Use mongodb set to only update explicit attributes
-    // Convert all nested objects into paths so `$set` doesn't overwrite nested objects
-    // `$set -> this.objToPaths(attrs)` has issues with nested objects where the parent doesn't exist
-    // For example `metadata.foo.bar: true` will fail if `metadata.foo` !== {} in the database yet
+    // Convert all nested objects into paths so `$set`
+    // doesn't overwrite nested objects
+    // `$set -> this.objToPaths(attrs)` has issues
+    // with nested objects where the parent doesn't exist
+    // For example `metadata.foo.bar: true` will fail
+    // if `metadata.foo` !== {} in the database yet
     var obj = {
-      "$set": attrs
+      '$set': attrs
     };
 
-    logger.data("Model [%s] patch with query: %s", this.urlRoot, JSON.stringify(query));
-    return this.db.findAndModify(this.urlRoot, query, obj, this.wrapResponse(options)).return(this);
+    logger.data('Model [%s] patch with query: %s',
+      this.urlRoot, JSON.stringify(query));
+    return this.db.findAndModify(
+      this.urlRoot,
+      query,
+      obj,
+      this.wrapResponse(options)
+    ).return(this);
   },
 
   // Removes a mongodb document
@@ -607,7 +671,7 @@ module.exports = Backbone.Model.extend({
   delete: function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new Error("No ID for Model");
+      var err = new Error('No ID for Model');
       options.error(err);
       return Promise.reject(err);
     }
@@ -616,7 +680,8 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    logger.data("Model [%s] delete with query: %s", this.urlRoot, JSON.stringify(query));
+    logger.data('Model [%s] delete with query: %s',
+      this.urlRoot, JSON.stringify(query));
     return this.db.remove(this.urlRoot, query, this.wrapResponse(options));
   },
 
@@ -631,7 +696,7 @@ module.exports = Backbone.Model.extend({
     } else {
       if (model.isNew()) {
         // If no ID in query, error out
-        var err = new Error("Trying to fetch a model with no `_id` attribute.");
+        var err = new Error('Trying to fetch a model with no `_id` attribute.');
         options.error(err);
         return Promise.reject(err);
       }
@@ -643,9 +708,15 @@ module.exports = Backbone.Model.extend({
       }
     }
 
-    var mongoOptions = _.pick(options, ["require"]) || {};
-    logger.data("Model [%s] read with query: %s", this.urlRoot, JSON.stringify(query));
-    return this.db.findOne(this.urlRoot, query, mongoOptions, this.wrapResponse(options)).return(this);
+    var mongoOptions = _.pick(options, ['require']) || {};
+    logger.data('Model [%s] read with query: %s',
+      this.urlRoot, JSON.stringify(query));
+    return this.db.findOne(
+      this.urlRoot,
+      query,
+      mongoOptions,
+      this.wrapResponse(options)
+    ).return(this);
   }
 
 });

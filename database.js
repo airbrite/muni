@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 // TODO
 // ---
@@ -22,7 +22,9 @@ module.exports = Backbone.Model.extend({
       mongodbs: {},
 
       // Keys: port, host, auth
-      caches: {}
+      caches: {},
+
+      silent: false
     };
   },
 
@@ -52,7 +54,7 @@ module.exports = Backbone.Model.extend({
     var redisClient = redis.createClient(options.port, options.host);
     if (options.auth) {
       redisClient.auth(options.auth);
-      connString += options.auth + "@";
+      connString += options.auth + '@';
     }
     connString += options.host;
     connString += ':';
@@ -61,11 +63,17 @@ module.exports = Backbone.Model.extend({
 
     // Catching this error event will prevent node from exiting
     this.caches[name].on('error', function(err) {
-      logger.error("Redis %s %d connect error to url: %s - %s".error, name, process.pid, connString, err.message);
+      if (!this.get('silent')) {
+        logger.error('Redis %s %d connect error to url: %s - %s'.error,
+          name, process.pid, connString, err.message);
+      }
     }.bind(this));
 
     this.caches[name].on('ready', function() {
-      logger.info("Redis %s %d connected to url: %s", name, process.pid, connString);
+      if (!this.get('silent')) {
+        logger.info('Redis %s %d connected to url: %s',
+          name, process.pid, connString);
+      }
     }.bind(this));
   },
 
@@ -73,12 +81,18 @@ module.exports = Backbone.Model.extend({
     this.mongodbs[name] = new Mongo(url);
 
     // Events
-    this.mongodbs[name].on("connect", function(url) {
-      logger.info("Mongo %s %d connected to url: %s", name, process.pid, url);
+    this.mongodbs[name].on('connect', function(url) {
+      if (!this.get('silent')) {
+        logger.info('Mongo %s %d connected to url: %s',
+          name, process.pid, url);
+      }
     }.bind(this));
 
-    this.mongodbs[name].on("error", function(error) {
-      Bootie.logger.error("Mongo %s %d connect error to url: %s -> %s".error, name, process.pid, url, error.message);
+    this.mongodbs[name].on('error', function(error) {
+      if (!this.get('silent')) {
+        logger.error('Mongo %s %d connect error to url: %s -> %s'.error,
+          name, process.pid, url, error.message);
+      }
     }.bind(this));
 
     // Connect

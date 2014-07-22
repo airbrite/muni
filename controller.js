@@ -1,15 +1,19 @@
-"use strict";
+'use strict';
 
 // What is Controller?
 // ---
 
-// Controller helps facilitate routing via express by providing configuring route handlers
+// Controller helps facilitate routing via express
+// by providing configuring route handlers
 //
-// For example, a route to `/users/:id` would be handled by a `UsersController` with function `findOne`
+// For example, a route to `/users/:id`
+// would be handled by a `UsersController` with function `findOne`
 //
-// It provides a way for each controller to setup the routes and handlers it wants to respond to
+// It provides a way for each controller
+// to setup the routes and handlers it wants to respond to
 //
-// Also provides a mechanism to define pre, before, and after middleware per controller or per route
+// Also provides a mechanism to define pre, before, and after middleware
+// per controller or per route
 //
 // Finally, it also provides response and error handling middleware
 //
@@ -21,14 +25,15 @@ var _ = require('lodash');
 var Backbone = require('backbone');
 var Model = require('./model');
 var Collection = require('./collection');
+var logger = require('./logger');
 
 module.exports = Backbone.Model.extend({
   debug: false,
 
-  path: "/",
+  path: '/',
 
-  sortParam: "created",
-  sortOrder: "desc",
+  sortParam: 'created',
+  sortOrder: 'desc',
   skip: 0,
   limit: 50,
 
@@ -80,7 +85,7 @@ module.exports = Backbone.Model.extend({
   // Setup routes that this controller should handle
   //
   // Example:
-  // this.routes.get["/test"] = {
+  // this.routes.get['/test'] = {
   //   action: this.testGet,
   //   middleware: []
   // };
@@ -168,7 +173,7 @@ module.exports = Backbone.Model.extend({
   errorResponse: function(err, req, res, next) {
     // Default to 500, but allow override
     var code = res.code || err.code || 500;
-    var data = err.message || "";
+    var data = err.message || '';
 
     var envelope = {
       meta: {
@@ -186,10 +191,10 @@ module.exports = Backbone.Model.extend({
     if (this.debug) {
       if (code >= 500) {
         if (err && err.stack && err.stack.error) {
-          console.error(err.stack.error);
+          logger.error(err.stack.error);
         }
       } else {
-        console.error("Error (%d): %s".error, code, data);
+        logger.error('Error (%d): %s'.error, code, data);
       }
     }
 
@@ -272,7 +277,8 @@ module.exports = Backbone.Model.extend({
       limit = 100;
     }
 
-    // Build created, updated objects into the query string if sent in as dot notation
+    // Build created
+    // updated objects into the query string if sent in as dot notation
     _.each(req.query, function(obj, key) {
       var match;
       if (match = key.match(/(created|updated).(gte|lte|gt|lt)/)) {
@@ -302,18 +308,18 @@ module.exports = Backbone.Model.extend({
 
       if (created.gte) {
         created.gte = _.isUnixTime(created.gte) ? created.gte * 1000 : created.gte;
-        createdQuery.created["$gte"] = new Date(created.gte).getTime();
+        createdQuery.created['$gte'] = new Date(created.gte).getTime();
       } else if (created.gt) {
         created.gt = _.isUnixTime(created.gt) ? created.gt * 1000 : created.gt;
-        createdQuery.created["$gt"] = new Date(created.gt).getTime();
+        createdQuery.created['$gt'] = new Date(created.gt).getTime();
       }
 
       if (created.lte) {
         created.lte = _.isUnixTime(created.lte) ? created.lte * 1000 : created.lte;
-        createdQuery.created["$lte"] = new Date(created.lte).getTime();
+        createdQuery.created['$lte'] = new Date(created.lte).getTime();
       } else if (created.lt) {
         created.lt = _.isUnixTime(created.lt) ? created.lt * 1000 : created.lt;
-        createdQuery.created["$lt"] = new Date(created.lt).getTime();
+        createdQuery.created['$lt'] = new Date(created.lt).getTime();
       }
 
       if (_.isNumber(created)) {
@@ -331,18 +337,18 @@ module.exports = Backbone.Model.extend({
 
       if (updated.gte) {
         updated.gte = _.isUnixTime(updated.gte) ? updated.gte * 1000 : updated.gte;
-        updatedQuery.updated["$gte"] = new Date(updated.gte).getTime();
+        updatedQuery.updated['$gte'] = new Date(updated.gte).getTime();
       } else if (updated.gt) {
         updated.gt = _.isUnixTime(updated.gt) ? updated.gt * 1000 : updated.gt;
-        updatedQuery.updated["$gt"] = new Date(updated.gt).getTime();
+        updatedQuery.updated['$gt'] = new Date(updated.gt).getTime();
       }
 
       if (updated.lte) {
         updated.lte = _.isUnixTime(updated.lte) ? updated.lte * 1000 : updated.lte;
-        updatedQuery.updated["$lte"] = new Date(updated.lte).getTime();
+        updatedQuery.updated['$lte'] = new Date(updated.lte).getTime();
       } else if (updated.lt) {
         updated.lt = _.isUnixTime(updated.lt) ? updated.lt * 1000 : updated.lt;
-        updatedQuery.created["$lt"] = new Date(updated.lt).getTime();
+        updatedQuery.created['$lt'] = new Date(updated.lt).getTime();
       }
 
       if (_.isNumber(updated)) {
@@ -359,11 +365,11 @@ module.exports = Backbone.Model.extend({
       };
 
       if (since) {
-        sinceUntilQuery.created["$gte"] = new Date(_.parseInt(since) * 1000).getTime();
+        sinceUntilQuery.created['$gte'] = new Date(_.parseInt(since) * 1000).getTime();
       }
 
       if (until) {
-        sinceUntilQuery.created["$lte"] = new Date(_.parseInt(until) * 1000).getTime();
+        sinceUntilQuery.created['$lte'] = new Date(_.parseInt(until) * 1000).getTime();
       }
 
       queries.push(sinceUntilQuery);
@@ -371,7 +377,7 @@ module.exports = Backbone.Model.extend({
 
     // Filter Params
     var queryParams = _.extend(_.result(this, 'queryParams'), {
-      "user_id": "string"
+      'user_id': 'string'
     });
     var filterParams = _.pick(req.query, _.keys(queryParams));
 
@@ -403,14 +409,14 @@ module.exports = Backbone.Model.extend({
         // regex case insensitive and escaping special characters
         vals = _.map(vals, function(v) {
           return {
-            // "$regex": '^' + _.escapeRegExp(v),
-            "$regex": _.escapeRegExp(v),
-            "$options": 'i'
+            // '$regex': '^' + _.escapeRegExp(v),
+            '$regex': _.escapeRegExp(v),
+            '$options': 'i'
           };
         });
         // filter[key] = {
-        //   "$regex": '^' + _.escapeRegExp(val),
-        //   "$options": 'i'
+        //   '$regex': '^' + _.escapeRegExp(val),
+        //   '$options': 'i'
         // };
       } else if (type === 'integer') {
         // integers
@@ -439,7 +445,7 @@ module.exports = Backbone.Model.extend({
           orClause[key] = orVal;
           orExpr.push(orClause);
         });
-        filter["$or"] = orExpr;
+        filter['$or'] = orExpr;
       }
 
       queries.push(filter);
@@ -458,10 +464,10 @@ module.exports = Backbone.Model.extend({
     ];
 
     return {
-      "query": query,
-      "sort": sortOptions,
-      "limit": parseInt(limit, 10),
-      "skip": parseInt(skip, 10)
+      'query': query,
+      'sort': sortOptions,
+      'limit': parseInt(limit, 10),
+      'skip': parseInt(skip, 10)
     };
   }
 

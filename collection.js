@@ -1,10 +1,10 @@
-"use strict";
+'use strict';
 
 // Dependencies
 // ---
 var _ = require('lodash');
 var Backbone = require('backbone');
-var Model = require("./model");
+var Model = require('./model');
 var logger = require('./logger');
 
 module.exports = Backbone.Collection.extend({
@@ -35,7 +35,7 @@ module.exports = Backbone.Collection.extend({
   // A `sync` event is fired after with parameters (model, resp, options)
   sync: function(method, model, options) {
     var op = this[method].call(this, model, options);
-    model.trigger("request", model, op, options);
+    model.trigger('request', model, op, options);
     return op;
   },
 
@@ -60,9 +60,16 @@ module.exports = Backbone.Collection.extend({
     }
 
     // Build query with optional: limit, skip, sort
-    var mongoOptions = _.pick(options, ["limit", "skip", "sort"]) || {};
-    logger.data("Collection [%s] read with query: %s and options: %s", this.model.prototype.urlRoot, JSON.stringify(query), JSON.stringify(mongoOptions));
-    return this.db.find(this.model.prototype.urlRoot, query, mongoOptions, this.wrapResponse(options)).bind(this).then(function(resp) {
+    var mongoOptions = _.pick(options, ['limit', 'skip', 'sort']) || {};
+    logger.data('Collection [%s] read with query: %s and options: %s',
+      this.model.prototype.urlRoot,
+      JSON.stringify(query),
+      JSON.stringify(mongoOptions));
+    return this.db.find(
+      this.model.prototype.urlRoot,
+      query, mongoOptions,
+      this.wrapResponse(options)
+    ).bind(this).then(function(resp) {
       this.total = resp[1] || 0;
       return this;
     });
@@ -104,7 +111,12 @@ module.exports = Backbone.Collection.extend({
 
     // Don't allow any mongo options for now
     var mongoOptions = {};
-    return this.db.count(this.model.prototype.urlRoot, query, mongoOptions, this.wrapResponse(options));
+    return this.db.count(
+      this.model.prototype.urlRoot,
+      query,
+      mongoOptions,
+      this.wrapResponse(options)
+    );
   }
 
 });

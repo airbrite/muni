@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var _ = require('lodash');
 var eyes = require('eyes');
@@ -88,7 +88,10 @@ _.extend(_, {
   },
 
   isValidEmail: function(email) {
-    if (email && typeof(email) === "string" && email.length > 0 && email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i)) {
+    if (email &&
+      typeof(email) === 'string' &&
+      email.length > 0 &&
+      email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i)) {
       return true;
     } else {
       return false;
@@ -102,12 +105,15 @@ _.extend(_, {
   },
 
   escapeRegExp: function(str) {
-    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
   },
 
   fingerprintObject: function(object, algorithm) {
     algorithm = algorithm || 'sha1';
-    return crypto.createHash(algorithm).update(JSON.stringify(object)).digest("hex").toString();
+    return crypto.createHash(algorithm)
+      .update(JSON.stringify(object))
+      .digest('hex')
+      .toString();
   },
 
   randomHash: function() {

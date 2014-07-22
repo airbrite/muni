@@ -1,9 +1,10 @@
-"use strict";
+'use strict';
 
 // What is CrudController?
 // ---
 
-// CrudController helps making CRUD routing easy by providing a controller that automatically maps all CRUD routes
+// CrudController helps making CRUD routing easy
+// by providing a controller that automatically maps all CRUD routes
 //
 // See documentation for [Controller](controller.html)
 
@@ -15,8 +16,8 @@
 // ---
 var _ = require('lodash');
 var Controller = require('./controller');
-var Model = require("./model");
-var Collection = require("./collection");
+var Model = require('./model');
+var Collection = require('./collection');
 
 module.exports = Controller.extend({
   debug: true,
@@ -30,7 +31,7 @@ module.exports = Controller.extend({
   collection: Collection,
 
   // Available controller actions (see `setupRoutes` for more info)
-  crud: ["T", "C", "R", "O", "U", "D"],
+  crud: ['T', 'C', 'R', 'O', 'U', 'D'],
 
   initialize: function() {
     // Make sure to call `super` as a best practice when overriding
@@ -50,14 +51,14 @@ module.exports = Controller.extend({
     Controller.prototype.setupRoutes.call(this);
 
     // Get the base url path
-    var basePath = _.result(this, "basePath");
+    var basePath = _.result(this, 'basePath');
 
     // Setup CRUD routes
     _.each(this.crud, function(action) {
       switch (action) {
         case 'T':
           // Create
-          this.routes.get[basePath + "/count"] = {
+          this.routes.get[basePath + '/count'] = {
             action: this.count,
             middleware: this.getRouteMiddleware('count')
           };
@@ -71,28 +72,28 @@ module.exports = Controller.extend({
           break;
         case 'R':
           // Find
-          this.routes.get[basePath + ".:format?"] = {
+          this.routes.get[basePath + '.:format?'] = {
             action: this.find,
             middleware: this.getRouteMiddleware('find')
           };
           break;
         case 'O':
           // FindOne
-          this.routes.get[basePath + "/:id.:format?"] = {
+          this.routes.get[basePath + '/:id.:format?'] = {
             action: this.findOne,
             middleware: this.getRouteMiddleware('findOne')
           };
           break;
         case 'U':
           // Update
-          this.routes.put[basePath + "/:id"] = {
+          this.routes.put[basePath + '/:id'] = {
             action: this.update,
             middleware: this.getRouteMiddleware('update')
           };
           break;
         case 'D':
           // Destroy
-          this.routes.delete[basePath + "/:id"] = {
+          this.routes.delete[basePath + '/:id'] = {
             action: this.destroy,
             middleware: this.getRouteMiddleware('destroy')
           };
@@ -150,7 +151,9 @@ module.exports = Controller.extend({
     });
 
     var model = this.setupModel(req);
-    return model.fetch(options).then(this.nextThen(req, res, next)).catch(this.nextCatch(req, res, next));
+    return model.fetch(options)
+      .then(this.nextThen(req, res, next))
+      .catch(this.nextCatch(req, res, next));
   },
 
   create: function(req, res, next) {
@@ -175,7 +178,7 @@ module.exports = Controller.extend({
     var model = this.setupModel(req);
     return model.destroy().then(function(resp) {
       if (resp === 0) {
-        var err = new Error("Document not found.");
+        var err = new Error('Document not found.');
         err.code = 404;
         return next(err);
       }

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var _ = require('lodash');
 var Promise = require('bluebird');
@@ -20,9 +20,9 @@ var Mongo = module.exports = function(url, options) {
   this.options = options || {};
 
   this.client = MongoClient;
-  this.url = url || "mongodb://localhost:27017";
+  this.url = url || 'mongodb://localhost:27017';
   this._db = null;
-  this.connection = "disconnected";
+  this.connection = 'disconnected';
   this.reconnectTimeout = this.options.reconnectTimeout || 500;
 };
 
@@ -31,15 +31,15 @@ Mongo.prototype = Object.create(EventEmitter.prototype);
 _.extend(Mongo.prototype, {
   connect: Promise.method(function() {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
 
     return Promise
       .bind(this)
       .then(function() {
-        if (this.connection === "connected") {
+        if (this.connection === 'connected') {
           callback && callback(null, this._db);
           return this._db;
-        } else if (this.connection === "connecting") {
+        } else if (this.connection === 'connecting') {
           return Promise.delay(this.reconnectTimeout)
             .bind(this)
             .then(function() {
@@ -47,18 +47,18 @@ _.extend(Mongo.prototype, {
             });
         }
 
-        this.connection = "connecting";
+        this.connection = 'connecting';
         return this.client.connectAsync(this.url, this.options)
           .bind(this)
           .then(function(db) {
             this._db = db;
-            this.emit("connect", this.url);
-            this.connection = "connected";
+            this.emit('connect', this.url);
+            this.connection = 'connected';
             callback && callback(null, db);
             return this._db;
           })
           .catch(function(err) {
-            this.connection = "disconnected";
+            this.connection = 'disconnected';
             callback && callback(err);
             throw err;
           });
@@ -67,7 +67,7 @@ _.extend(Mongo.prototype, {
 
   collection: Promise.method(function(collectionName) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
 
     return this.connect()
       .bind(this)
@@ -85,7 +85,7 @@ _.extend(Mongo.prototype, {
 
   // Check if a string is a valid ObjectID
   isValidObjectID: function(id) {
-    var checkForHexRegExp = new RegExp("^[0-9a-fA-F]{24}$");
+    var checkForHexRegExp = new RegExp('^[0-9a-fA-F]{24}$');
     return (typeof id === 'string') && id.length === 24 && checkForHexRegExp.test(id);
   },
 
@@ -140,7 +140,7 @@ _.extend(Mongo.prototype, {
   // Used by `find` and `findCursor`
   _cursor: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
     options = options || {};
 
     var fields = null;
@@ -160,8 +160,8 @@ _.extend(Mongo.prototype, {
   findCursor: function(collectionName, query) {
     var args = [].slice.call(arguments);
 
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = ((args.length > 2 && typeof args[args.length - 1] == 'object') && args.pop());
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = ((args.length > 2 && typeof args[args.length - 1] === 'object') && args.pop());
 
     options = options || {};
 
@@ -186,8 +186,8 @@ _.extend(Mongo.prototype, {
   // Count associated with findCursor
   count: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = options || {};
 
@@ -212,8 +212,8 @@ _.extend(Mongo.prototype, {
   // Find all docs matching query and turn into an array
   find: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = options || {};
 
@@ -249,8 +249,8 @@ _.extend(Mongo.prototype, {
 
   pagination: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = options || {};
 
@@ -287,8 +287,8 @@ _.extend(Mongo.prototype, {
   // Find a single doc matching query
   findOne: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = options || {};
 
@@ -315,7 +315,7 @@ _.extend(Mongo.prototype, {
       .then(this.uncast)
       .then(function(data) {
         if (!data && require) {
-          var requireErr = new Error("Document not found for query: " + JSON.stringify(query) + ".")
+          var requireErr = new Error('Document not found for query: ' + JSON.stringify(query) + '.');
           requireErr.code = 404;
           throw requireErr;
         }
@@ -332,8 +332,8 @@ _.extend(Mongo.prototype, {
   // Insert a document (safe: true)
   insert: function(collectionName, obj) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = _.extend({
       safe: true
@@ -361,8 +361,8 @@ _.extend(Mongo.prototype, {
   // Update one or more docs
   update: function(collectionName, query, obj) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 3 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 3 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = _.extend({
       safe: true
@@ -392,8 +392,8 @@ _.extend(Mongo.prototype, {
   // Update and return one doc
   findAndModify: function(collectionName, query, obj) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 3 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 3 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = _.extend({
       new: true,
@@ -427,7 +427,7 @@ _.extend(Mongo.prototype, {
         return this.uncast(response[0]);
       }).then(function(data) {
         if (!data && require) {
-          var requireErr = new Error("Document not found for query: " + JSON.stringify(query) + ".")
+          var requireErr = new Error('Document not found for query: ' + JSON.stringify(query) + '.');
           requireErr.code = 404;
           throw requireErr;
         }
@@ -444,8 +444,8 @@ _.extend(Mongo.prototype, {
   // Remove a document and returns count
   remove: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = _.extend({
       safe: true
@@ -471,8 +471,8 @@ _.extend(Mongo.prototype, {
   // Aggregate
   aggregate: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
     options = options || {};
 
     query = _.cloneDeep(query);
@@ -503,8 +503,8 @@ _.extend(Mongo.prototype, {
   // Get next sequence for counter
   getNextSequence: function(collectionName, query) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
 
     options = _.extend({
       safe: true,
@@ -515,7 +515,7 @@ _.extend(Mongo.prototype, {
     query = this.cast(query);
 
     return this.findAndModify(collectionName, query, {
-        "$inc": {
+        '$inc': {
           seq: 1
         }
       }, options)
@@ -534,7 +534,7 @@ _.extend(Mongo.prototype, {
   // Erases all records from a collection, if any
   eraseCollection: function(collectionName) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
 
     return this.remove(collectionName, {})
       .then(function(data) {
@@ -550,8 +550,8 @@ _.extend(Mongo.prototype, {
   // Indexes
   ensureIndex: function(collectionName, index) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
-    var options = args.length > 2 && typeof args[args.length - 1] == 'object' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
+    var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
     options = options || {};
 
     return this.collection(collectionName)
@@ -571,7 +571,7 @@ _.extend(Mongo.prototype, {
 
   dropIndexes: function(collectionName) {
     var args = [].slice.call(arguments);
-    var callback = typeof args[args.length - 1] == 'function' && args.pop();
+    var callback = typeof args[args.length - 1] === 'function' && args.pop();
 
     return this.collection(collectionName)
       .bind(this)

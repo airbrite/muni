@@ -49,48 +49,56 @@ module.exports = function(options) {
           var requiredParams = routeOptions.requiredParams || [];
           var allowedParams = routeOptions.allowedParams || [];
 
-          // Hook up the route/path/method to the controller action and middleware
+          // Hook up the route/path/method to the controller action/middleware
           var pre = _.invoke(controller.pre, 'bind', controller);
           var before = _.invoke(controller.before, 'bind', controller);
           var after = _.invoke(controller.after, 'bind', controller);
 
           // Define the express route
-          router[method](path, pre || [], routeOptions.middleware || [], before || [], function(req, res, next) {
-            // Pick allowed params in body and query
-            if (allowedParams.length > 0) {
-              req.body = _.pick(req.body, allowedParams);
-              req.query = _.pick(req.query, allowedParams);
-            }
-
-            // Reject request if required params are not present
-            if (requiredParams.length > 0) {
-              // Find all missing parameters
-              var missingParams = [];
-              _.each(requiredParams, function(requiredParam) {
-                if (!req.body[requiredParam] && !req.query[requiredParam]) {
-                  missingParams.push(requiredParam);
-                }
-              });
-
-              // If there are missing parameters, respond with an error before routing
-              if (missingParams.length > 0) {
-                var err;
-                var errParts = [];
-                missingParams = _.map(missingParams, function(missingParam) {
-                  return '`' + missingParam + '`';
-                });
-                errParts.push("Missing");
-                errParts.push(missingParams.join(', '));
-                errParts.push("parameter(s).");
-                err = new Error(errParts.join(' '));
-                err.code = 400;
-                return next(err);
+          router[method](
+            path,
+            pre || [],
+            routeOptions.middleware || [],
+            before || [],
+            function(req, res, next) {
+              // Pick allowed params in body and query
+              if (allowedParams.length > 0) {
+                req.body = _.pick(req.body, allowedParams);
+                req.query = _.pick(req.query, allowedParams);
               }
-            }
 
-            // Execute the route for the request
-            routeOptions.action.call(controller, req, res, next);
-          }, after || []);
+              // Reject request if required params are not present
+              if (requiredParams.length > 0) {
+                // Find all missing parameters
+                var missingParams = [];
+                _.each(requiredParams, function(requiredParam) {
+                  if (!req.body[requiredParam] && !req.query[requiredParam]) {
+                    missingParams.push(requiredParam);
+                  }
+                });
+
+                // If there are missing parameters,
+                // respond with an error before routing
+                if (missingParams.length > 0) {
+                  var err;
+                  var errParts = [];
+                  missingParams = _.map(missingParams, function(missingParam) {
+                    return '`' + missingParam + '`';
+                  });
+                  errParts.push("Missing");
+                  errParts.push(missingParams.join(', '));
+                  errParts.push("parameter(s).");
+                  err = new Error(errParts.join(' '));
+                  err.code = 400;
+                  return next(err);
+                }
+              }
+
+              // Execute the route for the request
+              routeOptions.action.call(controller, req, res, next);
+            },
+            after || []
+          );
 
           // Add route to set of active routes
           router.routes.push({
