@@ -105,6 +105,15 @@ module.exports = Backbone.Model.extend({
     if (_.isArray(resp)) {
       resp = resp[0];
     }
+
+    // Set defaults and apply schema
+    var defaults = _.result(this, 'defaults');
+    var schema = _.result(this, 'combinedSchema');
+    resp = this.buildAttributes(
+      schema,
+      defaults,
+      resp
+    );
     return resp;
   },
 
@@ -322,7 +331,8 @@ module.exports = Backbone.Model.extend({
       schema,
       defaults,
       body,
-      this.attributes, readOnlyAttributes
+      this.attributes,
+      readOnlyAttributes
     );
 
     // Set new attributes
