@@ -222,7 +222,7 @@ module.exports = Backbone.Model.extend({
         var xml = this.xmlBuilder.buildObject(res.data);
         res.set('Content-Type', 'application/xml; charset=utf-8');
         res.send(res.code, xml);
-      },
+      }.bind(this),
       text: function() {
         res.send(res.code, res.data);
       }
