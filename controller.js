@@ -26,7 +26,7 @@ var Backbone = require('backbone');
 var Model = require('./model');
 var Collection = require('./collection');
 var logger = require('./logger');
-var js2xmlparser = require("js2xmlparser");
+var xml2js = require('xml2js');
 
 module.exports = Backbone.Model.extend({
   debug: false,
@@ -37,6 +37,8 @@ module.exports = Backbone.Model.extend({
   sortOrder: 'desc',
   skip: 0,
   limit: 50,
+
+  xmlBuilder: new xml2js.Builder(),
 
   // Route specific middleware definitions
   // Object or Function
@@ -217,9 +219,9 @@ module.exports = Backbone.Model.extend({
         res.jsonp(res.code, res.data);
       },
       xml: function() {
-        var xmlString = js2xmlparser('message', res.data);
+        var xml = this.xmlBuilder.buildObject(res.data);
         res.set('Content-Type', 'application/xml; charset=utf-8');
-        res.send(res.code, xmlString);
+        res.send(res.code, xml);
       },
       text: function() {
         res.send(res.code, res.data);

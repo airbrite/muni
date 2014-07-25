@@ -1,6 +1,6 @@
 {
   "name": "bootie",
-  "version": "0.2.76",
+  "version": "0.2.77",
   "description": "Bootie Bootie Bootie",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,6 @@
     "express": "4.6.1",
     "eyes": "0.1.8",
     "hbs": "2.7.0",
-    "js2xmlparser": "^0.1.3",
     "lodash": "2.4.1",
     "moment": "2.7.0",
     "mongodb": "1.4.7",
@@ -30,7 +29,8 @@
     "request": "2.39.0",
     "urlsafe-base64": "0.0.2",
     "uuid": "1.4.1",
-    "winston": "0.7.3"
+    "winston": "0.7.3",
+    "xml2js": "0.4.4"
   },
   "devDependencies": {
     "mocha": "1.21.0",
