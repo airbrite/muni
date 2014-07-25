@@ -13,6 +13,13 @@ module.exports = function(options) {
   // Create a new express router
   var router = express.Router(options);
 
+  // Middleware
+  if (_.isArray(options.middleware)) {
+    _.each(options.middleware, function(middleware) {
+      router.use(middleware);
+    });
+  }
+
   // Array of active routes
   router.routes = [];
 

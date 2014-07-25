@@ -13,27 +13,6 @@ Bootie Bootie Bootie Bootie Bootie Everywhere!
 - Mongo
 - Database
 
-## App Configuration
-
-`config/index.js` - top level configuration object
-
-### Config JSON
-
-`database.json` - json representing all databases and connection information
-
-    {
-        "mongos": {
-            "primary": "mongodb://localhost:27017/test",
-            "secondary": "mongodb://localhost:27017/test"
-        }
-    }
-
-`environment.json` - additional key/value pairs for `config` object
-
-    {
-        "foo": "bar"
-    }
-
 ### Middleware
 
 All middleware should reside in the `middleware` folder.
@@ -227,8 +206,8 @@ There is less of a reason for base collection, but it is done here to show what 
 - `urlRoot` - `string` - mongodb collection name
 - `idAttribute` - `string` - usually is `_id`
 - `userIdAttribute` - `string` - usually is `user_id`
-- `privateAttributes` - `array of strings` - 
-- `publicAttributes` - `array of strings` - 
+- `privateAttributes` - `array of strings` -
+- `publicAttributes` - `array of strings` -
 
 ### Instance properties:
 
