@@ -26,6 +26,7 @@ var Backbone = require('backbone');
 var Model = require('./model');
 var Collection = require('./collection');
 var logger = require('./logger');
+var js2xmlparser = require("js2xmlparser");
 
 module.exports = Backbone.Model.extend({
   debug: false,
@@ -207,23 +208,23 @@ module.exports = Backbone.Model.extend({
   // Server actually responds to the request here
   finalResponse: function(req, res, next) {
     // If we timed out before managing to respond, don't send the response
-    if (res.headerSent) {
+    if (res.headersSent) {
       return;
     }
 
-    // Respond with correct format, defaulting to json
-    res.fmt = res.fmt || 'json';
-    if (res.fmt === 'json') {
-      // json
-      res.jsonp(res.code, res.data);
-    } else if (res.fmt === 'xml') {
-      // xml
-      res.set('Content-Type', 'application/xml; charset=utf-8');
-      res.send(res.code, res.data);
-    } else {
-      // text or html
-      res.send(res.code, res.data);
-    }
+    res.format({
+      json: function() {
+        res.jsonp(res.code, res.data);
+      },
+      xml: function() {
+        var xmlString = js2xmlparser('message', res.data);
+        res.set('Content-Type', 'application/xml; charset=utf-8');
+        res.send(res.code, xmlString);
+      },
+      text: function() {
+        res.send(res.code, res.data);
+      }
+    });
   },
 
 
