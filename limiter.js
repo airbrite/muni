@@ -26,7 +26,6 @@ var options = {
     window: 0
   },
   normal: {
-    ips: [],
     limit: 500,
     window: 60 * 15
   },

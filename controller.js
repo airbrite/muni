@@ -36,7 +36,7 @@ module.exports = Backbone.Model.extend({
   sortParam: 'created',
   sortOrder: 'desc',
   skip: 0,
-  limit: 50,
+  limit: 100,
 
   xmlBuilder: new xml2js.Builder(),
 
@@ -271,14 +271,10 @@ module.exports = Backbone.Model.extend({
     var until = req.query.until || req.query.to; // validate timestamp (s or ms) [ DO NOT USE]
     var sortBy = req.query.sort || this.sortParam; // validate sortableParams
     var orderBy = req.query.order || this.sortOrder; // validate [asc, desc]
-    var skip = req.query.skip || req.query.offset || this.skip; // validate int
-    var limit = req.query.limit || req.query.count || this.limit; // validate int
-
-    // Hard limit at 100
-    limit = Math.min(limit, 100);
-    if (limit === 0) {
-      limit = 100;
-    }
+    var skip = req.query.skip || req.query.offset || this.skip;
+    var limit = req.query.limit || req.query.count || this.limit;
+    skip = _.parseInt(skip) > 0 || 0;
+    limit = _.parseInt(limit) > 0 ? Math.min(limit, this.limit) : this.limit; // Hard limit at 100
 
     // Build created
     // updated objects into the query string if sent in as dot notation
@@ -286,7 +282,7 @@ module.exports = Backbone.Model.extend({
       var match;
       if (match = key.match(/(created|updated).(gte|lte|gt|lt)/)) {
         req.query[match[1]] = req.query[match[1]] || {};
-        req.query[match[1]][match[2]] = parseInt(obj);
+        req.query[match[1]][match[2]] = _.parseInt(obj);
       }
     });
 
@@ -469,8 +465,8 @@ module.exports = Backbone.Model.extend({
     return {
       'query': query,
       'sort': sortOptions,
-      'limit': parseInt(limit, 10),
-      'skip': parseInt(skip, 10)
+      'limit': limit,
+      'skip': skip
     };
   }
 
