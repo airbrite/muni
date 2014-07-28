@@ -65,6 +65,7 @@ module.exports = Backbone.Model.extend({
       get: {},
       post: {},
       put: {},
+      patch: {},
       delete: {}
     };
 

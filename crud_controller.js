@@ -31,7 +31,7 @@ module.exports = Controller.extend({
   collection: Collection,
 
   // Available controller actions (see `setupRoutes` for more info)
-  crud: ['T', 'C', 'R', 'O', 'U', 'D'],
+  crud: ['T', 'C', 'R', 'O', 'U', 'P', 'D'],
 
   initialize: function() {
     // Make sure to call `super` as a best practice when overriding
@@ -87,6 +87,13 @@ module.exports = Controller.extend({
         case 'U':
           // Update
           this.routes.put[basePath + '/:id'] = {
+            action: this.update,
+            middleware: this.getRouteMiddleware('update')
+          };
+          break;
+        case 'P':
+          // Patch
+          this.routes.patch[basePath + '/:id'] = {
             action: this.update,
             middleware: this.getRouteMiddleware('update')
           };
