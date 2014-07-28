@@ -39,6 +39,9 @@ Bootie.mixin = require('./mixin');
 // All external libraries
 // ---
 
+// Limiter
+Bootie.limiter = require('./limiter');
+
 // Logger
 Bootie.logger = require('./logger');
 
