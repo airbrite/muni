@@ -172,6 +172,9 @@ module.exports = Controller.extend({
 
   update: function(req, res, next, options) {
     options = options || {};
+    _.merge(options, {
+      require: true
+    });
 
     var model = this.setupModel(req);
     return model.fetch(options).then(function() {

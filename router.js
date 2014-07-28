@@ -13,13 +13,6 @@ module.exports = function(options) {
   // Create a new express router
   var router = express.Router(options);
 
-  // Middleware
-  if (_.isArray(options.middleware)) {
-    _.each(options.middleware, function(middleware) {
-      router.use(middleware);
-    });
-  }
-
   // Array of active routes
   router.routes = [];
 
@@ -29,45 +22,40 @@ module.exports = function(options) {
     router.url += "/" + options.version;
   }
 
-  // If this router should print out all routes
-  router.silent = options.silent ? options.silent : false;
+  // Controllers
+  router.controllers = options.controllers;
 
-  // Set of active routes
-  var paths = {};
+  // Add routes
+  router.addControllerRoutes = function() {
+    // Set of active routes
+    var paths = {};
 
-  // Each controller has a `routes` object
-  // Automagically hook up all routes defined in controllers
-  if (options.controllers) {
-    _.each(options.controllers, function(controller) {
-      var routes = controller.routes;
+    // Each controller has a `routes` object
+    // Automagically hook up all routes defined in controllers
+    if (router.controllers) {
+      _.each(router.controllers, function(controller) {
+        var routes = controller.routes;
 
-      _.each(routes, function(route, method) {
-        _.each(route, function(routeOptions, path) {
-          // If path/method has already been defined, skip
-          if (paths[path] === method) {
-            return;
-          }
+        _.each(routes, function(route, method) {
+          _.each(route, function(routeOptions, path) {
+            // If path/method has already been defined, skip
+            if (paths[path] === method) {
+              return;
+            }
 
-          // If no route action is defined, skip
-          if (!routeOptions.action) {
-            return;
-          }
+            // If no route action is defined, skip
+            if (!routeOptions.action) {
+              return;
+            }
 
-          var requiredParams = routeOptions.requiredParams || [];
-          var allowedParams = routeOptions.allowedParams || [];
+            var requiredParams = routeOptions.requiredParams || [];
+            var allowedParams = routeOptions.allowedParams || [];
 
-          // Hook up the route/path/method to the controller action/middleware
-          var pre = _.invoke(controller.pre, 'bind', controller);
-          var before = _.invoke(controller.before, 'bind', controller);
-          var after = _.invoke(controller.after, 'bind', controller);
-
-          // Define the express route
-          router[method](
-            path,
-            pre || [],
-            routeOptions.middleware || [],
-            before || [],
-            function(req, res, next) {
+            // Hook up the route/path/method to the controller action/middleware
+            var pre = _.invoke(controller.pre, 'bind', controller) || [];
+            var before = _.invoke(controller.before, 'bind', controller) || [];
+            var after = _.invoke(controller.after, 'bind', controller) || [];
+            var fn = function(req, res, next) {
               // Pick allowed params in body and query
               if (allowedParams.length > 0) {
                 req.body = _.pick(req.body, allowedParams);
@@ -103,29 +91,32 @@ module.exports = function(options) {
 
               // Execute the route for the request
               routeOptions.action.call(controller, req, res, next);
-            },
-            after || []
-          );
+            };
 
-          // Add route to set of active routes
-          router.routes.push({
-            url: router.url,
-            method: method,
-            path: path
+            // Define the express route
+            router[method](
+              path,
+              pre,
+              routeOptions.middleware || [],
+              before,
+              fn,
+              after
+            );
+
+            // Add route to set of active routes
+            router.routes.push({
+              url: router.url,
+              method: method,
+              path: path
+            });
+
+            // Set this path/method as being active
+            paths[path] = method;
           });
-
-          // Set this path/method as being active
-          paths[path] = method;
         });
       });
-    });
-  }
-
-  _.each(router.routes, function(route) {
-    if (!router.silent) {
-      logger.info("Route: [%s] %s", route.method, route.url + route.path);
     }
-  }.bind(this));
+  };
 
   return router;
 };
