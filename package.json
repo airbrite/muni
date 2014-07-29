@@ -1,6 +1,6 @@
 {
   "name": "bootie",
-  "version": "0.2.83",
+  "version": "0.2.84",
   "description": "Bootie Bootie Bootie",
   "main": "index.js",
   "scripts": {
@@ -29,7 +29,6 @@
     "request": "2.39.0",
     "urlsafe-base64": "0.0.2",
     "uuid": "1.4.1",
-    "winston": "0.7.3",
     "xml2js": "0.4.4"
   },
   "devDependencies": {

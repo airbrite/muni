@@ -15,7 +15,6 @@ var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
 var request = require('request');
-var logger = require('./logger');
 
 module.exports = Backbone.Model.extend({
   urlRoot: '',
@@ -120,7 +119,7 @@ module.exports = Backbone.Model.extend({
         var message = error.message ||
           response.meta &&
           response.meta.error_message;
-        logger.warn('Request error: %s', message);
+        console.warn('Request error: %s', message);
 
         if (callback) {
           callback(error);
@@ -130,7 +129,7 @@ module.exports = Backbone.Model.extend({
       } else if (response.statusCode >= 400) {
         error = new Error(this.extractError(body));
         error.code = response.statusCode;
-        logger.warn('Request failed with code: %d and message: %s',
+        console.warn('Request failed with code: %d and message: %s',
           error.code, error.message);
 
         if (callback) {

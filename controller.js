@@ -25,7 +25,6 @@ var _ = require('lodash');
 var Backbone = require('backbone');
 var Model = require('./model');
 var Collection = require('./collection');
-var logger = require('./logger');
 var xml2js = require('xml2js');
 
 module.exports = Backbone.Model.extend({
@@ -195,10 +194,10 @@ module.exports = Backbone.Model.extend({
     if (this.debug) {
       if (code >= 500) {
         if (err && err.stack && err.stack.error) {
-          logger.error(err.stack.error);
+          console.error(err.stack.error);
         }
       } else {
-        logger.error('Error (%d): %s'.error, code, data);
+        console.error('Error (%d): %s'.error, code, data);
       }
     }
 

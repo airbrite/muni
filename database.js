@@ -10,7 +10,6 @@ var _ = require('lodash');
 var Backbone = require('backbone');
 var redis = require('redis');
 var Mongo = require('./mongo');
-var logger = require('./logger');
 
 // DatabaseManager is a singleton that maintains the databases
 module.exports = Backbone.Model.extend({
@@ -64,14 +63,14 @@ module.exports = Backbone.Model.extend({
     // Catching this error event will prevent node from exiting
     this.caches[name].on('error', function(err) {
       if (!this.get('silent')) {
-        logger.error('Redis %s %d connect error to url: %s - %s'.error,
+        console.error('Redis %s %d connect error to url: %s - %s'.error,
           name, process.pid, connString, err.message);
       }
     }.bind(this));
 
     this.caches[name].on('ready', function() {
       if (!this.get('silent')) {
-        logger.info('Redis %s %d connected to url: %s',
+        console.log('Redis %s %d connected to url: %s',
           name, process.pid, connString);
       }
     }.bind(this));
@@ -83,14 +82,14 @@ module.exports = Backbone.Model.extend({
     // Events
     this.mongodbs[name].on('connect', function(url) {
       if (!this.get('silent')) {
-        logger.info('Mongo %s %d connected to url: %s',
+        console.log('Mongo %s %d connected to url: %s',
           name, process.pid, url);
       }
     }.bind(this));
 
     this.mongodbs[name].on('error', function(error) {
       if (!this.get('silent')) {
-        logger.error('Mongo %s %d connect error to url: %s -> %s'.error,
+        console.error('Mongo %s %d connect error to url: %s -> %s'.error,
           name, process.pid, url, error.message);
       }
     }.bind(this));

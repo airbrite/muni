@@ -9,7 +9,6 @@
 var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
-var logger = require('./logger');
 
 module.exports = Backbone.Model.extend({
   debug: false,
@@ -600,7 +599,7 @@ module.exports = Backbone.Model.extend({
 
   // Inserts a mongodb document
   create: function(model, options) {
-    logger.data('Model [%s] create called', this.urlRoot);
+    console.log('Model [%s] create called', this.urlRoot);
     return this.db.insert(
       this.urlRoot,
       model.toJSON(),
@@ -625,7 +624,7 @@ module.exports = Backbone.Model.extend({
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
-    logger.data('Model [%s] update with query: %s',
+    console.log('Model [%s] update with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
@@ -667,7 +666,7 @@ module.exports = Backbone.Model.extend({
       '$set': attrs
     };
 
-    logger.data('Model [%s] patch with query: %s',
+    console.log('Model [%s] patch with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
@@ -691,7 +690,7 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    logger.data('Model [%s] delete with query: %s',
+    console.log('Model [%s] delete with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.remove(this.urlRoot, query, this.wrapResponse(options));
   },
@@ -720,7 +719,7 @@ module.exports = Backbone.Model.extend({
     }
 
     var mongoOptions = _.pick(options, ['require']) || {};
-    logger.data('Model [%s] read with query: %s',
+    console.log('Model [%s] read with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findOne(
       this.urlRoot,

@@ -42,9 +42,6 @@ Bootie.mixin = require('./mixin');
 // Limiter
 Bootie.limiter = require('./limiter');
 
-// Logger
-Bootie.logger = require('./logger');
-
 // Database driver
 // [Annotated Source](mongo.html)
 Bootie.Mongo = require('./mongo');

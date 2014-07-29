@@ -2,7 +2,6 @@
 
 var _ = require('lodash');
 var express = require('express');
-var logger = require('./logger');
 
 // Exposes 2 additional attributes
 // routes - an array of mapped routes

@@ -1,7 +1,6 @@
 'use strict';
 
 var _ = require('lodash');
-var logger = require('./logger');
 
 // Clients
 // ---
@@ -40,7 +39,7 @@ module.exports = function(opts) {
     'reject'
   ]));
 
-  logger.info('Limiter: %s', JSON.stringify(options));
+  console.log('Limiter: %s', JSON.stringify(options));
 
   return middleware;
 };
@@ -50,7 +49,7 @@ function middleware(req, res, next) {
   var type = typeForIp(ip);
   var client = clients[ip] ? clients[ip] : (clients[ip] = new Client(ip, type));
 
-  logger.info('Limiter: %s', JSON.stringify(client));
+  console.log('Limiter: %s', JSON.stringify(client));
 
   // X-Rate-Limit-Limit: the rate limit ceiling for that given request
   // X-Rate-Limit-Remaining: the number of requests left for the window
