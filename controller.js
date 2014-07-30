@@ -395,6 +395,7 @@ module.exports = Backbone.Model.extend({
       'user_id': 'string'
     });
     var filterParams = _.pick(req.query, _.keys(queryParams));
+    var logicalOperator = '$' + (req.query.logical || 'and').toLowerCase().replace(/[@\s]/g, '');
 
     _.each(filterParams, function(val, key) {
       // If value is all, ignore this param
@@ -468,7 +469,7 @@ module.exports = Backbone.Model.extend({
 
     // Combine the query
     if (queries.length > 0) {
-      query['$and'] = queries;
+      query[logicalOperator] = queries;
     }
 
 
