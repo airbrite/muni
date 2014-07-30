@@ -80,7 +80,7 @@ function rejected(req, res, next) {
   // Respond in different formats
   res.format({
     json: function() {
-      res.jsonp(code, {
+      res.status(code).jsonp({
         code: code,
         message: message
       });

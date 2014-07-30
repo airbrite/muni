@@ -216,7 +216,7 @@ module.exports = Backbone.Model.extend({
 
     res.format({
       json: function() {
-        res.jsonp(res.code, res.data);
+        res.status(res.code).jsonp(res.data);
       },
       xml: function() {
         var xml = this.xmlBuilder.buildObject(res.data);
