@@ -87,10 +87,10 @@ function rejected(req, res, next) {
     },
     xml: function() {
       res.set('Content-Type', 'application/xml; charset=utf-8');
-      res.send(code, '<error>' + message + '</error');
+      res.status(code).send('<error>' + message + '</error');
     },
     text: function() {
-      res.send(code, message);
+      res.status(code).send(message);
     }
   });
 }

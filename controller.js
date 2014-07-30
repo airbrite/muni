@@ -221,21 +221,16 @@ module.exports = Backbone.Model.extend({
       xml: function() {
         var xml;
         try {
-          var xmlObject = {};
-          if (_.isObject(res.data)) {
-            xmlObject = res.data;
-          } else if (_.isString(res.data))  {
-            xmlObject = {
-              message: res.data
-            };
-          }
-          xml = this.xmlBuilder.buildObject(xmlObject);
-        } catch (e) {}
+          xml = this.xmlBuilder.buildObject(res.data);
+        } catch (e) {
+          console.error('XML building error: %s', e.stack);
+        }
         res.set('Content-Type', 'application/xml; charset=utf-8');
-        res.send(res.code, xml);
+
+        res.status(res.code).send(xml);
       }.bind(this),
       text: function() {
-        res.send(res.code, res.data);
+        res.status(res.code).send(res.data);
       }
     });
   },

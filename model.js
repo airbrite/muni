@@ -159,7 +159,9 @@ module.exports = Backbone.Model.extend({
       // A schema key with a value of `[]` or `{}`
       // Direct set json value for this key
       if (_.isObject(val) && _.isEmpty(val)) {
-        obj[key] = jsonVal || attrsVal;
+        obj[key] = !_.isUndefined(attrsVal) ?
+          attrsVal :
+          (!_.isUndefined(defaultsVal) ? defaultsVal : {});
         return;
       }
 
