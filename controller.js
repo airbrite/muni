@@ -214,24 +214,31 @@ module.exports = Backbone.Model.extend({
       return;
     }
 
+    // Look for `.json` or `.xml` extension in path
+    // And override request accept header
+    if (/.json$/.test(req.path)) {
+      req.headers.accept = 'application/json';
+    } else if (/.xml$/.test(req.path)) {
+      req.headers.accept = 'application/xml';
+    }
+
+    // Use request accept header to determine response content-type
     res.format({
       json: function() {
         res.status(res.code).jsonp(res.data);
       },
       xml: function() {
+        res.set('Content-Type', 'application/xml; charset=utf-8');
+
         var xml;
         try {
           xml = this.xmlBuilder.buildObject(res.data);
+          res.status(res.code).send(xml);
         } catch (e) {
           console.error('XML building error: %s', e.stack);
+          res.status(res.code);
         }
-        res.set('Content-Type', 'application/xml; charset=utf-8');
-
-        res.status(res.code).send(xml);
-      }.bind(this),
-      text: function() {
-        res.status(res.code).send(res.data);
-      }
+      }.bind(this)
     });
   },
 
