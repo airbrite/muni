@@ -70,7 +70,7 @@ module.exports = Backbone.Model.extend({
 
     this.caches[name].on('ready', function() {
       if (!this.get('silent')) {
-        console.log('Redis %s %d connected to url: %s',
+        console.verbose('Redis %s %d connected to url: %s',
           name, process.pid, connString);
       }
     }.bind(this));
@@ -82,7 +82,7 @@ module.exports = Backbone.Model.extend({
     // Events
     this.mongodbs[name].on('connect', function(url) {
       if (!this.get('silent')) {
-        console.log('Mongo %s %d connected to url: %s',
+        console.verbose('Mongo %s %d connected to url: %s',
           name, process.pid, url);
       }
     }.bind(this));

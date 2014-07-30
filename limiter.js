@@ -39,7 +39,7 @@ module.exports = function(opts) {
     'reject'
   ]));
 
-  console.log('Limiter: %s', JSON.stringify(options));
+  console.info('Limiter: %s', JSON.stringify(options));
 
   return middleware;
 };
@@ -49,7 +49,7 @@ function middleware(req, res, next) {
   var type = typeForIp(ip);
   var client = clients[ip] ? clients[ip] : (clients[ip] = new Client(ip, type));
 
-  console.log('Limiter: %s', JSON.stringify(client));
+  console.info('Limiter: %s', JSON.stringify(client));
 
   // X-Rate-Limit-Limit: the rate limit ceiling for that given request
   // X-Rate-Limit-Remaining: the number of requests left for the window

@@ -599,7 +599,7 @@ module.exports = Backbone.Model.extend({
 
   // Inserts a mongodb document
   create: function(model, options) {
-    console.log('Model [%s] create called', this.urlRoot);
+    console.info('Model [%s] create called', this.urlRoot);
     return this.db.insert(
       this.urlRoot,
       model.toJSON(),
@@ -624,7 +624,7 @@ module.exports = Backbone.Model.extend({
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
-    console.log('Model [%s] update with query: %s',
+    console.info('Model [%s] update with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
@@ -666,7 +666,7 @@ module.exports = Backbone.Model.extend({
       '$set': attrs
     };
 
-    console.log('Model [%s] patch with query: %s',
+    console.info('Model [%s] patch with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
@@ -690,7 +690,7 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    console.log('Model [%s] delete with query: %s',
+    console.info('Model [%s] delete with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.remove(this.urlRoot, query, this.wrapResponse(options));
   },
@@ -719,7 +719,7 @@ module.exports = Backbone.Model.extend({
     }
 
     var mongoOptions = _.pick(options, ['require']) || {};
-    console.log('Model [%s] read with query: %s',
+    console.info('Model [%s] read with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findOne(
       this.urlRoot,

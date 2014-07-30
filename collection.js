@@ -60,7 +60,7 @@ module.exports = Backbone.Collection.extend({
 
     // Build query with optional: limit, skip, sort
     var mongoOptions = _.pick(options, ['limit', 'skip', 'sort']) || {};
-    console.log('Collection [%s] read with query: %s and options: %s',
+    console.info('Collection [%s] read with query: %s and options: %s',
       this.model.prototype.urlRoot,
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
