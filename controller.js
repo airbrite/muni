@@ -219,7 +219,18 @@ module.exports = Backbone.Model.extend({
         res.status(res.code).jsonp(res.data);
       },
       xml: function() {
-        var xml = this.xmlBuilder.buildObject(res.data);
+        var xml;
+        try {
+          var xmlObject = {};
+          if (_.isObject(res.data)) {
+            xmlObject = res.data;
+          } else if (_.isString(res.data))  {
+            xmlObject = {
+              message: res.data
+            };
+          }
+          xml = this.xmlBuilder.buildObject(xmlObject);
+        } catch (e) {}
         res.set('Content-Type', 'application/xml; charset=utf-8');
         res.send(res.code, xml);
       }.bind(this),
