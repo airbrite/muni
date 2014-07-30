@@ -279,8 +279,11 @@ module.exports = Backbone.Model.extend({
     var orderBy = req.query.order || this.sortOrder; // validate [asc, desc]
     var skip = req.query.skip || req.query.offset || this.skip;
     var limit = req.query.limit || req.query.count || this.limit;
-    skip = _.parseInt(skip) > 0 || 0;
-    limit = _.parseInt(limit) > 0 ? Math.min(limit, this.limit) : this.limit; // Hard limit at 100
+    since = _.parseInt(since) || null;
+    until = _.parseInt(until) || null;
+    skip = _.parseInt(skip) || 0;
+    limit = _.parseInt(limit) || 0;
+    limit = Math.min(limit, this.limit); // Hard limit at 100
 
     // Build created
     // updated objects into the query string if sent in as dot notation
@@ -370,11 +373,11 @@ module.exports = Backbone.Model.extend({
       };
 
       if (since) {
-        sinceUntilQuery.created['$gte'] = new Date(_.parseInt(since) * 1000).getTime();
+        sinceUntilQuery.created['$gte'] = new Date(since * 1000).getTime();
       }
 
       if (until) {
-        sinceUntilQuery.created['$lte'] = new Date(_.parseInt(until) * 1000).getTime();
+        sinceUntilQuery.created['$lte'] = new Date(until * 1000).getTime();
       }
 
       queries.push(sinceUntilQuery);
