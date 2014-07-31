@@ -5,6 +5,7 @@ var Promise = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var MongoClient = require('mongodb').MongoClient;
 var ObjectID = require('mongodb').ObjectID;
+var moment = require('moment');
 
 Promise.delay = function(ms) {
   var promise = new Promise(function(resolve, reject) {
@@ -89,7 +90,15 @@ _.extend(Mongo.prototype, {
     return (typeof id === 'string') && id.length === 24 && checkForHexRegExp.test(id);
   },
 
+  // Check if a string is a valid ISO8601 date string
+  isValidISO8601String: function(str) {
+    // 2013-11-18T09:04:24.447Z
+    // YYYY-MM-DDTHH:mm:ss.SSSZ
+    return moment(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
+  },
+
   // Automatically cast to HexString to ObjectID
+  // Automatically cast ISO8601 date strings to Date
   // Must clone the obj and not pass it directly into the query
   // Or else the cast function will modify the original object
   cast: function(obj) {
@@ -97,6 +106,8 @@ _.extend(Mongo.prototype, {
       if (_.isString(val)) {
         if (this.isValidObjectID(val)) {
           obj[key] = new ObjectID(val);
+        } else if (this.isValidISO8601String(val)) {
+          obj[key] = new Date(val);
         }
       } else if (_.isObject(val)) {
         if (val['$oid']) {
