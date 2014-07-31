@@ -159,10 +159,8 @@ _.extend(Mongo.prototype, {
   // NOTE: The cursor does NOT automatically `uncast` $oid in results
   findCursor: function(collectionName, query) {
     var args = [].slice.call(arguments);
-
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = ((args.length > 2 && typeof args[args.length - 1] === 'object') && args.pop());
-
     options = options || {};
 
     query = _.cloneDeep(query);
@@ -188,7 +186,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = options || {};
 
     query = _.cloneDeep(query);
@@ -214,7 +211,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = options || {};
 
     query = _.cloneDeep(query);
@@ -251,7 +247,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = options || {};
 
     query = _.cloneDeep(query);
@@ -289,7 +284,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = options || {};
 
     var require = false;
@@ -334,7 +328,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = _.extend({
       safe: true
     }, options || {}); // force safe mode
@@ -363,7 +356,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 3 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = _.extend({
       safe: true
     }, options || {}); // force safe mode
@@ -394,7 +386,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 3 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = _.extend({
       new: true,
       safe: true
@@ -446,7 +437,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = _.extend({
       safe: true
     }, options || {}); // force new mode, safe mode
@@ -505,7 +495,6 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = typeof args[args.length - 1] === 'function' && args.pop();
     var options = args.length > 2 && typeof args[args.length - 1] === 'object' && args.pop();
-
     options = _.extend({
       safe: true,
       new: true
