@@ -232,7 +232,8 @@ module.exports = Backbone.Model.extend({
 
         var xml;
         try {
-          xml = this.xmlBuilder.buildObject(res.data);
+          var xmlData = JSON.parse(JSON.stringify(res.data));
+          xml = this.xmlBuilder.buildObject(xmlData);
           res.status(res.code).send(xml);
         } catch (e) {
           console.error('XML building error: %s', e.stack);
