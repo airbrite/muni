@@ -225,7 +225,7 @@ _.extend(Mongo.prototype, {
         return this._cursor(collectionName, query, options);
       })
       .tap(function(cursor) {
-        cursor.countAsync().then(function(resp) {
+        return cursor.countAsync().then(function(resp) {
           count = resp || 0;
         });
       })
