@@ -148,13 +148,14 @@ module.exports = Backbone.Model.extend({
 
   // Default middleware for handling successful responses
   successResponse: function(req, res, next) {
-    // Default to 200, but allow override (e.g. 201)
-    res.code = res.code || 200;
-
-    var data = res.data || {};
+    var data = res.data || null;
+    var code = 200;
+    if (_.isNumber(res.code)) {
+      code = res.code;
+    }
     var envelope = {
       meta: {
-        code: res.code
+        code: code
       },
       data: data
     };
@@ -164,9 +165,9 @@ module.exports = Backbone.Model.extend({
       envelope.meta.paging = res.paging;
     }
 
-    if (res.code === 204) {
-      res.data = null;
-    } else {
+    // Set code and data
+    res.code = code;
+    if (res.code !== 204) {
       res.data = envelope;
     }
     next();
@@ -174,17 +175,24 @@ module.exports = Backbone.Model.extend({
 
   // Default middleware for handling error responses
   errorResponse: function(err, req, res, next) {
-    // Default to 500, but allow override
-    var code = res.code || err.code || 500;
-    var data = err.message || '';
-
+    var data = err.message || 'Internal Server Error';
+    var code = 500;
+    if (_.isNumber(err.code)) {
+      code = err.code;
+    } else if (_.isNumber(res.code)) {
+      code = res.code;
+    }
+    var error = {
+      message: data,
+      code: code
+    };
+    if (_.isString(err.type)) {
+      error.type = err.type;
+    }
     var envelope = {
       meta: {
         code: code,
-        error: {
-          message: data,
-          code: code
-        }
+        error: error
       },
       data: data
     };
@@ -193,14 +201,15 @@ module.exports = Backbone.Model.extend({
     // We should log these errors somewhere remotely
     if (this.debug) {
       if (code >= 500) {
-        if (err && err.stack && err.stack.error) {
-          console.error(err.stack.error);
+        if (err && err.stack) {
+          console.error('Error: %s', JSON.stringify(err.stack));
         }
       } else {
-        console.error('Error (%d): %s'.error, code, data);
+        console.error('Error (%d): %s'.error, code, err.message);
       }
     }
 
+    // Set code and data
     res.code = code;
     res.data = envelope;
     next();
@@ -242,6 +251,7 @@ module.exports = Backbone.Model.extend({
       }.bind(this)
     });
   },
+
 
 
   // Render
