@@ -23,9 +23,10 @@ module.exports = Backbone.Model.extend({
       // Keys: port, host, auth
       caches: {},
 
-      silent: false,
+      // Automatically connect when setting up mongodb
+      autoconnect: true,
 
-      autoconnect: true
+      silent: false
     };
   },
 

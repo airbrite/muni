@@ -202,6 +202,7 @@ _.extend(Mongo.prototype, {
       'fields',
       'sort',
       'limit',
+      'skip',
       'hint',
       'explain',
       'timeout',
