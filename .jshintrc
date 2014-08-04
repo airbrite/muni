@@ -26,7 +26,13 @@
     "mixpanel": true,
     "config": true,
     "Air": true,
-    "Promise": true
+    "Promise": true,
+    "describe": true,
+    "it": true,
+    "before": true,
+    "after": true,
+    "beforeEach": true,
+    "afterEach": true
   },
   "globalstrict": true,
   "quotmark": false,

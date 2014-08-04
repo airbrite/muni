@@ -626,12 +626,14 @@ module.exports = Backbone.Model.extend({
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
+    var mongoOptions = _.pick(options, ['require']) || {};
     console.info('Model [%s] update with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
       query,
       model.toJSON(),
+      mongoOptions,
       this.wrapResponse(options)
     ).return(this);
   },
@@ -668,12 +670,14 @@ module.exports = Backbone.Model.extend({
       '$set': attrs
     };
 
+    var mongoOptions = _.pick(options, ['require']) || {};
     console.info('Model [%s] patch with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
       query,
       obj,
+      mongoOptions,
       this.wrapResponse(options)
     ).return(this);
   },
