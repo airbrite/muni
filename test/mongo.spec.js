@@ -172,6 +172,15 @@ describe('Mongo', function() {
       });
     });
 
+    it('#find with skip', function() {
+      return mongo.find('tests', {}, {
+        skip: 1
+      }).then(function(results) {
+        var docs = results[0];
+        assert.deepEqual(docs, mongo.uncast(mongo.cast(helpers.getFixture('docs'))).splice(1, 1));
+      });
+    });
+
     it('#find with sort', function() {
       return mongo.find('tests', {}, {
         sort: [
