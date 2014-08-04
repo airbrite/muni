@@ -23,7 +23,9 @@ module.exports = Backbone.Model.extend({
       // Keys: port, host, auth
       caches: {},
 
-      silent: false
+      silent: false,
+
+      autoconnect: true
     };
   },
 
@@ -95,6 +97,8 @@ module.exports = Backbone.Model.extend({
     }.bind(this));
 
     // Connect
-    this.mongodbs[name].connect();
+    if (this.get('autoconnect')) {
+      this.mongodbs[name].connect();
+    }
   }
 });
