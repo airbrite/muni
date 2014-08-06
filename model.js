@@ -524,27 +524,6 @@ module.exports = Backbone.Model.extend({
     });
   }),
 
-  // Transactions
-  // Applies a boolean flag `locked`
-  lock: Promise.method(function() {
-    if (this.get('locked')) {
-      var err = new Error('Model already locked.');
-      return Promise.reject(err);
-    }
-
-    this.set('locked', true);
-    return this.save();
-  }),
-
-  unlock: Promise.method(function() {
-    if (!this.get('locked')) {
-      return Promise.resolve(this);
-    }
-
-    this.set('locked', false);
-    return this.save();
-  }),
-
   // Inserts a mongodb document
   create: Promise.method(function(model, options) {
     console.info('Model [%s] create called', this.urlRoot);
