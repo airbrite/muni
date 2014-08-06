@@ -8,10 +8,6 @@
 //
 // See documentation for [Controller](controller.html)
 
-// TODO
-// ---
-// 2014/05/22 - Peter will add some comments
-
 // Dependencies
 // ---
 var _ = require('lodash');
@@ -32,11 +28,6 @@ module.exports = Controller.extend({
 
   // Available controller actions (see `setupRoutes` for more info)
   crud: ['T', 'C', 'R', 'O', 'U', 'P', 'D'],
-
-  initialize: function() {
-    // Make sure to call `super` as a best practice when overriding
-    Controller.prototype.initialize.call(this);
-  },
 
   // Base path appends `urlRoot`
   basePath: function() {
@@ -111,18 +102,21 @@ module.exports = Controller.extend({
     }.bind(this));
   },
 
+
+
   // CRUD functions
   // ---
 
   count: function(req, res, next, options) {
     var qo = this.parseQueryString(req);
+    var collection = this.setupCollection(req, qo);
 
     // Merge `options.query` with the query string query and filters
     if (options && options.query) {
       _.merge(qo.query, options.query);
     }
 
-    return this.get('db').count(this.urlRoot, qo.query).then(function(total) {
+    return collection.count(qo).then(function(total) {
       res.data = {
         total: total
       };
@@ -139,7 +133,7 @@ module.exports = Controller.extend({
       _.merge(qo.query, options.query);
     }
 
-    return collection.fetch(qo).then(function() {
+    return collection.fetch(qo).tap(function() {
       res.paging = {
         total: parseInt(collection.total),
         count: parseInt(collection.models.length),
@@ -147,8 +141,7 @@ module.exports = Controller.extend({
         offset: parseInt(qo.skip),
         has_more: parseInt(collection.models.length) < parseInt(collection.total)
       };
-      return collection;
-    }).then(this.nextThen(req, res, next)).catch(next);
+    }).then(this.render(req, res, next)).catch(next);
   },
 
   findOne: function(req, res, next, options) {
@@ -158,14 +151,14 @@ module.exports = Controller.extend({
     });
 
     var model = this.setupModel(req);
-    return model.fetch(options).then(this.nextThen(req, res, next)).catch(next);
+    return model.fetch(options).then(this.render(req, res, next)).catch(next);
   },
 
   create: function(req, res, next) {
     var model = this.setupModel(req);
     return model.setFromRequest(req.body).then(function() {
       return model.save();
-    }).then(this.nextThen(req, res, next)).catch(next);
+    }).then(this.render(req, res, next)).catch(next);
   },
 
   update: function(req, res, next, options) {
@@ -179,7 +172,7 @@ module.exports = Controller.extend({
       return model.setFromRequest(req.body);
     }).then(function() {
       return model.save(null, options);
-    }).then(this.nextThen(req, res, next)).catch(next);
+    }).then(this.render(req, res, next)).catch(next);
   },
 
   destroy: function(req, res, next) {
@@ -197,12 +190,12 @@ module.exports = Controller.extend({
   },
 
 
+
   // Helpers
   // ---
 
   // Creates and returns a model
-  // Checks for the existence of `id` in the url params
-  // If there is an authenticated user, set the `user_id` attribute
+  // If there is a `db` and/or `cache` connection, assign it to the model
   setupModel: function(req) {
     var model = new this.model();
     model.db = this.get('db');
@@ -211,12 +204,11 @@ module.exports = Controller.extend({
   },
 
   // Creates and returns a collection
-  // If there is an authenticated user, add `user_id` to the query
+  // If there is a `db` and/or `cache` connection, assign it to the collection
   setupCollection: function(req, qo) {
     var collection = new this.collection();
     collection.db = this.get('db');
     collection.cache = this.get('cache');
     return collection;
   }
-
 });
