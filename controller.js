@@ -110,20 +110,18 @@ module.exports = Backbone.Model.extend({
   // Middleware
   // ---
 
-  // Promise friendly next()
-  // Used as a resolver for `then`
-  nextThen: function(req, res, next) {
+  // Render a model or a collection in the response
+  // Used as a promise resolver in a `.then` promise handler
+  // Always bind inner function to `this` original context
+  render: function(req, res, next) {
     return function(modelOrCollection) {
       this.prepareResponse(modelOrCollection, req, res, next);
     }.bind(this);
   },
 
-  // Promise friendly next(err)
-  // Used as a resolver for `catch`
-  nextCatch: function(req, res, next) {
-    return function(err) {
-      next(err);
-    }.bind(this);
+  // Deprecated (see `render`)
+  nextThen: function(req, res, next) {
+    return this.render(req, res, next);
   },
 
   // This method can be overridden to customize the response
@@ -170,7 +168,8 @@ module.exports = Backbone.Model.extend({
     if (res.code !== 204) {
       res.data = envelope;
     }
-    next();
+
+    return next();
   },
 
   // Default middleware for handling error responses
@@ -212,7 +211,8 @@ module.exports = Backbone.Model.extend({
     // Set code and data
     res.code = code;
     res.data = envelope;
-    next();
+
+    return next();
   },
 
   // Final middleware for handling all responses
@@ -283,6 +283,34 @@ module.exports = Backbone.Model.extend({
     }
   },
 
+  // For `created` and `updated` date range query string
+  buildTimestampQuery: function(query) {
+    var result = {};
+    if (!_.isObject(query) || _.isEmpty(query)) {
+      return result;
+    }
+
+    // timestamp might be in `ms` or `s`
+    _.each(query, function(timestamp, operator) {
+      if (!_.contains(['gt', 'gte', 'lt', 'lte', 'ne'], operator)) {
+        return;
+      }
+
+      // Timestamp must be an integer
+      timestamp = _.parseInt(timestamp);
+      if (_.isNaN(timestamp)) {
+        return;
+      }
+
+      // Convert seconds to milliseconds
+      timestamp = _.isUnixTime(timestamp) ? timestamp * 1000 : timestamp;
+
+      result['$' + operator] = timestamp;
+    });
+
+    return result;
+  },
+
   // Parses req.query (querystring) for since/until, sort/order, skip/limit
   // Also builds a query using allowed queryParams if applicable
   parseQueryString: function(req) {
@@ -291,117 +319,33 @@ module.exports = Backbone.Model.extend({
     var options = {};
 
     // Reserved Params
-    var since = req.query.since || req.query.from; // validate timestamp (s or ms) [DO NOT USE]
-    var until = req.query.until || req.query.to; // validate timestamp (s or ms) [ DO NOT USE]
+    var created = req.query.created || {}; // accepts both s and ms
+    var updated = req.query.updated || {}; // accepts both s and ms
     var sortBy = req.query.sort || this.sortParam; // validate sortableParams
-    var orderBy = req.query.order || this.sortOrder; // validate [asc, desc]
+    var orderBy = req.query.order || this.sortOrder; // validate [asc, desc] or [1, -1]
     var skip = req.query.skip || req.query.offset || this.skip;
     var limit = req.query.limit || req.query.count || this.limit;
-    since = _.parseInt(since) || null;
-    until = _.parseInt(until) || null;
     skip = _.parseInt(skip) || 0;
     limit = _.parseInt(limit) || 0;
     limit = Math.min(limit, this.limit); // Hard limit at 100
 
-    // Build created
-    // updated objects into the query string if sent in as dot notation
-    _.each(req.query, function(obj, key) {
-      var match;
-      if (match = key.match(/(created|updated).(gte|lte|gt|lt)/)) {
-        req.query[match[1]] = req.query[match[1]] || {};
-        req.query[match[1]][match[2]] = _.parseInt(obj);
-      }
-    });
 
-    var created = req.query.created || {}; // accepts both s and ms
-    var updated = req.query.updated || {}; // accepts both s and ms
+    // Date Range params
+    var createdQuery = this.buildTimestampQuery(created);
+    var updatedQuery = this.buildTimestampQuery(updated);
 
-    // Convert all timestamps into integers
-    _.each(created, function(timestamp, key) {
-      created[key] = _.parseInt(timestamp);
-    });
-
-    _.each(updated, function(timestamp, key) {
-      updated[key] = _.parseInt(timestamp);
-    });
-
-    // Query
-    // Create date
-    if (!_.isEmpty(created)) {
-      var createdQuery = {
-        created: {}
-      };
-
-      if (created.gte) {
-        created.gte = _.isUnixTime(created.gte) ? created.gte * 1000 : created.gte;
-        createdQuery.created['$gte'] = new Date(created.gte).getTime();
-      } else if (created.gt) {
-        created.gt = _.isUnixTime(created.gt) ? created.gt * 1000 : created.gt;
-        createdQuery.created['$gt'] = new Date(created.gt).getTime();
-      }
-
-      if (created.lte) {
-        created.lte = _.isUnixTime(created.lte) ? created.lte * 1000 : created.lte;
-        createdQuery.created['$lte'] = new Date(created.lte).getTime();
-      } else if (created.lt) {
-        created.lt = _.isUnixTime(created.lt) ? created.lt * 1000 : created.lt;
-        createdQuery.created['$lt'] = new Date(created.lt).getTime();
-      }
-
-      if (_.isNumber(created)) {
-        created = _.isUnixTime(created) ? created * 1000 : created;
-        createdQuery.created = new Date(created).getTime();
-      }
-      queries.push(createdQuery);
+    if (!_.isEmpty(createdQuery)) {
+      queries.push({
+        created: createdQuery
+      });
+    }
+    if (!_.isEmpty(updatedQuery)) {
+      queries.push({
+        updated: updatedQuery
+      });
     }
 
-    // Updated/modified date
-    if (!_.isEmpty(updated)) {
-      var updatedQuery = {
-        updated: {}
-      };
-
-      if (updated.gte) {
-        updated.gte = _.isUnixTime(updated.gte) ? updated.gte * 1000 : updated.gte;
-        updatedQuery.updated['$gte'] = new Date(updated.gte).getTime();
-      } else if (updated.gt) {
-        updated.gt = _.isUnixTime(updated.gt) ? updated.gt * 1000 : updated.gt;
-        updatedQuery.updated['$gt'] = new Date(updated.gt).getTime();
-      }
-
-      if (updated.lte) {
-        updated.lte = _.isUnixTime(updated.lte) ? updated.lte * 1000 : updated.lte;
-        updatedQuery.updated['$lte'] = new Date(updated.lte).getTime();
-      } else if (updated.lt) {
-        updated.lt = _.isUnixTime(updated.lt) ? updated.lt * 1000 : updated.lt;
-        updatedQuery.created['$lt'] = new Date(updated.lt).getTime();
-      }
-
-      if (_.isNumber(updated)) {
-        updated = _.isUnixTime(updated) ? updated * 1000 : updated;
-        updatedQuery.updated = new Date(updated).getTime();
-      }
-      queries.push(updatedQuery);
-    }
-
-    // Since/Until Range
-    if (since || until) {
-      var sinceUntilQuery = {
-        created: {}
-      };
-
-      if (since) {
-        sinceUntilQuery.created['$gte'] = new Date(since * 1000).getTime();
-      }
-
-      if (until) {
-        sinceUntilQuery.created['$lte'] = new Date(until * 1000).getTime();
-      }
-
-      queries.push(sinceUntilQuery);
-    }
-
-    // Filter Params
+    // Filter params
     var queryParams = _.extend(_.result(this, 'queryParams'), {
       'user_id': 'string'
     });
@@ -436,27 +380,20 @@ module.exports = Backbone.Model.extend({
         // regex case insensitive and escaping special characters
         vals = _.map(vals, function(v) {
           return {
-            // '$regex': '^' + _.escapeRegExp(v),
             '$regex': _.escapeRegExp(v),
             '$options': 'i'
           };
         });
-        // filter[key] = {
-        //   '$regex': '^' + _.escapeRegExp(val),
-        //   '$options': 'i'
-        // };
       } else if (type === 'integer') {
         // integers
         vals = _.map(vals, function(v) {
           return _.parseInt(v);
         });
-        // val = _.parseInt(val);
       } else if (type === 'float') {
         // floats
         vals = _.map(vals, function(v) {
           return _.parseFloat(v);
         });
-        // val = parseFloat(val);
       } else {
         // invalid or unknown type
         return;
@@ -483,7 +420,6 @@ module.exports = Backbone.Model.extend({
       query[logicalOperator] = queries;
     }
 
-
     // Options
     // Sort/Order/Limit/Skip
     var sortOptions = [
@@ -497,5 +433,4 @@ module.exports = Backbone.Model.extend({
       'skip': skip
     };
   }
-
 });
