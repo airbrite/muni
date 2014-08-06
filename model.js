@@ -424,37 +424,37 @@ module.exports = Backbone.Model.extend({
   // ---
   // These can either return a promise or a value
 
-  beforeFetch: function() {
+  beforeFetch: Promise.method(function() {
     return this;
-  },
+  }),
 
-  afterFetch: function() {
+  afterFetch: Promise.method(function() {
     return this;
-  },
+  }),
 
-  beforeCreate: function() {
+  beforeCreate: Promise.method(function() {
     return this;
-  },
+  }),
 
-  beforeUpdate: function() {
+  beforeUpdate: Promise.method(function() {
     return this;
-  },
+  }),
 
-  afterCreate: function() {
+  afterCreate: Promise.method(function() {
     return this;
-  },
+  }),
 
-  afterUpdate: function() {
+  afterUpdate: Promise.method(function() {
     return this;
-  },
+  }),
 
-  beforeSave: function() {
+  beforeSave: Promise.method(function() {
     return this;
-  },
+  }),
 
-  afterSave: function() {
+  afterSave: Promise.method(function() {
     return this;
-  },
+  }),
 
   // Override the backbone sync method for use with mongodb
   // options contains 2 callbacks: `success` and `error`
