@@ -1,25 +1,19 @@
 'use strict';
 
 var _ = require('lodash');
-var eyes = require('eyes');
 var uuid = require('uuid');
 var moment = require('moment');
 var accounting = require('accounting');
 var URLSafeBase64 = require('urlsafe-base64');
 var crypto = require('crypto');
 var ObjectID = require('mongodb').ObjectID;
+var objectIdHelper = require('mongodb-objectid-helper');
 
 var mixin = module.exports = {};
 
 // This mixes in several helper functions to `_`
-_.extend(_, {
+_.mixin({
   uuid: uuid.v4,
-
-  inspect: eyes.inspector({
-    maxLength: 4096
-  }),
-
-  parseFloat: parseFloat,
 
   centsToDollars: function(value) {
     return accounting.formatNumber(accounting.toFixed(value / 100, 2), 2);
@@ -76,6 +70,11 @@ _.extend(_, {
     return ObjectID.isValid(value);
   },
 
+  // Check if a string is a valid ObjectID
+  isValidObjectID: function(id) {
+    return objectIdHelper.isObjectId(id);
+  },
+
   isUnixTime: function(value) {
     if (value && value.toString().length > 11) {
       return false;
@@ -101,7 +100,7 @@ _.extend(_, {
   isValidISO8601String: function(str) {
     // 2013-11-18T09:04:24.447Z
     // YYYY-MM-DDTHH:mm:ss.SSSZ
-    return moment(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
+    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
   },
 
   escapeRegExp: function(str) {

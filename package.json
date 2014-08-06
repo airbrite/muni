@@ -1,6 +1,6 @@
 {
   "name": "bootie",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Bootie Bootie Bootie",
   "main": "index.js",
   "scripts": {
@@ -19,15 +19,14 @@
     "backbone": "1.1.2",
     "bluebird": "2.2.2",
     "colors": "0.6.2",
-    "express": "4.6.1",
-    "eyes": "git://github.com/airbrite/eyes.js.git",
+    "express": "4.8.1",
     "hbs": "2.7.0",
     "lodash": "2.4.1",
-    "moment": "2.7.0",
+    "moment": "2.8.1",
     "mongodb": "1.4.8",
     "mongodb-objectid-helper": "0.2.0",
     "redis": "0.11.0",
-    "request": "2.39.0",
+    "request": "2.40.0",
     "urlsafe-base64": "0.0.2",
     "uuid": "1.4.1",
     "xml2js": "0.4.4"
@@ -35,7 +34,7 @@
   "devDependencies": {
     "chai": "1.9.1",
     "chai-as-promised": "4.1.1",
-    "mocha": "1.21.0",
+    "mocha": "1.21.4",
     "sinon": "1.10.3",
     "sinon-as-promised": "0.0.4",
     "sinon-chai": "2.5.0"
