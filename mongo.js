@@ -21,6 +21,7 @@ var Mongo = module.exports = function(url, options) {
   // http://blog.mongolab.com/2014/04/mongodb-driver-mongoose/
   _.defaults(options, {
     server: {
+      auto_reconnect: true,
       socketOptions: {
         keepAlive: 1,
         connectTimeoutMS: 30000,
