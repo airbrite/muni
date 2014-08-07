@@ -73,13 +73,8 @@ _.mixin({
     return /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(value);
   },
 
-  // Check if a string is a valid ObjectID
-  isObjectID: function(value) {
-    return objectIdHelper.isObjectId(value);
-  },
-
-  // Check if a string is a valid ObjectID
-  isValidObjectID: function(value) {
+  // Check if a String or ObjectId is a valid ObjectId
+  isObjectId: function(value) {
     return objectIdHelper.isObjectId(value);
   },
 

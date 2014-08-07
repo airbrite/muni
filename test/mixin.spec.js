@@ -3,16 +3,14 @@
 
 var _ = require('lodash');
 var assert = require('chai').assert;
-var ObjectID = require('mongodb').ObjectID;
+var ObjectId = require('mongodb').ObjectID;
 
 require('../mixin');
 
 describe("Mixins", function() {
-
   // Local variables
   var secretString = 'omg wtf bbq!';
   var encryptedString;
-
 
   it("should generate a random hash", function() {
     var randomHash = _.randomHash();
@@ -28,7 +26,6 @@ describe("Mixins", function() {
     var decryptedString = _.decryptString(encryptedString);
     assert.strictEqual(decryptedString, secretString);
   });
-
 
   it("should sanitize an email", function() {
     var email = " lEeTh4x0R@tryCelery.com  ";
@@ -57,20 +54,12 @@ describe("Mixins", function() {
     assert.isFalse(_.isValidISO8601String('Thu, 07 Aug 2014 07:49:53 GMT'));
   });
 
-  it('#isValidObjectID', function() {
-    var oid = new ObjectID();
-    assert.isTrue(_.isValidObjectID(oid));
-    assert.isTrue(_.isValidObjectID('53b4694cda836700006b61f2'));
-    assert.isFalse(_.isValidObjectID('trollolol'));
+  it('#isObjectId', function() {
+    var oid = new ObjectId();
+    assert.isTrue(_.isObjectId(oid.toHexString()));
+    assert.isTrue(_.isObjectId('53b4694cda836700006b61f2'));
+    assert.isFalse(_.isObjectId('trollolol'));
   });
-
-  it('#isObjectID', function() {
-    var oid = new ObjectID();
-    assert.isTrue(_.isObjectID(oid.toHexString()));
-    assert.isTrue(_.isObjectID('53b4694cda836700006b61f2'));
-    assert.isFalse(_.isObjectID('trollolol'));
-  });
-
 
   it('#isUUID', function() {
     var uuid = _.uuid();
@@ -88,13 +77,11 @@ describe("Mixins", function() {
     assert.strictEqual(_.decodeBase64(str), 'i am + base $@#4 23425@#$@--//=');
   });
 
-
   it('#validateBase64', function() {
     var str = 'i am + base $@#4 23425@#$@--//=';
     assert.isTrue(_.validateBase64(_.encodeBase64(str)));
     assert.isFalse(_.validateBase64(str));
   });
-
 
   it('#defaultsDeep', function() {
     var obj = {
@@ -142,5 +129,4 @@ describe("Mixins", function() {
       }]
     });
   });
-
 });

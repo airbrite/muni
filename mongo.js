@@ -5,7 +5,7 @@ var Promise = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var mongodb = require('mongodb');
 var MongoClient = require('mongodb').MongoClient;
-var ObjectID = require('mongodb').ObjectID;
+var ObjectId = require('mongodb').ObjectID;
 var moment = require('moment');
 var objectIdHelper = require('mongodb-objectid-helper');
 
@@ -111,15 +111,15 @@ _.extend(Mongo.prototype, {
 
   // Create and return an ObjectId (not a string)
   newObjectId: function(str) {
-    return new ObjectID(str);
+    return new ObjectId(str);
   },
 
   newObjectIdHexString: function(str) {
-    return new ObjectID(str).toHexString();
+    return new ObjectId(str).toHexString();
   },
 
-  // Check if a string is a valid ObjectID
-  isValidObjectID: function(id) {
+  // Check if a string is a valid ObjectId
+  isObjectId: function(id) {
     return objectIdHelper.isObjectId(id);
   },
 
@@ -130,15 +130,15 @@ _.extend(Mongo.prototype, {
     return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
   },
 
-  // Automatically cast to HexString to ObjectID
+  // Automatically cast to HexString to ObjectId
   // Automatically cast ISO8601 date strings to Javascript Date
   // Will mutate the original object
   // obj can be an object or an array
   cast: function(obj) {
     _.each(obj, function(val, key) {
       if (_.isString(val)) {
-        if (this.isValidObjectID(val)) {
-          obj[key] = new ObjectID(val);
+        if (this.isObjectId(val)) {
+          obj[key] = new ObjectId(val);
         } else if (this.isValidISO8601String(val)) {
           obj[key] = new Date(val);
         }
@@ -156,7 +156,7 @@ _.extend(Mongo.prototype, {
     return obj;
   },
 
-  // Automatically uncast ObjectID to HexString
+  // Automatically uncast ObjectId to HexString
   // Automatically uncast Mongo ISODate to Javascript Date
   // Will mutate the original object
   // obj can be an object or an array
