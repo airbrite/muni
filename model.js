@@ -38,13 +38,9 @@ module.exports = Backbone.Model.extend({
   // so if you include an object as a default value,
   // it will be shared among all instances.
   // Instead, define defaults as a function.
-  // Object or Function
-  // string: null
-  // integer: 0
-  // float: 0.0
-  // boolean: true or false
-  // object: {}
-  // array: []
+  //
+  // See `model.spec.js` for how to use
+
   defaults: function() {},
 
   // Defaults that should be applied to all models
@@ -59,14 +55,7 @@ module.exports = Backbone.Model.extend({
 
   // Define the types of each attribute
   // Object or Function
-  // key: 'string'
-  // key: 'integer'
-  // key: 'float'
-  // key: 'date'
-  // key: {inner_key: 'string'}
-  // key: ['string']
-  // key: [{inner_key: 'string'}]
-  // key: ['model']
+  // See `model.spec.js` for how to use
   schema: function() {},
 
   // Attributes that should be included in all responses
@@ -79,11 +68,19 @@ module.exports = Backbone.Model.extend({
     return schema;
   },
 
-  constructor: function() {
-    Backbone.Model.prototype.constructor.apply(this, arguments);
-
-    // Apply `baseDefaults`
-    _.defaults(this.attributes, _.result(this, 'baseDefaults'));
+  // Override to support `defaultsDeep` and `combinedDefaults`
+  // http://backbonejs.org/docs/backbone.html#section-35
+  constructor: function(attributes, options) {
+    var attrs = attributes || {};
+    options || (options = {});
+    this.cid = _.uniqueId('c');
+    this.attributes = {};
+    if (options.collection) this.collection = options.collection;
+    if (options.parse) attrs = this.parse(attrs, options) || {};
+    attrs = _.defaultsDeep({}, attrs, _.result(this, 'combinedDefaults'));
+    this.set(attrs, options);
+    this.changed = {};
+    this.initialize.apply(this, arguments);
   },
 
   initialize: function() {
@@ -96,7 +93,7 @@ module.exports = Backbone.Model.extend({
 
   // Set defaults and apply/validate schema
   parse: function(resp, options) {
-    // Mongodb `create` returns an array of one document
+    // Mongodb sometimes returns an array of one document
     if (_.isArray(resp)) {
       resp = resp[0];
     }
@@ -119,16 +116,54 @@ module.exports = Backbone.Model.extend({
     };
   },
 
-  // TODO: Perform `schema` validation here
-  _validate: function(attrs, options) {
-    var valid = Backbone.Model.prototype._validate.apply(this, arguments);
+  // Getters and Setters
+  // ---
 
-    if (!valid) {
-      return false;
+  // Tested and working with both shallow and deep keypaths
+  get: function(attr) {
+    if (!_.isString(attr)) {
+      return undefined;
     }
 
-    return true;
+    return this.getDeep(this.attributes, attr);
   },
+
+  // Support dot notation of accessing nested keypaths
+  getDeep: function(attrs, attr) {
+    var keys = attr.split('.');
+    var key;
+    var val = attrs;
+    var context = this;
+
+    for (var i = 0, n = keys.length; i < n; i++) {
+      // get key
+      key = keys[i];
+
+      // Hold reference to the context when diving deep into nested keys
+      if (i > 0) {
+        context = val;
+      }
+
+      // get value for key
+      val = val[key];
+
+      // value for key does not exist
+      // break out of loop early
+      if (_.isUndefined(val) || _.isNull(val)) {
+        break;
+      }
+    }
+
+    // Eval computed properties that are functions
+    if (_.isFunction(val)) {
+      // Call it with the proper context (see above)
+      val = val.call(context);
+    }
+
+    return val;
+  },
+
+  // TODO set and setDeep
 
   // Note: Mutates attrs
   // Verifies that all attr keys are defined in the schema
@@ -146,6 +181,7 @@ module.exports = Backbone.Model.extend({
           return;
         }
 
+        // The schema type is defined by the first element in the array
         schemaType = schemaType[0];
 
         // Empty array with an empty object [{}], no-op
@@ -167,7 +203,6 @@ module.exports = Backbone.Model.extend({
         }
         return this.validateAttributes(val, schemaType);
       }
-
 
       switch (schemaType) {
         case 'id':
@@ -243,6 +278,27 @@ module.exports = Backbone.Model.extend({
     }, this);
   },
 
+  // Override backbone's `toJSON` to support `cloneDeep`
+  toJSON: function(options) {
+    var json = _.cloneDeep(this.attributes);
+    return json;
+  },
+
+  // Convert attributes into a pojo,
+  // then remove attributes that should be hidden
+  render: function() {
+    var json = this.toJSON();
+    var hiddenAttributes = _.result(this, 'hiddenAttributes');
+    this.removeAttributes(json, hiddenAttributes);
+    return json;
+  },
+
+  // Alias for `render`
+  toResponse: function() {
+    return this.render();
+  },
+
+
 
   // Used to set attributes from a request body
   setFromRequest: Promise.method(function(body) {
@@ -263,69 +319,7 @@ module.exports = Backbone.Model.extend({
     return this;
   }),
 
-  // Alias for `render`
-  toResponse: function() {
-    return this.render();
-  },
 
-  toJSON: function(options) {
-    var json = _.cloneDeep(this.attributes);
-    return json;
-  },
-
-  render: function() {
-    var json = this.toJSON();
-    var hiddenAttributes = _.result(this, 'hiddenAttributes');
-    this.removeAttributes(json, hiddenAttributes);
-    return json;
-  },
-
-  // Getters and Setters
-  // ---
-
-  // Tested and working with both shallow and deep keypaths
-  get: function(attr) {
-    if (!_.isString(attr)) {
-      return undefined;
-    }
-
-    return this.getDeep(this.attributes, attr);
-  },
-
-  // Support dot notation of accessing nested keypaths
-  getDeep: function(attrs, attr) {
-    var keys = attr.split('.');
-    var key;
-    var val = attrs;
-    var context = this;
-
-    for (var i = 0, n = keys.length; i < n; i++) {
-      // get key
-      key = keys[i];
-
-      // Hold reference to the context when diving deep into nested keys
-      if (i > 0) {
-        context = val;
-      }
-
-      // get value for key
-      val = val[key];
-
-      // value for key does not exist
-      // break out of loop early
-      if (_.isUndefined(val) || _.isNull(val)) {
-        break;
-      }
-    }
-
-    // Eval computed properties that are functions
-    if (_.isFunction(val)) {
-      // Call it with the proper context (see above)
-      val = val.call(context);
-    }
-
-    return val;
-  },
 
   // Lifecycle methods
   // ---

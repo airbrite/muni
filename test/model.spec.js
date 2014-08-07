@@ -27,6 +27,133 @@ describe('Model', function() {
   // Set max timeout allowed
   this.timeout(10000);
 
+  it('#getDeep shallow', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var val = testModel.get('string');
+    assert.strictEqual(val, 'i am a string');
+
+  });
+
+  it('#getDeep nested object', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+    var val = testModel.get('object.omg.wtf');
+    assert.strictEqual(val, 'bbq');
+  });
+
+  it('#getDeep nested array', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+    var val = testModel.get('array_objects.1.foo');
+    assert.strictEqual(val, 'baz');
+  });
+
+  it('#getDeep nested undefined', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+    var val = testModel.get('object.i_dont_exist.who_am_i');
+    assert.isUndefined(val);
+  });
+
+  it('#combinedDefaults', function() {
+    var TestModel = Model.extend({
+      defaults: function() {
+        return {
+          uno: 'one'
+        };
+      },
+      baseDefaults: function() {
+        return {
+          dos: 'two'
+        };
+      }
+    });
+    var testModel = new TestModel();
+
+    assert.deepEqual(testModel.combinedDefaults(), {
+      uno: 'one',
+      dos: 'two'
+    });
+  });
+
+  it('#combinedSchema', function() {
+    var TestModel = Model.extend({
+      schema: function() {
+        return {
+          uno: 'string'
+        };
+      },
+      baseSchema: function() {
+        return {
+          dos: 'number'
+        };
+      }
+    });
+    var testModel = new TestModel();
+
+    assert.deepEqual(testModel.combinedSchema(), {
+      uno: 'string',
+      dos: 'number'
+    });
+  });
+
+  it('should set changedFromRequest after setFromRequest', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var body = {
+      string: 'i changed',
+      i_dont_exist: 'trollolol',
+      boolean: true,
+      object: {
+        omg: {
+          wtf: 'lol'
+        }
+      },
+      array_objects: [{
+        foo: 'bar'
+      }, {
+        foo: 'changed'
+      }]
+    };
+
+    testModel.setFromRequest(body);
+
+    assert.deepEqual(testModel.changedFromRequest, {
+      string: 'i changed',
+      object: {
+        omg: {
+          wtf: 'lol'
+        }
+      },
+      array_objects: [{
+        foo: 'bar'
+      }, {
+        foo: 'changed'
+      }]
+    });
+  });
+
+
+
+
   it('#setFromRequest', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
