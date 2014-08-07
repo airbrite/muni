@@ -38,29 +38,24 @@ module.exports = Backbone.Model.extend({
   // so if you include an object as a default value,
   // it will be shared among all instances.
   // Instead, define defaults as a function.
-  // Object or Function
-  // string: null
-  // integer: 0
-  // float: 0.0
-  // boolean: true or false
-  // object: {}
-  // array: []
+  //
+  // See `model.spec.js` for how to use
+
   defaults: function() {},
 
   // Defaults that should be applied to all models
   // Object or Function
   baseDefaults: function() {},
 
+  combinedDefaults: function() {
+    var defaults = _.result(this, 'defaults');
+    _.merge(defaults, _.result(this, 'baseDefaults'));
+    return defaults;
+  },
+
   // Define the types of each attribute
   // Object or Function
-  // key: 'string'
-  // key: 'integer'
-  // key: 'float'
-  // key: 'date'
-  // key: {inner_key: 'string'}
-  // key: ['string']
-  // key: [{inner_key: 'string'}]
-  // key: ['model']
+  // See `model.spec.js` for how to use
   schema: function() {},
 
   // Attributes that should be included in all responses
@@ -73,11 +68,19 @@ module.exports = Backbone.Model.extend({
     return schema;
   },
 
-  constructor: function() {
-    Backbone.Model.prototype.constructor.apply(this, arguments);
-
-    // Apply `baseDefaults`
-    _.defaults(this.attributes, _.result(this, 'baseDefaults'));
+  // Override to support `defaultsDeep` and `combinedDefaults`
+  // http://backbonejs.org/docs/backbone.html#section-35
+  constructor: function(attributes, options) {
+    var attrs = attributes || {};
+    options || (options = {});
+    this.cid = _.uniqueId('c');
+    this.attributes = {};
+    if (options.collection) this.collection = options.collection;
+    if (options.parse) attrs = this.parse(attrs, options) || {};
+    attrs = _.defaultsDeep({}, attrs, _.result(this, 'combinedDefaults'));
+    this.set(attrs, options);
+    this.changed = {};
+    this.initialize.apply(this, arguments);
   },
 
   initialize: function() {
@@ -90,20 +93,14 @@ module.exports = Backbone.Model.extend({
 
   // Set defaults and apply/validate schema
   parse: function(resp, options) {
-    // Mongodb `create` returns an array of one document
+    // Mongodb sometimes returns an array of one document
     if (_.isArray(resp)) {
       resp = resp[0];
     }
 
     // Set defaults and apply schema
-    var defaults = _.result(this, 'defaults');
-    var schema = _.result(this, 'combinedSchema');
-    resp = this.buildAttributes(
-      schema,
-      defaults,
-      resp,
-      resp
-    );
+    var defaults = _.result(this, 'combinedDefaults');
+    _.defaultsDeep(resp, defaults);
     return resp;
   },
 
@@ -117,260 +114,6 @@ module.exports = Backbone.Model.extend({
         options.success(resp);
       }
     };
-  },
-
-  // TODO: Perform `schema` validation here
-  _validate: function(attrs, options) {
-    var valid = Backbone.Model.prototype._validate.apply(this, arguments);
-
-    if (!valid) {
-      return false;
-    }
-
-    return true;
-  },
-
-  // Validates attribute type
-  // Applies default attributes
-  // Omits readOnly and hidden attributes
-  buildAttributes: function(schema, defaults, json, attrs, ignoredAttrs) {
-    var obj = {};
-
-    _.each(schema, function(val, key) {
-      var jsonVal = _.isObject(json) ? json[key] : null;
-      var defaultsVal = _.isObject(defaults) ? defaults[key] : null;
-      var attrsVal = _.isObject(attrs) ? attrs[key] : null;
-      var ignoredAttrsVal = _.isObject(ignoredAttrs) ? ignoredAttrs[key] : null;
-
-      // If this key should be ignored, don't set it at all
-      if (ignoredAttrsVal === true) {
-        return;
-      }
-
-      // A schema key with a value of `[]` or `{}`
-      // Direct set json value for this key
-      if (_.isObject(val) && _.isEmpty(val)) {
-        obj[key] = !_.isUndefined(attrsVal) ?
-          attrsVal :
-          (!_.isUndefined(defaultsVal) ? defaultsVal : {});
-        return;
-      }
-
-      // Schema value can be one of three types: `Array, Object, String`
-      // Arrays and Objects can have nested schemas
-      // Strings are a final type definition
-      // and can be: `integer, float, boolean, id, string, date`
-      if (_.isArray(val)) {
-        // json value is null or undefined
-        // use current attribute value or default to `[]`
-        if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
-          obj[key] = !_.isUndefined(attrsVal) ?
-            attrsVal :
-            (!_.isUndefined(defaultsVal) ? defaultsVal : []);
-          return;
-        }
-
-        // No object inside array or the object inside is empty
-        // It is an array of strings/numbers/booleans/dates/ids
-        // A schema key with a vaue of `['string']` or `['date']` or `[{}]`
-        // Direct set json value for this key
-        if (_.isString(val[0]) || _.isEmpty(val[0])) {
-          obj[key] = jsonVal || attrsVal;
-          return;
-        }
-
-        // Setting an empty array will reset to defaults
-        if (_.isEmpty(jsonVal)) {
-          obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : [];
-          return;
-        }
-
-        // If first value inside schema value is an object
-        // For each json value for this key
-        // Recursively call `buildAttributes` for each json value (object)
-        // Push results into an array
-        obj[key] = [];
-        _.each(jsonVal, function(jsonKeyVal) {
-          obj[key].push(this.buildAttributes(
-            val[0],
-            defaultsVal,
-            jsonKeyVal,
-            attrsVal,
-            ignoredAttrsVal
-          ));
-        }.bind(this));
-      } else if (_.isObject(val)) {
-        // json value is null or undefined
-        // use current attribute value or default to `{}`
-        if (_.isNull(jsonVal) || _.isUndefined(jsonVal)) {
-          obj[key] = !_.isUndefined(attrsVal) ?
-            attrsVal :
-            (!_.isUndefined(defaultsVal) ? defaultsVal : {});
-          return;
-        }
-
-        // Setting an empty object will reset to defaults
-        if (_.isEmpty(jsonVal)) {
-          obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : {};
-          return;
-        }
-
-        // Recursively call `buildAttributes` for the json value (object)
-        obj[key] = this.buildAttributes(
-          val,
-          defaultsVal,
-          jsonVal,
-          attrsVal,
-          ignoredAttrsVal
-        );
-      } else if (_.isString(val)) {
-        if (val === 'integer' || val === 'uinteger') {
-          if (jsonVal === '') {
-            obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0;
-            return;
-          }
-          var intNumber = _.parseInt(jsonVal);
-          if (_.isNaN(intNumber)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : 0);
-            return;
-          }
-
-          obj[key] = val === 'uinteger' ? Math.max(intNumber, 0) : intNumber;
-        } else if (val === 'float' || val === 'ufloat') {
-          if (jsonVal === '') {
-            obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0.0;
-            return;
-          }
-          var floatNumber = parseFloat(jsonVal);
-          if (_.isNaN(floatNumber)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : 0.0);
-            return;
-          }
-
-          obj[key] = val === 'ufloat' ? Math.max(floatNumber, 0.0) : floatNumber;
-        } else if (val === 'boolean') {
-          if (!_.isBoolean(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : false);
-            return;
-          }
-
-          obj[key] = jsonVal;
-        } else if (val === 'id') {
-          if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
-            return;
-          }
-
-          obj[key] = jsonVal;
-        } else if (val === 'string') {
-          if (!_.isString(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
-            return;
-          }
-
-          obj[key] = jsonVal;
-        } else if (val === 'timestamp') {
-          // Empty string means reset to default
-          if (jsonVal === '') {
-            obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : null;
-            return;
-          }
-          // a timestamp can be set explicitly to `null`
-          if (!_.isNumber(jsonVal) && !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
-            return;
-          }
-
-          obj[key] = jsonVal;
-        } else if (val === 'date') {
-          // a date can be set explicitly to `null`
-          if (!_.isValidISO8601String(jsonVal) &&
-            !_.isDate(jsonVal) &&
-            !_.isNull(jsonVal)) {
-            obj[key] = !_.isUndefined(attrsVal) ?
-              attrsVal :
-              (!_.isUndefined(defaultsVal) ? defaultsVal : null);
-            return;
-          }
-
-          obj[key] = jsonVal;
-        } else {
-          obj[key] = jsonVal;
-        }
-      }
-    }.bind(this));
-
-    return obj;
-  },
-
-  // Used to set attributes from a request body
-  setFromRequest: Promise.method(function(body) {
-    var defaults = _.result(this, 'defaults');
-    var schema = _.result(this, 'combinedSchema');
-    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    body = this.buildAttributes(
-      schema,
-      defaults,
-      body,
-      this.attributes,
-      readOnlyAttributes
-    );
-
-    // Set new attributes
-    this.requestAttributes = _.cloneDeep(body);
-    this.set(this.requestAttributes);
-
-    // At this point, we take a snapshot of the changed attributes
-    // A copy of the `changed` attributes right after the request body is set
-    this.changedFromRequest = _.cloneDeep(this.changed);
-    this.previousFromRequest = _.cloneDeep(this.previousAttributes());
-
-    return this;
-  }),
-
-  // Alias for `render`
-  toResponse: function() {
-    return this.render();
-  },
-
-  toJSON: function(options) {
-    var json = _.cloneDeep(this.attributes);
-    return json;
-  },
-
-  render: function() {
-    var json = this.toJSON();
-
-    var schema = _.result(this, 'combinedSchema');
-
-    // If there is no schema defined, return all attributes
-    if (_.isEmpty(schema)) {
-      return json;
-    }
-
-    var hiddenAttributes = _.result(this, 'hiddenAttributes');
-    var defaults = _.result(this, 'defaults');
-    json = this.buildAttributes(
-      schema,
-      defaults,
-      json,
-      this.attributes,
-      hiddenAttributes
-    );
-
-    return json;
   },
 
   // Getters and Setters
@@ -419,6 +162,181 @@ module.exports = Backbone.Model.extend({
 
     return val;
   },
+
+  // TODO set and setDeep
+
+  // Note: Mutates attrs
+  // Verifies that all attr keys are defined in the schema
+  // If an attr does not have a corresponding schema, it is removed
+  validateAttributes: function(attrs, schema) {
+    if (!_.isObject(attrs) || _.isUndefined(schema) || _.isNull(schema)) {
+      return;
+    }
+
+    _.each(attrs, function(val, key) {
+      var isValid = false;
+      // schema might be either an object or a string
+      var schemaType = _.isObject(schema) ? schema[key] : schema;
+
+      // Objects and Arrays
+      if (_.isArray(schemaType)) {
+        // Empty array is a loosely defined schema, no-op
+        // That means allow anything inside
+        // Ex: []
+        if (!schemaType.length) {
+          return;
+        }
+
+        // The schema type is defined by the first element in the array
+        schemaType = schemaType[0];
+
+        // Array with an empty object, no-op
+        // Ex. [{}]
+        if (_.isObject(schemaType) && _.isEmpty(schemaType)) {
+          return;
+        }
+
+        // Iteratively recursively validate inside each object in the array
+        // Ex. [{...}]
+        if (_.isObject(schemaType)) {
+          _.each(val, function(arrVal) {
+            this.validateAttributes(arrVal, schemaType);
+          }, this);
+          return;
+        }
+
+        // Recursively validate the array
+        // Ex: ['string'] or ['integer']
+        return this.validateAttributes(val, schemaType);
+      } else if (_.isObject(schemaType)) {
+        // Empty object is a loosely defined schema, no-op
+        // That means allow anything inside
+        // Ex: {}
+        if (_.isEmpty(schemaType)) {
+          return;
+        }
+
+        // Recursively validate the object
+        // Ex: {...}
+        return this.validateAttributes(val, schemaType);
+      }
+
+      // All other types are defined as a string
+      switch (schemaType) {
+        case 'id':
+          isValid = _.isObjectId(val) || _.isUUID(val);
+          break;
+        case 'string':
+          isValid = _.isString(val);
+          break;
+        case 'integer':
+          attrs[key] = val = _.parseInt(val);
+          isValid = _.isNumber(val) && !_.isNaN(val);
+          break;
+        case 'uinteger':
+          attrs[key] = val = _.parseInt(val);
+          isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
+          break;
+        case 'float':
+          attrs[key] = val = parseFloat(val);
+          isValid = _.isNumber(val) && !_.isNaN(val);
+          break;
+        case 'ufloat':
+          attrs[key] = val = parseFloat(val);
+          isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
+          break;
+        case 'boolean':
+          isValid = _.isBoolean(val);
+          break;
+        case 'timestamp':
+          isValid = _.isTimestamp(val);
+          break;
+        case 'date':
+          // Also support ISO8601 strings, convert to date
+          if (_.isString(val) && _.isValidISO8601String(val)) {
+            attrs[key] = val = new Date(val);
+          }
+          isValid = _.isDate(val);
+          break;
+        default:
+          break;
+      }
+
+      // Array elements default to `null` if invalid
+      // Other keys are deleted
+      if (!isValid) {
+        if (_.isArray(attrs)) {
+          attrs[key] = null;
+        } else if (_.isObject(attrs)) {
+          delete attrs[key];
+        }
+      }
+    }, this);
+  },
+
+  // Removes attributes
+  // Does not work for objects embedded inside arrays
+  removeAttributes: function(attrs, options) {
+    _.each(attrs, function(val, key) {
+      // shouldRemove is either an object or a boolean
+      var shouldRemove = options[key];
+      if (_.isUndefined(shouldRemove)) {
+        return;
+      }
+
+      // Support nested object
+      if (_.isObject(val) && !_.isArray(val)) {
+        return this.removeAttributes(val, shouldRemove);
+      }
+
+      if (shouldRemove === true) {
+        delete attrs[key];
+      }
+    }, this);
+  },
+
+  // Override backbone's `toJSON` to support `cloneDeep`
+  toJSON: function(options) {
+    var json = _.cloneDeep(this.attributes);
+    return json;
+  },
+
+  // Convert attributes into a pojo,
+  // then remove attributes that should be hidden
+  render: function() {
+    var json = this.toJSON();
+    var hiddenAttributes = _.result(this, 'hiddenAttributes');
+    this.removeAttributes(json, hiddenAttributes);
+    return json;
+  },
+
+  // Alias for `render`
+  toResponse: function() {
+    return this.render();
+  },
+
+
+
+  // Used to set attributes from a request body
+  setFromRequest: Promise.method(function(body) {
+    var schema = _.result(this, 'combinedSchema');
+    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+    this.validateAttributes(body, schema);
+    this.removeAttributes(body, readOnlyAttributes);
+
+    // Set new attributes
+    this.requestAttributes = _.cloneDeep(body);
+    this.set(body);
+
+    // At this point, we take a snapshot of the changed attributes
+    // A copy of the `changed` attributes right after the request body is set
+    this.changedFromRequest = _.cloneDeep(this.changed);
+    this.previousFromRequest = _.cloneDeep(this.previousAttributes());
+
+    return this;
+  }),
+
+
 
   // Lifecycle methods
   // ---

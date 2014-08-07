@@ -37,7 +37,8 @@
     "mocha": "1.21.4",
     "sinon": "1.10.3",
     "sinon-as-promised": "0.0.4",
-    "sinon-chai": "2.5.0"
+    "sinon-chai": "2.5.0",
+    "eyes": "git://github.com/airbrite/eyes.js.git"
   },
   "author": {
     "name": "Peter Shih",

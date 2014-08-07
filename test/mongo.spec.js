@@ -43,14 +43,14 @@ describe('Mongo', function() {
     it('#newObjectId and #newObjectIdHexString', function() {
       var objectId = mongo.newObjectId();
       var objectIdString = mongo.newObjectIdHexString();
-      assert.isTrue(mongo.isValidObjectID(objectId), true);
-      assert.isTrue(mongo.isValidObjectID(objectIdString), true);
+      assert.isTrue(mongo.isObjectId(objectId), true);
+      assert.isTrue(mongo.isObjectId(objectIdString), true);
     });
 
-    it('#isValidObjectID', function() {
-      assert.isTrue(mongo.isValidObjectID('538b7c95c883570700ee9644'), true);
-      assert.isFalse(mongo.isValidObjectID('12345'), true);
-      assert.isFalse(mongo.isValidObjectID(12345), true);
+    it('#isObjectId', function() {
+      assert.isTrue(mongo.isObjectId('538b7c95c883570700ee9644'), true);
+      assert.isFalse(mongo.isObjectId('12345'), true);
+      assert.isFalse(mongo.isObjectId(12345), true);
     });
 
     it('#isValidISO8601String', function() {
