@@ -141,7 +141,7 @@ module.exports = Controller.extend({
         offset: parseInt(qo.skip),
         has_more: parseInt(collection.models.length) < parseInt(collection.total)
       };
-    }).then(this.render(req, res, next)).catch(next);
+    }).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   findOne: function(req, res, next, options) {
@@ -151,14 +151,14 @@ module.exports = Controller.extend({
     });
 
     var model = this.setupModel(req);
-    return model.fetch(options).then(this.render(req, res, next)).catch(next);
+    return model.fetch(options).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   create: function(req, res, next) {
     var model = this.setupModel(req);
     return model.setFromRequest(req.body).then(function() {
       return model.save();
-    }).then(this.render(req, res, next)).catch(next);
+    }).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   update: function(req, res, next, options) {
@@ -172,7 +172,7 @@ module.exports = Controller.extend({
       return model.setFromRequest(req.body);
     }).then(function() {
       return model.save(null, options);
-    }).then(this.render(req, res, next)).catch(next);
+    }).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   destroy: function(req, res, next) {

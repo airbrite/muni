@@ -1,6 +1,6 @@
 {
   "name": "bootie",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Bootie Bootie Bootie",
   "main": "index.js",
   "scripts": {

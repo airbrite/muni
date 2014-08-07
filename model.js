@@ -330,7 +330,7 @@ module.exports = Backbone.Model.extend({
 
     // Set new attributes
     this.requestAttributes = _.cloneDeep(body);
-    this.set(body);
+    this.set(this.requestAttributes);
 
     // At this point, we take a snapshot of the changed attributes
     // A copy of the `changed` attributes right after the request body is set
