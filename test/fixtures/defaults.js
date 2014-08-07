@@ -18,6 +18,7 @@ module.exports = function() {
         wtf: 'bbq'
       }
     },
+    object_defaults_empty: {},
     array_empty: [],
     array_strings: ['a', 'b', 'c', 'd'],
     array_numbers: [1, 2, 3, 4],

@@ -18,6 +18,18 @@ module.exports = function() {
         wtf: 'string'
       }
     },
+    object_defaults_empty: {
+      first: {
+        second: {
+          third: {
+            such: 'string'
+          },
+          tres: {
+            yo: 'string'
+          }
+        }
+      }
+    },
     array_empty: [],
     array_strings: ['string'],
     array_numbers: ['uinteger'],

@@ -27,8 +27,6 @@ describe('Model', function() {
   // Set max timeout allowed
   this.timeout(10000);
 
-
-
   it('#setFromRequest', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
@@ -53,10 +51,40 @@ describe('Model', function() {
         omg: {
           wtf: 'lol'
         }
+      },
+      object_defaults_empty: {
+        first: {
+          second: {
+            third: {
+              such: 'win',
+              wtf: 'lol'
+            },
+            tres: {
+              yo: 12345
+            }
+          }
+        }
       }
     };
 
     testModel.setFromRequest(body);
+
+    assert.deepEqual(body, {
+      integer: 9876,
+      object: {
+        omg: {}
+      },
+      object_defaults_empty: {
+        first: {
+          second: {
+            third: {
+              such: 'win'
+            },
+            tres: {}
+          }
+        }
+      }
+    });
   });
 
   it('#render', function() {
@@ -80,8 +108,6 @@ describe('Model', function() {
     assert.isUndefined(json.string);
     assert.isUndefined(json.object.omg.wtf);
   });
-
-
 
   it('#removeAttributes', function() {
     var TestModel = Model.extend({
@@ -108,7 +134,6 @@ describe('Model', function() {
     assert.isUndefined(testModel.attributes.array_objects);
     assert.isUndefined(testModel.attributes.object.omg.wtf);
     assert.isUndefined(testModel.attributes.array_objects_empty);
-
   });
 
 
@@ -122,6 +147,40 @@ describe('Model', function() {
         schema: helpers.requireFixture('schema')
       });
       testModel = new TestModel();
+    });
+
+    it('should set nested attribute of empty object', function() {
+      var schema = _.result(testModel, 'schema');
+
+      var attrs = {
+        object_defaults_empty: {
+          first: {
+            second: {
+              third: {
+                such: 'win',
+                wtf: 'lol'
+              },
+              tres: {
+                yo: 12345
+              }
+            }
+          }
+        }
+      };
+
+      testModel.validateAttributes(attrs, schema);
+      assert.deepEqual(attrs, {
+        object_defaults_empty: {
+          first: {
+            second: {
+              third: {
+                such: 'win'
+              },
+              tres: {}
+            }
+          }
+        }
+      });
     });
 
     it('should ignore invalid value type', function() {
@@ -169,7 +228,6 @@ describe('Model', function() {
         date: new Date('2014-08-07T07:49:53.555Z')
       });
     });
-
 
     it('should allow setting anything into empty object', function() {
       var schema = _.result(testModel, 'schema');
@@ -243,8 +301,6 @@ describe('Model', function() {
       });
     });
 
-
-
     it('should validate array of uintegers', function() {
       var schema = _.result(testModel, 'schema');
 
@@ -258,7 +314,6 @@ describe('Model', function() {
       });
     });
 
-
     it('should validate array of booleans', function() {
       var schema = _.result(testModel, 'schema');
 
@@ -271,8 +326,6 @@ describe('Model', function() {
         array_booleans: [true, false, null, null, null]
       });
     });
-
-
 
     it('should validate array of objects that are empty', function() {
       var schema = _.result(testModel, 'schema');
@@ -294,8 +347,6 @@ describe('Model', function() {
         }]
       });
     });
-
-
 
     it('should validate array of objects', function() {
       var schema = _.result(testModel, 'schema');
@@ -321,7 +372,5 @@ describe('Model', function() {
         }]
       });
     });
-
   });
-
 });
