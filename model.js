@@ -169,14 +169,20 @@ module.exports = Backbone.Model.extend({
   // Verifies that all attr keys are defined in the schema
   // If an attr does not have a corresponding schema, it is removed
   validateAttributes: function(attrs, schema) {
+    if (!_.isObject(attrs) || _.isUndefined(schema) || _.isNull(schema)) {
+      return;
+    }
+
     _.each(attrs, function(val, key) {
+      var isValid = false;
       // schema might be either an object or a string
       var schemaType = _.isObject(schema) ? schema[key] : schema;
-      var isValid = false;
 
       // Objects and Arrays
       if (_.isArray(schemaType)) {
-        // Empty array [], no-op
+        // Empty array is a loosely defined schema, no-op
+        // That means allow anything inside
+        // Ex: []
         if (!schemaType.length) {
           return;
         }
@@ -184,11 +190,14 @@ module.exports = Backbone.Model.extend({
         // The schema type is defined by the first element in the array
         schemaType = schemaType[0];
 
-        // Empty array with an empty object [{}], no-op
+        // Array with an empty object, no-op
+        // Ex. [{}]
         if (_.isObject(schemaType) && _.isEmpty(schemaType)) {
           return;
         }
 
+        // Iteratively recursively validate inside each object in the array
+        // Ex. [{...}]
         if (_.isObject(schemaType)) {
           _.each(val, function(arrVal) {
             this.validateAttributes(arrVal, schemaType);
@@ -196,14 +205,23 @@ module.exports = Backbone.Model.extend({
           return;
         }
 
+        // Recursively validate the array
+        // Ex: ['string'] or ['integer']
         return this.validateAttributes(val, schemaType);
       } else if (_.isObject(schemaType)) {
+        // Empty object is a loosely defined schema, no-op
+        // That means allow anything inside
+        // Ex: {}
         if (_.isEmpty(schemaType)) {
           return;
         }
+
+        // Recursively validate the object
+        // Ex: {...}
         return this.validateAttributes(val, schemaType);
       }
 
+      // All other types are defined as a string
       switch (schemaType) {
         case 'id':
           isValid = _.isValidObjectID(val) || _.isUUID(val);
@@ -241,7 +259,6 @@ module.exports = Backbone.Model.extend({
           isValid = _.isDate(val);
           break;
         default:
-          // Do not allow an attr without a schema defined
           break;
       }
 
