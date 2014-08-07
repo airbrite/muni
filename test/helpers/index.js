@@ -10,6 +10,10 @@ module.exports = {
     return {};
   },
 
+  requireFixture: function(filename) {
+    return require(__dirname + '/../fixtures/' + filename);
+  },
+
   cloneModel: function(model) {
     var clone = model.clone();
     _.extend(clone, model);

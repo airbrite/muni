@@ -6,7 +6,6 @@ var moment = require('moment');
 var accounting = require('accounting');
 var URLSafeBase64 = require('urlsafe-base64');
 var crypto = require('crypto');
-var ObjectID = require('mongodb').ObjectID;
 var objectIdHelper = require('mongodb-objectid-helper');
 
 var mixin = module.exports = {};
@@ -14,6 +13,10 @@ var mixin = module.exports = {};
 // This mixes in several helper functions to `_`
 _.mixin({
   uuid: uuid.v4,
+
+  defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
+    return _.merge(value, other, deep);
+  }),
 
   centsToDollars: function(value) {
     return accounting.formatNumber(accounting.toFixed(value / 100, 2), 2);
@@ -66,20 +69,32 @@ _.mixin({
     return URLSafeBase64.validate(str);
   },
 
-  isObjectID: function(value) {
-    return ObjectID.isValid(value);
+  isUUID: function(value) {
+    return /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(value);
   },
 
   // Check if a string is a valid ObjectID
-  isValidObjectID: function(id) {
-    return objectIdHelper.isObjectId(id);
+  isObjectID: function(value) {
+    return objectIdHelper.isObjectId(value);
+  },
+
+  // Check if a string is a valid ObjectID
+  isValidObjectID: function(value) {
+    return objectIdHelper.isObjectId(value);
   },
 
   isUnixTime: function(value) {
-    if (value && value.toString().length > 11) {
+    if (value && value >= 0 && value.toString().length > 11) {
       return false;
     }
     return true;
+  },
+
+  isTimestamp: function(value) {
+    if (value && value >= 0 && value.toString().length === 13) {
+      return true;
+    }
+    return false;
   },
 
   sanitizeEmail: function(email) {
