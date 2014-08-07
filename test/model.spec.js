@@ -153,8 +153,7 @@ describe('Model', function() {
 
 
 
-
-  it('#setFromRequest', function() {
+  it('#setFromRequest with readOnlyAttributes', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
       schema: helpers.requireFixture('schema'),
@@ -211,6 +210,46 @@ describe('Model', function() {
           }
         }
       }
+    });
+  });
+
+  it('#setFromRequest with unset', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var body = {
+      string: null,
+      integer: null,
+      timestamp: null,
+      object: null,
+      boolean: null
+    };
+
+    testModel.setFromRequest(body);
+
+    assert.isNull(testModel.get('string'));
+    assert.isNull(testModel.get('timestamp'));
+    assert.deepEqual(testModel.get('object'), {});
+    assert.strictEqual(testModel.get('integer'), 0);
+    assert.isFalse(testModel.get('boolean'));
+  });
+
+  it('#setFromRequest with asdf', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var body = {};
+
+    testModel.setFromRequest(body);
+
+    assert.deepEqual(body, {
+
     });
   });
 
@@ -309,6 +348,31 @@ describe('Model', function() {
         }
       });
     });
+
+    it('should unset with null', function() {
+      var schema = _.result(testModel, 'schema');
+
+      var attrs = {
+        string: null,
+        integer: null,
+        timestamp: null,
+        object: null,
+        array_strings: null,
+        boolean: null
+      };
+
+      testModel.validateAttributes(attrs, schema);
+
+      assert.deepEqual(attrs, {
+        string: null,
+        integer: 0,
+        timestamp: null,
+        object: {},
+        array_strings: [],
+        boolean: false
+      });
+    });
+
 
     it('should ignore invalid value type', function() {
       var schema = _.result(testModel, 'schema');
