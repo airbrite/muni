@@ -73,32 +73,22 @@ module.exports = Backbone.Model.extend({
     return schema;
   },
 
-  // Instance properties
-  // ---
-  // `db`
-  // `cache`
-
   constructor: function() {
     Backbone.Model.prototype.constructor.apply(this, arguments);
 
     // Apply `baseDefaults`
     _.defaults(this.attributes, _.result(this, 'baseDefaults'));
-
-    // Whenever a model gets assigned a value for `idAttribute`
-    // Clear out defaults because we assume this is an existing model in the db
-    // this.listenTo(this, 'change:' + this.idAttribute, function() {
-    //   // Clear out all defaults
-    //   this.clearDefaults();
-    // }.bind(this));
   },
 
   initialize: function() {
+    this.db; // reference to a mongodb client/connection
+    this.cache; // reference to a redis client/connection
     this.requestAttributes = {};
     this.changedFromRequest = {};
     this.previousFromRequest = {};
   },
 
-  // Copied from Backbone
+  // Set defaults and apply/validate schema
   parse: function(resp, options) {
     // Mongodb `create` returns an array of one document
     if (_.isArray(resp)) {
@@ -117,7 +107,19 @@ module.exports = Backbone.Model.extend({
     return resp;
   },
 
+  // Responsible for setting attributes after a database call
+  // Takes the mongodb response and calls the Backbone success method
+  wrapResponse: function(options) {
+    return function(err, resp) {
+      if (err) {
+        options.error(err);
+      } else {
+        options.success(resp);
+      }
+    };
+  },
 
+  // TODO: Perform `schema` validation here
   _validate: function(attrs, options) {
     var valid = Backbone.Model.prototype._validate.apply(this, arguments);
 
@@ -125,18 +127,7 @@ module.exports = Backbone.Model.extend({
       return false;
     }
 
-    // TODO: Perform `schema` validation here
-
     return true;
-  },
-
-  // Clears out all attributes that were set with `defaults`
-  // Useful for doing mongodb `patch` without first fetching the entire model
-  clearDefaults: function() {
-    var defaultKeys = _.keys(_.result(this, 'defaults'));
-    _.each(defaultKeys, function(defaultKey) {
-      this.unset(defaultKey);
-    }.bind(this));
   },
 
   // Validates attribute type
@@ -252,7 +243,7 @@ module.exports = Backbone.Model.extend({
             obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0.0;
             return;
           }
-          var floatNumber = _.parseFloat(jsonVal);
+          var floatNumber = parseFloat(jsonVal);
           if (_.isNaN(floatNumber)) {
             obj[key] = !_.isUndefined(attrsVal) ?
               attrsVal :
@@ -325,7 +316,7 @@ module.exports = Backbone.Model.extend({
   },
 
   // Used to set attributes from a request body
-  setFromRequest: function(body) {
+  setFromRequest: Promise.method(function(body) {
     var defaults = _.result(this, 'defaults');
     var schema = _.result(this, 'combinedSchema');
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
@@ -347,7 +338,7 @@ module.exports = Backbone.Model.extend({
     this.previousFromRequest = _.cloneDeep(this.previousAttributes());
 
     return this;
-  },
+  }),
 
   // Alias for `render`
   toResponse: function() {
@@ -382,147 +373,8 @@ module.exports = Backbone.Model.extend({
     return json;
   },
 
-  optionsFromSave: function(key, val, options) {
-    var attrs;
-    if (key === null || typeof key === 'object') {
-      attrs = key;
-      options = val;
-    } else {
-      (attrs = {})[key] = val;
-    }
-
-    return options = _.extend({
-      validate: true
-    }, options);
-  },
-
-  // Lifecycle methods
+  // Getters and Setters
   // ---
-  // Returns: Promise (this)
-
-  beforeFetch: function() {
-    return this;
-  },
-
-  afterFetch: function() {
-    return this;
-  },
-
-  beforeCreate: function() {
-    return this;
-  },
-
-  beforeUpdate: function() {
-    return this;
-  },
-
-  afterCreate: function() {
-    return this;
-  },
-
-  afterUpdate: function() {
-    return this;
-  },
-
-  beforeSave: function() {
-    return this;
-  },
-
-  afterSave: function() {
-    return this;
-  },
-
-  // Adds before/after fetch lifecycle methods
-  // Returns: Promise (this)
-  fetch: function() {
-    var originalArguments = arguments;
-
-    return Promise.cast().bind(this).then(function() {
-      return this.beforeFetch.apply(this, originalArguments);
-    }).then(function() {
-      return Backbone.Model.prototype.fetch.apply(this, originalArguments);
-    }).then(function() {
-      return this.afterFetch.apply(this, originalArguments);
-    });
-  },
-
-
-  // Return a rejected promise if validation fails
-  // Bubble up the `validationError` from Backbone
-  save: function() {
-    var originalArguments = arguments;
-
-    var beforeFn, afterFn;
-    if (this.isNew()) {
-      beforeFn = this.beforeCreate;
-      afterFn = this.afterCreate;
-    } else {
-      beforeFn = this.beforeUpdate;
-      afterFn = this.afterUpdate;
-    }
-
-    return Promise.cast().bind(this).then(function() {
-      return beforeFn.apply(this, originalArguments);
-    }).then(function() {
-      return this.beforeSave.apply(this, originalArguments);
-    }).then(function() {
-      var op = Backbone.Model.prototype.save.apply(this, originalArguments);
-      if (!op) {
-        return Promise.reject(this.validationError);
-      }
-      return op;
-    }).then(function() {
-      return afterFn.apply(this, originalArguments);
-    }).then(function() {
-      return this.afterSave.apply(this, originalArguments);
-    });
-  },
-
-
-
-  // Transactions
-  // Applies a boolean flag `locked`
-  lock: function() {
-    if (this.get('locked')) {
-      var err = new Error('Model already locked.');
-      return Promise.reject(err);
-    }
-
-    this.set('locked', true);
-    return this.save();
-  },
-
-  unlock: function() {
-    if (!this.get('locked')) {
-      return Promise.resolve(this);
-    }
-
-    this.set('locked', false);
-    return this.save();
-  },
-
-  // Convert all nested objects into dot notation keypaths (for `$set` patch)
-  objToPaths: function(obj) {
-    var ret = {};
-    var separator = '.';
-
-    _.each(obj, function(val, key) {
-      if (_.isObject(val) && !_.isArray(val) && !_.isEmpty(val)) {
-        //Recursion for embedded objects
-        var obj2 = this.objToPaths(val);
-
-        for (var key2 in obj2) {
-          var val2 = obj2[key2];
-
-          ret[key + separator + key2] = val2;
-        }
-      } else {
-        ret[key] = val;
-      }
-    }.bind(this));
-
-    return ret;
-  },
 
   // Tested and working with both shallow and deep keypaths
   get: function(attr) {
@@ -568,6 +420,42 @@ module.exports = Backbone.Model.extend({
     return val;
   },
 
+  // Lifecycle methods
+  // ---
+  // These can either return a promise or a value
+
+  beforeFetch: Promise.method(function() {
+    return this;
+  }),
+
+  afterFetch: Promise.method(function() {
+    return this;
+  }),
+
+  beforeCreate: Promise.method(function() {
+    return this;
+  }),
+
+  beforeUpdate: Promise.method(function() {
+    return this;
+  }),
+
+  afterCreate: Promise.method(function() {
+    return this;
+  }),
+
+  afterUpdate: Promise.method(function() {
+    return this;
+  }),
+
+  beforeSave: Promise.method(function() {
+    return this;
+  }),
+
+  afterSave: Promise.method(function() {
+    return this;
+  }),
+
   // Override the backbone sync method for use with mongodb
   // options contains 2 callbacks: `success` and `error`
   // Both callbacks have parameters (model, resp, options)
@@ -577,7 +465,7 @@ module.exports = Backbone.Model.extend({
   // ---
   // A `request` event is fired before with parameters (model, op, options)
   // A `sync` event is fired after with parameters (model, resp, options)
-  sync: function(method, model, options) {
+  sync: Promise.method(function(method, model, options) {
     // Force all `update` to actually be `patch` if configured
     if (this.updateUsingPatch && method === 'update') {
       method = 'patch';
@@ -586,37 +474,74 @@ module.exports = Backbone.Model.extend({
     var op = this[method].call(this, model, options);
     model.trigger('request', model, op, options);
     return op;
-  },
+  }),
 
-  // Takes the mongodb response and calls the Backbone success method
-  wrapResponse: function(options) {
-    return function(err, resp) {
-      if (err) {
-        options.error(err);
-      } else {
-        options.success(resp);
+  // Adds before/after fetch lifecycle methods
+  fetch: Promise.method(function() {
+    var originalArguments = arguments;
+
+    return Promise.bind(this).then(function() {
+      return this.beforeFetch.apply(this, originalArguments);
+    }).then(function() {
+      return Backbone.Model.prototype.fetch.apply(this, originalArguments);
+    }).then(function() {
+      return this.afterFetch.apply(this, originalArguments);
+    }).catch(function(err) {
+      console.error('#fetch: %s', err.message);
+      throw err;
+    });
+  }),
+
+
+  // Return a rejected promise if validation fails
+  // Bubble up the `validationError` from Backbone
+  save: Promise.method(function() {
+    var originalArguments = arguments;
+
+    var beforeFn, afterFn;
+    if (this.isNew()) {
+      beforeFn = this.beforeCreate;
+      afterFn = this.afterCreate;
+    } else {
+      beforeFn = this.beforeUpdate;
+      afterFn = this.afterUpdate;
+    }
+
+    return Promise.bind(this).then(function() {
+      return beforeFn.apply(this, originalArguments);
+    }).then(function() {
+      return this.beforeSave.apply(this, originalArguments);
+    }).then(function() {
+      var op = Backbone.Model.prototype.save.apply(this, originalArguments);
+      if (!op) {
+        return Promise.reject(this.validationError);
       }
-    };
-  },
+      return op;
+    }).then(function() {
+      return afterFn.apply(this, originalArguments);
+    }).then(function() {
+      return this.afterSave.apply(this, originalArguments);
+    });
+  }),
 
   // Inserts a mongodb document
-  create: function(model, options) {
+  create: Promise.method(function(model, options) {
     console.info('Model [%s] create called', this.urlRoot);
     return this.db.insert(
       this.urlRoot,
       model.toJSON(),
       this.wrapResponse(options)
     ).return(this);
-  },
+  }),
 
   // Updates a mongodb document
   // NOTE: This replaces the entire document with the model attributes
-  update: function(model, options) {
+  update: Promise.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
       var err = new Error('No ID for Model');
       options.error(err);
-      return Promise.reject(err);
+      throw err;
     }
 
     // Build query against the model's id
@@ -636,16 +561,16 @@ module.exports = Backbone.Model.extend({
       mongoOptions,
       this.wrapResponse(options)
     ).return(this);
-  },
+  }),
 
   // Updates a mongodb document
   // NOTE: This sets only explicitly provided model attributes
-  patch: function(model, options) {
+  patch: Promise.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
       var err = new Error('No ID for Model');
       options.error(err);
-      return Promise.reject(err);
+      throw err;
     }
 
     // Build query against the model's id
@@ -659,13 +584,7 @@ module.exports = Backbone.Model.extend({
     var attrs = model.toJSON();
     delete attrs[this.idAttribute];
 
-    // Use mongodb set to only update explicit attributes
-    // Convert all nested objects into paths so `$set`
-    // doesn't overwrite nested objects
-    // `$set -> this.objToPaths(attrs)` has issues
-    // with nested objects where the parent doesn't exist
-    // For example `metadata.foo.bar: true` will fail
-    // if `metadata.foo` !== {} in the database yet
+    // Use mongodb set to only update explicit attributes using `$set`
     var obj = {
       '$set': attrs
     };
@@ -680,16 +599,16 @@ module.exports = Backbone.Model.extend({
       mongoOptions,
       this.wrapResponse(options)
     ).return(this);
-  },
+  }),
 
   // Removes a mongodb document
   // Must have ID
-  delete: function(model, options) {
+  delete: Promise.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
       var err = new Error('No ID for Model');
       options.error(err);
-      return Promise.reject(err);
+      throw err;
     }
 
     // Build query against the model's id
@@ -698,13 +617,18 @@ module.exports = Backbone.Model.extend({
 
     console.info('Model [%s] delete with query: %s',
       this.urlRoot, JSON.stringify(query));
-    return this.db.remove(this.urlRoot, query, this.wrapResponse(options));
-  },
+
+    return this.db.remove(
+      this.urlRoot,
+      query,
+      this.wrapResponse(options)
+    );
+  }),
 
   // Finds a single mongodb document
   // If `options.query` is provided and is an object,
   // it is used as the query
-  read: function(model, options) {
+  read: Promise.method(function(model, options) {
     var query = {};
     if (_.isObject(options.query)) {
       // Build query
@@ -714,7 +638,7 @@ module.exports = Backbone.Model.extend({
         // If no ID in query, error out
         var err = new Error('Trying to fetch a model with no `_id` attribute.');
         options.error(err);
-        return Promise.reject(err);
+        throw err;
       }
 
       // Build query against the model's id and user_id if it exists
@@ -727,12 +651,12 @@ module.exports = Backbone.Model.extend({
     var mongoOptions = _.pick(options, ['require']) || {};
     console.info('Model [%s] read with query: %s',
       this.urlRoot, JSON.stringify(query));
+
     return this.db.findOne(
       this.urlRoot,
       query,
       mongoOptions,
       this.wrapResponse(options)
     ).return(this);
-  }
-
+  })
 });

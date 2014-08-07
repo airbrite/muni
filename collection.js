@@ -3,6 +3,7 @@
 // Dependencies
 // ---
 var _ = require('lodash');
+var Promise = require('bluebird');
 var Backbone = require('backbone');
 var Model = require('./model');
 
@@ -11,31 +12,14 @@ module.exports = Backbone.Collection.extend({
 
   model: Model,
 
-  // Instance properties
-  // ---
-  // `db`
-  // `cache`
-
-  initialize: function() {},
+  initialize: function() {
+    this.db; // reference to a mongodb client/connection
+    this.cache; // reference to a redis client/connection
+  },
 
   // Copied from Backbone, not currently overridden
   parse: function(resp, options) {
     return resp;
-  },
-
-  // Override the backbone sync method for use with mongodb
-  // options contains 2 callbacks: `success` and `error`
-  // Both callbacks have parameters (model, resp, options)
-  // `resp` is either a `document` or an `error` object
-  //
-  // Events
-  // ---
-  // A `request` event is fired before with parameters (model, op, options)
-  // A `sync` event is fired after with parameters (model, resp, options)
-  sync: function(method, model, options) {
-    var op = this[method].call(this, model, options);
-    model.trigger('request', model, op, options);
-    return op;
   },
 
   // Takes the mongodb response and calls the Backbone success method
@@ -49,8 +33,40 @@ module.exports = Backbone.Collection.extend({
     };
   },
 
+  // Override `Collection.set` to assign
+  // a collection's user to all models in the collection
+  set: function() {
+    var ret = Backbone.Collection.prototype.set.apply(this, arguments);
+
+    this.each(function(model) {
+      // Pass `db` to all models in the collection
+      model.db = this.db;
+      // Pass `collection.user` to all models in the collection
+      if (this.user) {
+        model.user = this.user;
+      }
+    }.bind(this));
+
+    return ret;
+  },
+
+  // Override the backbone sync method for use with mongodb
+  // options contains 2 callbacks: `success` and `error`
+  // Both callbacks have parameters (model, resp, options)
+  // `resp` is either a `document` or an `error` object
+  //
+  // Events
+  // ---
+  // A `request` event is fired before with parameters (model, op, options)
+  // A `sync` event is fired after with parameters (model, resp, options)
+  sync: Promise.method(function(method, model, options) {
+    var op = this[method].call(this, model, options);
+    model.trigger('request', model, op, options);
+    return op;
+  }),
+
   // Finds mongodb documents
-  read: function(collection, options) {
+  read: Promise.method(function(collection, options) {
     var query = {};
 
     // Build query against where query
@@ -72,50 +88,39 @@ module.exports = Backbone.Collection.extend({
       this.total = resp[1] || 0;
       return this;
     });
-  },
-
-  set: function() {
-    var ret = Backbone.Collection.prototype.set.apply(this, arguments);
-
-    this.each(function(model) {
-      // Pass `db` to all models in the collection
-      model.db = this.db;
-      // Pass `collection.user` to all models in the collection
-      if (this.user) {
-        model.user = this.user;
-      }
-    }.bind(this));
-
-    return ret;
-  },
+  }),
 
   // Count (not part of `sync`)
-  // success/error parameters are (resp)
-  count: function(options) {
+  // This is an extension to Backbone
+  count: Promise.method(function(options) {
     options = options || {};
 
-    var success = options.success;
+    // This is for `wrapResponse`
+    // `options` may contain `success` and `error` callbacks
+    var successCallback = options.success;
+    var errorCallback = options.error;
     options.success = function(resp) {
-      if (success) {
-        success(resp);
+      if (successCallback) {
+        successCallback(resp);
+      }
+    };
+    options.error = function(err) {
+      if (errorCallback) {
+        errorCallback(err);
       }
     };
 
-    var query = {};
-
     // Build query against where query
+    var query = {};
     if (_.isObject(options.query)) {
       query = options.query;
     }
 
-    // Don't allow any mongo options for now
-    var mongoOptions = {};
     return this.db.count(
       this.model.prototype.urlRoot,
       query,
-      mongoOptions,
+      {},
       this.wrapResponse(options)
     );
-  }
-
+  })
 });

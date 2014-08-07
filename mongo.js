@@ -127,7 +127,7 @@ _.extend(Mongo.prototype, {
   isValidISO8601String: function(str) {
     // 2013-11-18T09:04:24.447Z
     // YYYY-MM-DDTHH:mm:ss.SSSZ
-    return moment(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
+    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
   },
 
   // Automatically cast to HexString to ObjectID
