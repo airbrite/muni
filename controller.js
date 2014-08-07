@@ -392,7 +392,7 @@ module.exports = Backbone.Model.extend({
       } else if (type === 'float') {
         // floats
         vals = _.map(vals, function(v) {
-          return _.parseFloat(v);
+          return parseFloat(v);
         });
       } else {
         // invalid or unknown type

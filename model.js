@@ -243,7 +243,7 @@ module.exports = Backbone.Model.extend({
             obj[key] = !_.isUndefined(defaultsVal) ? defaultsVal : 0.0;
             return;
           }
-          var floatNumber = _.parseFloat(jsonVal);
+          var floatNumber = parseFloat(jsonVal);
           if (_.isNaN(floatNumber)) {
             obj[key] = !_.isUndefined(attrsVal) ?
               attrsVal :
