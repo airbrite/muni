@@ -14,7 +14,9 @@ var mixin = module.exports = {};
 _.mixin({
   uuid: uuid.v4,
 
-  defaultsDeep: _.partialRight(_.merge, _.defaults),
+  defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
+    return _.merge(value, other, deep);
+  }),
 
   centsToDollars: function(value) {
     return accounting.formatNumber(accounting.toFixed(value / 100, 2), 2);
