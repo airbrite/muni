@@ -256,6 +256,7 @@ module.exports = Backbone.Model.extend({
           isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
           break;
         case 'boolean':
+          // coerce value into a boolean
           attrs[key] = val = !!val;
           isValid = _.isBoolean(val);
           break;
