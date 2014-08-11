@@ -234,7 +234,7 @@ module.exports = Backbone.Model.extend({
       // All other types are defined as a string
       switch (schemaType) {
         case 'id':
-          isValid = _.isObjectId(val) || _.isUUID(val);
+          isValid = _.isObjectId(val);
           break;
         case 'string':
           isValid = _.isString(val);

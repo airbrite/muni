@@ -62,8 +62,12 @@ describe("Mixins", function() {
   });
 
   it('#isUUID', function() {
-    var uuid = _.uuid();
-    assert.isTrue(_.isUUID(uuid));
+    var uuid1 = '1d704255-bd6a-3da8-2978-0fa9d999e656';
+    var uuid2 = '54883600-724d-4cd1-954b-bb333de2345d';
+    var baduuid1 = '54883600724d4cd1954bbb333de2345d';
+    assert.isTrue(_.isUUID(uuid1));
+    assert.isTrue(_.isUUID(uuid2));
+    assert.isFalse(_.isUUID(baduuid1));
     assert.isFalse(_.isUUID('asdf'));
   });
 

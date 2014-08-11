@@ -70,7 +70,19 @@ _.mixin({
   },
 
   isUUID: function(value) {
-    return /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(value);
+    // http://en.wikipedia.org/wiki/Universally_unique_identifier#Variants_and_versions
+    // Version 3 (MD5 hash)
+    // xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
+    // where x is any hexadecimal digit and y is one of 8, 9, A, or B
+    //
+    // Celery uses mostly V4 (some older uuid is not v4 compatible)
+    // Version 4 (random)
+    // xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    // where x is any hexadecimal digit and y is one of 8, 9, A, or B
+    // f47ac10b-58cc-4372-a567-0e02b2c3d479
+    //
+    // This regex is compatible with non-v4 uuid
+    return /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(value);
   },
 
   // Check if a String or ObjectId is a valid ObjectId
