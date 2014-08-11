@@ -8,7 +8,7 @@ var URLSafeBase64 = require('urlsafe-base64');
 var crypto = require('crypto');
 var objectIdHelper = require('mongodb-objectid-helper');
 
-var mixin = module.exports = {};
+var mixins = module.exports = {};
 
 // This mixes in several helper functions to `_`
 _.mixin({

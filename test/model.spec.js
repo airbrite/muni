@@ -11,7 +11,7 @@ var Promise = require('bluebird');
 var sinonAsPromised = require('sinon-as-promised')(Promise);
 var Model = require('../model');
 
-require('../mixin');
+require('../mixins');
 
 // Eyes
 console.inspect = require('eyes').inspector({

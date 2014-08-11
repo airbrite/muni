@@ -5,7 +5,7 @@ var _ = require('lodash');
 var assert = require('chai').assert;
 var ObjectId = require('mongodb').ObjectID;
 
-require('../mixin');
+require('../mixins');
 
 describe("Mixins", function() {
   // Local variables

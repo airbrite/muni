@@ -21,7 +21,7 @@ Bootie._ = require('lodash');
 Bootie.colors = require('colors');
 Bootie.uuid = require('uuid');
 
-Bootie.mixin = require('./mixin');
+Bootie.mixins = require('./mixins');
 
 
 // All external libraries
