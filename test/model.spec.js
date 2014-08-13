@@ -11,7 +11,7 @@ var Promise = require('bluebird');
 var sinonAsPromised = require('sinon-as-promised')(Promise);
 var Model = require('../model');
 
-require('../mixin');
+require('../mixins');
 
 // Eyes
 console.inspect = require('eyes').inspector({
@@ -501,7 +501,7 @@ describe('Model', function() {
 
       testModel.validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
-        array_numbers: [5, 6, null, 8]
+        array_numbers: [5, 6, 0, 8]
       });
     });
 
@@ -514,7 +514,7 @@ describe('Model', function() {
 
       testModel.validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
-        array_booleans: [true, false, null, null, null]
+        array_booleans: [true, false, true, false, true]
       });
     });
 
