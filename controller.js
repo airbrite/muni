@@ -378,10 +378,9 @@ module.exports = Backbone.Model.extend({
         // no transformation
       } else if (type === 'regex') {
         // regex case insensitive and escaping special characters
-        // Always add `^` to use a prefix regex for index performance
         vals = _.map(vals, function(v) {
           return {
-            '$regex': '^' + _.escapeRegExp(v),
+            '$regex': _.escapeRegExp(v),
             '$options': 'i'
           };
         });
