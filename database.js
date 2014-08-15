@@ -7,6 +7,7 @@
 // Dependencies
 // ---
 var _ = require('lodash');
+var Promise = require('bluebird');
 var Backbone = require('backbone');
 var redis = require('redis');
 var Mongo = require('./mongo');
@@ -58,6 +59,11 @@ module.exports = Backbone.Model.extend({
       redisClient.auth(options.auth);
       connString += options.auth + '@';
     }
+
+    // The promisified method name will be
+    // the original method name suffixed with "Async".
+    Promise.promisifyAll(redisClient);
+
     connString += options.host;
     connString += ':';
     connString += options.port;
