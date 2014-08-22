@@ -108,15 +108,12 @@ module.exports = Controller.extend({
   // ---
 
   count: function(req, res, next, options) {
-    var qo = this.parseQueryString(req);
-    var collection = this.setupCollection(req, qo);
+    var collection = this.setupCollection(req);
 
-    // Merge `options.query` with the query string query and filters
-    if (options && options.query) {
-      _.merge(qo.query, options.query);
-    }
+    options = options || {};
+    _.merge(options, this.parseQueryString(req));
 
-    return collection.count(qo).then(function(total) {
+    return collection.count(options).then(function(total) {
       res.data = {
         total: total
       };
@@ -125,49 +122,49 @@ module.exports = Controller.extend({
   },
 
   find: function(req, res, next, options) {
-    var qo = this.parseQueryString(req);
-    var collection = this.setupCollection(req, qo);
+    var collection = this.setupCollection(req);
 
-    // Merge `options.query` with the query string query and filters
-    if (options && options.query) {
-      _.merge(qo.query, options.query);
-    }
+    options = options || {};
+    _.merge(options, this.parseQueryString(req));
 
-    return collection.fetch(qo).tap(function() {
+    return collection.fetch(options).tap(function() {
       res.paging = {
         total: parseInt(collection.total),
         count: parseInt(collection.models.length),
-        limit: parseInt(qo.limit),
-        offset: parseInt(qo.skip),
+        limit: parseInt(options.limit),
+        offset: parseInt(options.skip),
         has_more: parseInt(collection.models.length) < parseInt(collection.total)
       };
     }).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   findOne: function(req, res, next, options) {
+    var model = this.setupModel(req);
+
     options = options || {};
     _.merge(options, {
       require: true
     });
 
-    var model = this.setupModel(req);
     return model.fetch(options).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   create: function(req, res, next) {
     var model = this.setupModel(req);
+
     return model.setFromRequest(req.body).then(function() {
       return model.save();
     }).bind(this).then(this.render(req, res, next)).catch(next);
   },
 
   update: function(req, res, next, options) {
+    var model = this.setupModel(req);
+
     options = options || {};
     _.merge(options, {
       require: true
     });
 
-    var model = this.setupModel(req);
     return model.fetch(options).then(function() {
       return model.setFromRequest(req.body);
     }).then(function() {
@@ -177,6 +174,7 @@ module.exports = Controller.extend({
 
   destroy: function(req, res, next) {
     var model = this.setupModel(req);
+
     return model.destroy().then(function(resp) {
       if (resp === 0) {
         var err = new Error('Document not found.');
@@ -205,7 +203,7 @@ module.exports = Controller.extend({
 
   // Creates and returns a collection
   // If there is a `db` and/or `cache` connection, assign it to the collection
-  setupCollection: function(req, qo) {
+  setupCollection: function(req) {
     var collection = new this.collection();
     collection.db = this.get('db');
     collection.cache = this.get('cache');
