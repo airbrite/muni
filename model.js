@@ -98,9 +98,14 @@ module.exports = Backbone.Model.extend({
       resp = resp[0];
     }
 
-    // Set defaults and apply schema
+    // Apply schema
+    var schema = _.result(this, 'combinedSchema');
+    this.validateAttributes(resp, schema);
+
+    // Set defaults
     var defaults = _.result(this, 'combinedDefaults');
     _.defaultsDeep(resp, defaults);
+
     return resp;
   },
 
@@ -177,6 +182,13 @@ module.exports = Backbone.Model.extend({
       var isValid = false;
       // schema might be either an object or a string
       var schemaType = _.isObject(schema) ? schema[key] : schema;
+
+      // if the schema for this key does not exist
+      // remove it as a property completely
+      if (_.isUndefined(schemaType)) {
+        delete attrs[key];
+        return;
+      }
 
       // Objects and Arrays
       if (_.isArray(schemaType)) {
