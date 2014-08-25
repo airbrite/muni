@@ -315,6 +315,29 @@ describe('Model', function() {
       testModel = new TestModel();
     });
 
+    it('should delete undefined schema attributes', function() {
+      // when setting a non-existent key to null
+      // should have no effect, and the key should be removed
+      var schema = _.result(testModel, 'schema');
+
+      var attrs = {
+        non_existent_key: null,
+        string: 'i should show up',
+        object: {
+          non_existent_nested_key: null,
+          foo: 'i should also show up'
+        }
+      };
+
+      testModel.validateAttributes(attrs, schema);
+      assert.deepEqual(attrs, {
+        object: {
+          foo: 'i should also show up'
+        },
+        string: 'i should show up'
+      })
+    });
+
     it('should set nested attribute of empty object', function() {
       var schema = _.result(testModel, 'schema');
 

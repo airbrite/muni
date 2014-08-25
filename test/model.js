@@ -7,9 +7,7 @@ var Model = require("../model");
 var Mongo = require("../mongo");
 
 // TODO FIX TESTS
-return;
-
-describe("Models", function() {
+describe.skip("Models", function() {
 
   // Local variables
   var savedId;
