@@ -139,6 +139,7 @@ describe('Model', function() {
     assert.deepEqual(testModel.changedFromRequest, {
       string: 'i changed',
       object: {
+        foo: 'bar',
         omg: {
           wtf: 'lol'
         }
@@ -195,22 +196,12 @@ describe('Model', function() {
 
     testModel.setFromRequest(body);
 
-    assert.deepEqual(body, {
-      integer: 9876,
-      object: {
-        omg: {}
-      },
-      object_defaults_empty: {
-        first: {
-          second: {
-            third: {
-              such: 'win'
-            },
-            tres: {}
-          }
-        }
-      }
+    assert.deepEqual(testModel.attributes.object, {
+      foo: 'bar',
+      omg: {}
     });
+    assert.strictEqual(testModel.attributes.integer, 9876);
+    assert.strictEqual(testModel.attributes.string, 'i am a string');
   });
 
   it('#setFromRequest with unset', function() {
@@ -237,20 +228,50 @@ describe('Model', function() {
     assert.isFalse(testModel.get('boolean'));
   });
 
-  it('#setFromRequest with asdf', function() {
+  it('#setFromRequest with omitted nested key should not unset the omitted key', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
       schema: helpers.requireFixture('schema')
     });
     var testModel = new TestModel();
 
-    var body = {};
+    var body = {
+      object: {
+        omg: {
+          wtf: 'lol'
+        }
+      }
+    };
 
     testModel.setFromRequest(body);
 
-    assert.deepEqual(body, {
-
+    assert.deepEqual(testModel.attributes.object, {
+      foo: 'bar',
+      omg: {
+        wtf: 'lol'
+      }
     });
+  });
+
+  it('#setFromRequest with omitted nested key should not trigger change', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var body = {
+      object: {
+        // foo: 'bar'
+        omg: {
+          wtf: 'bbq'
+        }
+      }
+    };
+
+    testModel.setFromRequest(body);
+
+    assert.deepEqual(testModel.changedFromRequest, {});
   });
 
   it('#render', function() {

@@ -346,14 +346,22 @@ module.exports = Backbone.Model.extend({
 
   // Used to set attributes from a request body
   setFromRequest: Promise.method(function(body) {
+    // Merge body into existing attributes
+    // http://stackoverflow.com/questions/19965844/lodash-difference-between-extend-assign-and-merge
+    var attrs = _.cloneDeep(this.attributes);
+    _.merge(attrs, body);
+
+    // Apply schema
     var schema = _.result(this, 'combinedSchema');
+    this.validateAttributes(attrs, schema);
+
+    // Remove read only attributes
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    this.validateAttributes(body, schema);
-    this.removeAttributes(body, readOnlyAttributes);
+    this.removeAttributes(attrs, readOnlyAttributes);
 
     // Set new attributes
-    this.requestAttributes = _.cloneDeep(body);
-    this.set(body);
+    this.requestAttributes = _.cloneDeep(attrs);
+    this.set(attrs);
 
     // At this point, we take a snapshot of the changed attributes
     // A copy of the `changed` attributes right after the request body is set
