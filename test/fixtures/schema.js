@@ -10,6 +10,7 @@ module.exports = function() {
     ufloat: 'ufloat',
     boolean: 'boolean',
     timestamp: 'timestamp',
+    i_am_null: 'ufloat',
     date: 'date',
     object_empty: {},
     object: {
