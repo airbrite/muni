@@ -366,7 +366,14 @@ module.exports = Backbone.Model.extend({
     // This is in order to properly trigger change detection for nested keys
     // http://stackoverflow.com/questions/19965844/lodash-difference-between-extend-assign-and-merge
     var attrs = _.cloneDeep(this.attributes);
-    _.merge(attrs, body);
+    _.merge(attrs, body, function(dst, src) {
+      if (_.isObject(src) && _.isEmpty(src)) {
+        // If src is an empty object {} or empty array []
+        // We do not want to perform a merge, just set it
+        return src;
+      }
+      return undefined;
+    });
 
     // Remove read only attributes
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
