@@ -86,7 +86,6 @@ module.exports = Backbone.Model.extend({
   initialize: function() {
     this.db; // reference to a mongodb client/connection
     this.cache; // reference to a redis client/connection
-    this.requestAttributes = {};
     this.changedFromRequest = {};
     this.previousFromRequest = {};
   },
@@ -97,14 +96,6 @@ module.exports = Backbone.Model.extend({
     if (_.isArray(resp)) {
       resp = resp[0];
     }
-
-    // Apply schema
-    var schema = _.result(this, 'combinedSchema');
-    this.validateAttributes(resp, schema);
-
-    // Set defaults
-    var defaults = _.result(this, 'combinedDefaults');
-    _.defaultsDeep(resp, defaults);
 
     return resp;
   },
@@ -123,6 +114,32 @@ module.exports = Backbone.Model.extend({
 
   // Getters and Setters
   // ---
+
+
+  set: function(key, val, options) {
+    var attrs;
+    if (key === null) return this;
+
+    if (typeof key === 'object') {
+      attrs = key;
+      options = val;
+    } else {
+      (attrs = {})[key] = val;
+    }
+
+    options || (options = {});
+
+    // Don't override unset
+    if (options.unset) {
+      return Backbone.Model.prototype.set.apply(this, arguments);
+    }
+
+    // Apply schema
+    var schema = _.result(this, 'combinedSchema');
+    this.validateAttributes(attrs, schema);
+
+    return Backbone.Model.prototype.set.call(this, attrs, options);
+  },
 
   // Tested and working with both shallow and deep keypaths
   get: function(attr) {
@@ -185,13 +202,13 @@ module.exports = Backbone.Model.extend({
 
       // if the schema for this key does not exist
       // remove it as a property completely
-      if (_.isUndefined(schemaType)) {
+      if (_.isNull(schemaType) || _.isUndefined(schemaType)) {
         delete attrs[key];
         return;
       }
 
       // Allow the use of `null` to unset
-      if (_.isNull(val)) {
+      if (_.isNull(val) || _.isUndefined(val)) {
         attrs[key] = null;
         return;
       }
@@ -346,20 +363,16 @@ module.exports = Backbone.Model.extend({
   // Used to set attributes from a request body
   setFromRequest: Promise.method(function(body) {
     // Merge body into existing attributes
+    // This is in order to properly trigger change detection for nested keys
     // http://stackoverflow.com/questions/19965844/lodash-difference-between-extend-assign-and-merge
     var attrs = _.cloneDeep(this.attributes);
     _.merge(attrs, body);
-
-    // Apply schema
-    var schema = _.result(this, 'combinedSchema');
-    this.validateAttributes(attrs, schema);
 
     // Remove read only attributes
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
     this.removeAttributes(attrs, readOnlyAttributes);
 
     // Set new attributes
-    this.requestAttributes = _.cloneDeep(attrs);
     this.set(attrs);
 
     // At this point, we take a snapshot of the changed attributes
