@@ -287,6 +287,38 @@ describe('Model', function() {
     assert.deepEqual(testModel.changedFromRequest, {});
   });
 
+  it('#setFromRequest with empty object should work', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var body = {
+      object: {}
+    };
+
+    testModel.setFromRequest(body);
+
+    assert.deepEqual(testModel.get('object'), {});
+  });
+
+  it('#setFromRequest with empty array should work', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    var body = {
+      array_strings: []
+    };
+
+    testModel.setFromRequest(body);
+
+    assert.deepEqual(testModel.get('array_strings'), []);
+  });
+
   it('#render', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
