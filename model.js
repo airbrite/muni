@@ -190,13 +190,14 @@ module.exports = Backbone.Model.extend({
         return;
       }
 
+      // Allow the use of `null` to unset
+      if (_.isNull(val)) {
+        attrs[key] = null;
+        return;
+      }
+
       // Objects and Arrays
       if (_.isArray(schemaType)) {
-        if (_.isNull(val)) {
-          attrs[key] = [];
-          return;
-        }
-
         // Empty array is a loosely defined schema, no-op
         // That means allow anything inside
         // Ex: []
@@ -226,11 +227,6 @@ module.exports = Backbone.Model.extend({
         // Ex: ['string'] or ['integer']
         return this.validateAttributes(val, schemaType);
       } else if (_.isObject(schemaType)) {
-        if (_.isNull(val)) {
-          attrs[key] = {};
-          return;
-        }
-
         // Empty object is a loosely defined schema, no-op
         // That means allow anything inside
         // Ex: {}
@@ -252,18 +248,22 @@ module.exports = Backbone.Model.extend({
           isValid = _.isString(val);
           break;
         case 'integer':
+          // coerce value into integer
           attrs[key] = val = _.parseInt(val) || 0;
           isValid = _.isNumber(val) && !_.isNaN(val);
           break;
         case 'uinteger':
+          // coerce value into integer
           attrs[key] = val = _.parseInt(val) || 0;
           isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
           break;
         case 'float':
+          // coerce value into float
           attrs[key] = val = parseFloat(val) || 0;
           isValid = _.isNumber(val) && !_.isNaN(val);
           break;
         case 'ufloat':
+          // coerce value into float
           attrs[key] = val = parseFloat(val) || 0;
           isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
           break;
@@ -283,18 +283,17 @@ module.exports = Backbone.Model.extend({
           isValid = _.isDate(val);
           break;
         default:
+          isValid = false;
           break;
       }
 
+      // Invalid value for schema type
       // Array elements default to `null` if invalid
       // Other keys are deleted
       if (!isValid) {
-        // Allow the use of `null` to unset
-        if (_.isNull(val)) {
+        if (_.isArray(attrs)) {
           attrs[key] = null;
-        } else if (_.isArray(attrs)) {
-          attrs[key] = null;
-        } else if (_.isObject(attrs)) {
+        } else {
           delete attrs[key];
         }
       }

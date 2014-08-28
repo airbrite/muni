@@ -27,6 +27,19 @@ describe('Model', function() {
   // Set max timeout allowed
   this.timeout(10000);
 
+  it('should set defaults with null', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    // `i_am_null` is type `ufloat` except defaulted to `null
+    // It should still be set as `null`
+    // Because `null` is special and overrides type
+    assert.strictEqual(testModel.get('i_am_null'), null);
+  });
+
   it('#getDeep shallow', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
@@ -223,9 +236,9 @@ describe('Model', function() {
 
     assert.isNull(testModel.get('string'));
     assert.isNull(testModel.get('timestamp'));
-    assert.deepEqual(testModel.get('object'), {});
-    assert.strictEqual(testModel.get('integer'), 0);
-    assert.isFalse(testModel.get('boolean'));
+    assert.isNull(testModel.get('object'));
+    assert.isNull(testModel.get('integer'));
+    assert.isNull(testModel.get('boolean'));
   });
 
   it('#setFromRequest with omitted nested key should not unset the omitted key', function() {
@@ -356,7 +369,7 @@ describe('Model', function() {
           foo: 'i should also show up'
         },
         string: 'i should show up'
-      })
+      });
     });
 
     it('should set nested attribute of empty object', function() {
@@ -409,11 +422,11 @@ describe('Model', function() {
 
       assert.deepEqual(attrs, {
         string: null,
-        integer: 0,
+        integer: null,
         timestamp: null,
-        object: {},
-        array_strings: [],
-        boolean: false
+        object: null,
+        array_strings: null,
+        boolean: null
       });
     });
 
