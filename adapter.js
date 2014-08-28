@@ -115,34 +115,30 @@ module.exports = Backbone.Model.extend({
       this.LAST_RESPONSE = response;
       this.LAST_BODY = body;
 
+      // Usually a connection error (server unresponsive)
       if (error) {
         var message = error.message ||
           response.meta &&
           response.meta.error_message;
         console.warn('Request error: %s', message);
 
-        if (callback) {
-          callback(error);
-        }
-
+        callback && callback(error);
         return deferred.reject(error);
-      } else if (response.statusCode >= 400) {
+      }
+
+      // Usually an intentional error from the server
+      if (response.statusCode >= 400) {
         error = new Error(this.extractError(body));
         error.code = response.statusCode;
         console.warn('Request failed with code: %d and message: %s',
           error.code, error.message);
 
-        if (callback) {
-          callback(error);
-        }
-
+        callback && callback(error);
         return deferred.reject(error);
       }
 
-      if (callback) {
-        callback(null, body);
-      }
-
+      // Success
+      callback && callback(null, body);
       return deferred.resolve(body);
     }.bind(this));
 
