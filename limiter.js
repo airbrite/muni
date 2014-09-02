@@ -48,6 +48,7 @@ function middleware(req, res, next) {
   var ip = req.ip;
   var type = typeForIp(ip);
   var client = clients[ip] ? clients[ip] : (clients[ip] = new Client(ip, type));
+  var bypass = req.get('X-Rate-Limit-Bypass') ? true : false;
 
   console.info('Limiter: %s', JSON.stringify(client));
 
@@ -60,7 +61,7 @@ function middleware(req, res, next) {
     'X-Rate-Limit-Reset':  client.resets
   });
 
-  if (options.reject && client.used >= client.limit) {
+  if (!bypass && options.reject && client.used >= client.limit) {
     return rejected(req, res, next);
   }
 
