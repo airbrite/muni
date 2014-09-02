@@ -97,6 +97,8 @@ module.exports = Backbone.Model.extend({
       resp = resp[0];
     }
 
+    resp = _.defaultsDeep({}, resp, _.result(this, 'combinedDefaults'));
+
     return resp;
   },
 
