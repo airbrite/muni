@@ -363,7 +363,10 @@ module.exports = Backbone.Model.extend({
 
 
   // Used to set attributes from a request body
+  // Assume `this.attributes` is populated with existing data
   setFromRequest: Promise.method(function(body) {
+    body = _.defaultsDeep(body, this.attributes);
+
     // Remove read only attributes
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
     this.removeAttributes(body, readOnlyAttributes);

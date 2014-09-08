@@ -98,7 +98,10 @@ describe("Mixins", function() {
         foo: 'bar'
       }, {
         hello: 'moto'
-      }]
+      }],
+      object: {
+        array: [1, 2, 3]
+      }
     };
 
     _.defaultsDeep(obj, {
@@ -113,7 +116,10 @@ describe("Mixins", function() {
         noob: 'tube'
       }, {
         hello: 'android'
-      }]
+      }],
+      object: {
+        array: [3, 4, 5]
+      }
     });
 
     assert.deepEqual(obj, {
@@ -126,11 +132,13 @@ describe("Mixins", function() {
         wtf: 'doge'
       },
       array: [{
-        foo: 'bar',
-        noob: 'tube'
+        foo: 'bar'
       }, {
         hello: 'moto'
-      }]
+      }],
+      object: {
+        array: [1, 2, 3]
+      }
     });
   });
 });

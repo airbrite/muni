@@ -15,6 +15,10 @@ _.mixin({
   uuid: uuid.v4,
 
   defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
+    // If non-empty array, do not deep merge
+    if (_.isArray(value) && !_.isEmpty(value)) {
+      return value;
+    }
     return _.merge(value, other, deep);
   }),
 
