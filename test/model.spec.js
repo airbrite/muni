@@ -152,7 +152,6 @@ describe('Model', function() {
     assert.deepEqual(testModel.changedFromRequest, {
       string: 'i changed',
       object: {
-        foo: 'bar',
         omg: {
           wtf: 'lol'
         }
@@ -210,7 +209,6 @@ describe('Model', function() {
     testModel.setFromRequest(body);
 
     assert.deepEqual(testModel.attributes.object, {
-      foo: 'bar',
       omg: {}
     });
     assert.strictEqual(testModel.attributes.integer, 9876);
@@ -241,7 +239,9 @@ describe('Model', function() {
     assert.isNull(testModel.get('boolean'));
   });
 
-  it('#setFromRequest with omitted nested key should not unset the omitted key', function() {
+  // this is no longer the case
+  // we don't do `deep` extends anymore
+  it.skip('#setFromRequest with omitted nested key should not unset the omitted key', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
       schema: helpers.requireFixture('schema')
@@ -266,7 +266,8 @@ describe('Model', function() {
     });
   });
 
-  it('#setFromRequest with omitted nested key should not trigger change', function() {
+  // see test above
+  it.skip('#setFromRequest with omitted nested key should not trigger change', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
       schema: helpers.requireFixture('schema')
