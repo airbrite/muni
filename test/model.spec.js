@@ -27,6 +27,22 @@ describe('Model', function() {
   // Set max timeout allowed
   this.timeout(10000);
 
+  it('should set an empty array', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema')
+    });
+    var testModel = new TestModel();
+
+    return testModel.setFromRequest({
+      array_strings: []
+    }).then(function() {
+      assert.deepEqual(testModel.get('array_strings'), []);
+    });
+  });
+
+  // return;
+
   it('should set defaults with null', function() {
     var TestModel = Model.extend({
       defaults: helpers.requireFixture('defaults'),
@@ -152,6 +168,7 @@ describe('Model', function() {
     assert.deepEqual(testModel.changedFromRequest, {
       string: 'i changed',
       object: {
+        foo: 'bar',
         omg: {
           wtf: 'lol'
         }
@@ -209,6 +226,7 @@ describe('Model', function() {
     testModel.setFromRequest(body);
 
     assert.deepEqual(testModel.attributes.object, {
+      foo: 'bar',
       omg: {}
     });
     assert.strictEqual(testModel.attributes.integer, 9876);

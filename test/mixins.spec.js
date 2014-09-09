@@ -132,6 +132,62 @@ describe("Mixins", function() {
         wtf: 'doge'
       },
       array: [{
+        foo: 'bar',
+        noob: 'tube'
+      }, {
+        hello: 'moto'
+      }],
+      object: {
+        array: [1, 2, 3]
+      }
+    });
+  });
+
+  it('#mergeSafe', function() {
+    var obj = {
+      foo: {
+        bar: {
+          baz: false
+        }
+      },
+      array: [{
+        foo: 'bar'
+      }, {
+        hello: 'moto'
+      }],
+      object: {
+        array: [1, 2, 3]
+      }
+    };
+
+    _.mergeSafe(obj, {
+      omg: 'troll',
+      foo: {
+        bar: {
+          lol: true
+        },
+        wtf: 'doge'
+      },
+      array: [{
+        noob: 'tube'
+      }, {
+        hello: 'android'
+      }],
+      object: {
+        array: [3, 4, 5]
+      }
+    });
+
+    assert.deepEqual(obj, {
+      omg: 'troll',
+      foo: {
+        bar: {
+          baz: false,
+          lol: true
+        },
+        wtf: 'doge'
+      },
+      array: [{
         foo: 'bar'
       }, {
         hello: 'moto'

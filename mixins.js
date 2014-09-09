@@ -15,8 +15,18 @@ _.mixin({
   uuid: uuid.v4,
 
   defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
-    // If non-empty array, do not deep merge
-    if (_.isArray(value) && !_.isEmpty(value)) {
+    return _.merge(value, other, deep);
+  }),
+
+  // Do not merge arrays and empty objects
+  // Arrays always want to be overwritten explicitly (empty or not)
+  // Objects want to be overwritten explicitly when empty
+  mergeSafe: _.partialRight(_.merge, function deep(value, other) {
+    if (_.isArray(value)) {
+      // If array, do not deep merge
+      return value;
+    } else if (_.isObject(value) && _.isEmpty(value)) {
+      // If empty object, do not merge
       return value;
     }
     return _.merge(value, other, deep);
