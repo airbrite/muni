@@ -329,6 +329,17 @@ module.exports = Backbone.Model.extend({
     limit = _.parseInt(limit) || 0;
     limit = Math.min(limit, this.limit); // Hard limit at 100
 
+    var page = _.parseInt(req.query.page);
+    if (page > 0) {
+      // IMPORTANT! `page` starts at 1
+      // if `page` is specified, we override `skip`
+      // calculate skip based on page and limit
+      // lets assume limit is 100
+      // page 1 is skip 0
+      // page 2 is skip 100
+      // etc...
+      skip = (page - 1) * limit;
+    }
 
     // Date Range params
     var createdQuery = this.buildTimestampQuery(created);
