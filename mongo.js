@@ -255,11 +255,11 @@ _.extend(Mongo.prototype, {
       var skip = options.skip || 0;
 
       var obj = {
-        total: parseInt(total),
-        count: parseInt(page),
-        limit: parseInt(limit),
-        offset: parseInt(skip),
-        has_more: parseInt(page) < parseInt(total)
+        total: _.parseInt(total),
+        count: _.parseInt(page),
+        limit: _.parseInt(limit),
+        offset: _.parseInt(skip),
+        has_more: _.parseInt(page) < _.parseInt(total)
       };
 
       callback && callback(null, obj);

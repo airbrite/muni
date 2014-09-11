@@ -187,7 +187,7 @@ module.exports = Backbone.Model.extend({
     return val;
   },
 
-  // TODO set and setDeep
+  // TODO setDeep
 
   // Note: Mutates attrs
   // Verifies that all attr keys are defined in the schema

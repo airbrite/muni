@@ -129,11 +129,13 @@ module.exports = Controller.extend({
 
     return collection.fetch(options).tap(function() {
       res.paging = {
-        total: parseInt(collection.total),
-        count: parseInt(collection.models.length),
-        limit: parseInt(options.limit),
-        offset: parseInt(options.skip),
-        has_more: parseInt(collection.models.length) < parseInt(collection.total)
+        total: _.parseInt(collection.total),
+        count: _.parseInt(collection.models.length),
+        limit: _.parseInt(options.limit),
+        offset: _.parseInt(options.skip),
+        page: Math.ceil(_.parseInt(options.skip) / _.parseInt(options.limit)) + 1,
+        pages: Math.ceil(_.parseInt(collection.total) / _.parseInt(options.limit)),
+        has_more: _.parseInt(collection.models.length) < _.parseInt(collection.total)
       };
     }).bind(this).then(this.render(req, res, next)).catch(next);
   },
