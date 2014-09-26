@@ -51,49 +51,70 @@ module.exports = Controller.extend({
           // Create
           this.routes.get[basePath + '/count'] = {
             action: this.count,
-            middleware: this.getRouteMiddleware('count')
+            middleware: this.getRouteOption('count', 'middleware'),
+            allowedParams: this.getRouteOption('count', 'allowedParams'),
+            requiredParams: this.getRouteOption('count', 'requiredParams'),
+            disallowedParams: this.getRouteOption('count', 'disallowedParams')
           };
           break;
         case 'C':
           // Create
           this.routes.post[basePath] = {
             action: this.create,
-            middleware: this.getRouteMiddleware('create')
+            middleware: this.getRouteOption('create', 'middleware'),
+            allowedParams: this.getRouteOption('create', 'allowedParams'),
+            requiredParams: this.getRouteOption('create', 'requiredParams'),
+            disallowedParams: this.getRouteOption('create', 'disallowedParams')
           };
           break;
         case 'R':
           // Find
           this.routes.get[basePath + '.:format?'] = {
             action: this.find,
-            middleware: this.getRouteMiddleware('find')
+            middleware: this.getRouteOption('find', 'middleware'),
+            allowedParams: this.getRouteOption('find', 'allowedParams'),
+            requiredParams: this.getRouteOption('find', 'requiredParams'),
+            disallowedParams: this.getRouteOption('find', 'disallowedParams')
           };
           break;
         case 'O':
           // FindOne
           this.routes.get[basePath + '/:id.:format?'] = {
             action: this.findOne,
-            middleware: this.getRouteMiddleware('findOne')
+            middleware: this.getRouteOption('findOne', 'middleware'),
+            allowedParams: this.getRouteOption('findOne', 'allowedParams'),
+            requiredParams: this.getRouteOption('findOne', 'requiredParams'),
+            disallowedParams: this.getRouteOption('findOne', 'disallowedParams')
           };
           break;
         case 'U':
           // Update
           this.routes.put[basePath + '/:id'] = {
             action: this.update,
-            middleware: this.getRouteMiddleware('update')
+            middleware: this.getRouteOption('update', 'middleware'),
+            allowedParams: this.getRouteOption('update', 'allowedParams'),
+            requiredParams: this.getRouteOption('update', 'requiredParams'),
+            disallowedParams: this.getRouteOption('update', 'disallowedParams')
           };
           break;
         case 'P':
           // Patch
           this.routes.patch[basePath + '/:id'] = {
             action: this.update,
-            middleware: this.getRouteMiddleware('update')
+            middleware: this.getRouteOption('update', 'middleware'),
+            allowedParams: this.getRouteOption('update', 'allowedParams'),
+            requiredParams: this.getRouteOption('update', 'requiredParams'),
+            disallowedParams: this.getRouteOption('update', 'disallowedParams')
           };
           break;
         case 'D':
           // Destroy
           this.routes.delete[basePath + '/:id'] = {
             action: this.destroy,
-            middleware: this.getRouteMiddleware('destroy')
+            middleware: this.getRouteOption('destroy', 'middleware'),
+            allowedParams: this.getRouteOption('destroy', 'allowedParams'),
+            requiredParams: this.getRouteOption('destroy', 'requiredParams'),
+            disallowedParams: this.getRouteOption('destroy', 'disallowedParams')
           };
           break;
         default:

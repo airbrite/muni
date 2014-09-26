@@ -201,10 +201,10 @@ module.exports = Backbone.Model.extend({
     if (this.debug) {
       if (code >= 500) {
         if (err && err.stack) {
-          console.error('Error: %s', JSON.stringify(err.stack));
+          console.error('Request Error: %j', err.stack, {});
         }
       } else {
-        console.error('Error (%d): %s'.error, code, err.message);
+        console.error('Request Error (%d): %s', code, err.message);
       }
     }
 
@@ -272,12 +272,12 @@ module.exports = Backbone.Model.extend({
   // Helpers
   // ---
 
-  // Gets any route middleware that may have been defined
-  getRouteMiddleware: function(action) {
-    // Find route middleware definitions
-    var middleware = _.result(this, 'middleware');
-    if (_.has(middleware, action)) {
-      return middleware[action];
+  // Gets any route options that may have been defined
+  getRouteOption: function(action, option) {
+    // Find route option definitions
+    var routeOption = _.result(this, option);
+    if (_.has(routeOption, action)) {
+      return routeOption[action];
     } else {
       return [];
     }
