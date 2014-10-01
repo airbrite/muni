@@ -277,7 +277,13 @@ module.exports = Backbone.Model.extend({
     // Find route option definitions
     var routeOption = _.result(this, option);
     if (_.has(routeOption, action)) {
-      return routeOption[action];
+      var array = routeOption[action];
+      if (option === 'allowedParams') {
+        array = _.union(array, _.keys(_.result(this, 'queryParams')));
+      } else if (option === 'disallowedParams') {
+        array = _.without(array, _.keys(_.result(this, 'queryParams')));
+      }
+      return array;
     } else {
       return [];
     }
