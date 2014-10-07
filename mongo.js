@@ -22,7 +22,7 @@ var Mongo = module.exports = function(url, options) {
   // http://blog.mongolab.com/2014/04/mongodb-driver-mongoose/
   _.defaults(options, {
     auto_reconnect: true,
-    poolSize: 10,
+    poolSize: 5, // default is 5
     connectTimeoutMS: 30000,
     socketTimeoutMS: 30000
 
@@ -85,12 +85,20 @@ _.extend(Mongo.prototype, {
     return MongoClient.connectAsync(
       this.url
     ).bind(this).then(function(db) {
+      if (this.db) {
+        db.close();
+        callback && callback(null, this.db);
+        return this.db;
+      }
+
       this.db = db;
       this.emit('connect', this.url, options.collection);
+      // console.log('Connected to MongoDB with URL: %s', this.url)
       callback && callback(null, this.db);
       return this.db;
     }).catch(function(err) {
       this.emit('error', err);
+      // console.error('Error: %s connecting to MongoDB with URL: %s', err.message, this.url)
       callback && callback(err);
       throw err;
     });
