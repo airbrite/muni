@@ -25,7 +25,7 @@ module.exports = Backbone.Model.extend({
       caches: {},
 
       // Automatically connect when setting up mongodb
-      autoconnect: true,
+      prime: true,
 
       silent: false
     };
@@ -85,8 +85,8 @@ module.exports = Backbone.Model.extend({
     }.bind(this));
   },
 
-  setupMongo: function(name, url) {
-    this.mongodbs[name] = new Mongo(url);
+  setupMongo: function(name, mongo) {
+    this.mongodbs[name] = new Mongo(mongo.url, mongo.options);
 
     // Events
     this.mongodbs[name].on('connect', function(url) {
@@ -104,7 +104,7 @@ module.exports = Backbone.Model.extend({
     }.bind(this));
 
     // Connect
-    if (this.get('autoconnect')) {
+    if (this.get('prime')) {
       this.mongodbs[name].connect();
     }
   }

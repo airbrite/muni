@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
+var querystring = require('querystring');
 var Promise = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var mongodb = require('mongodb');
@@ -15,32 +16,44 @@ Promise.promisifyAll(MongoClient);
 
 // options are used for mongodb connection options
 var Mongo = module.exports = function(url, options) {
-  this.options = options || {};
+  options = options || {};
 
   // MongoLab recommended settings
   // http://blog.mongolab.com/2014/04/mongodb-driver-mongoose/
   _.defaults(options, {
-    server: {
-      auto_reconnect: true,
-      socketOptions: {
-        keepAlive: 1,
-        connectTimeoutMS: 30000,
-        socketTimeoutMS: 30000
-      }
-    },
-    replset: {
-      socketOptions: {
-        keepAlive: 1,
-        connectTimeoutMS: 30000,
-        socketTimeoutMS: 30000
-      }
-    }
+    auto_reconnect: true,
+    poolSize: 10,
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 30000
+
+    // NOTE 2014-10-07
+    // For some reason, the mongo driver refuses to read these options
+    // So I'm resorting to using the url string options
+    //
+    // server: {
+    //   auto_reconnect: true,
+    //   socketOptions: {
+    //     keepAlive: 1,
+    //     connectTimeoutMS: 30000,
+    //     socketTimeoutMS: 30000
+    //   }
+    // },
+    // replset: {
+    //   socketOptions: {
+    //     keepAlive: 1,
+    //     connectTimeoutMS: 30000,
+    //     socketTimeoutMS: 30000
+    //   }
+    // }
   });
+
+  this.queryOptions = querystring.stringify(options);
 
   // Public properties for direct access allowed
   // Reuseable connection pool, only connect once
   this.db;
   this.url = url || 'mongodb://localhost:27017/test';
+  this.url = this.url + '?' + this.queryOptions;
 };
 
 Mongo.mongodb = mongodb;
@@ -70,8 +83,7 @@ _.extend(Mongo.prototype, {
 
     // Open a reuseable connection
     return MongoClient.connectAsync(
-      this.url,
-      this.options
+      this.url
     ).bind(this).then(function(db) {
       this.db = db;
       this.emit('connect', this.url, options.collection);
