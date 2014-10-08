@@ -34,10 +34,6 @@ Bootie.limiter = require('./limiter');
 // [Annotated Source](mongo.html)
 Bootie.Mongo = require('./mongo');
 
-// Database manager
-// [Annotated Source](database.html)
-Bootie.Database = require('./database');
-
 // Router
 // [Annotated Source](router.html)
 Bootie.Router = require('./router');
