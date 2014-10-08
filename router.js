@@ -47,25 +47,18 @@ module.exports = function(options) {
               return;
             }
 
-            var disallowedParams = routeOptions.disallowedParams || [];
-            var requiredParams = routeOptions.requiredParams || [];
-            var allowedParams = routeOptions.allowedParams || [];
-
             // Hook up the route/path/method to the controller action/middleware
             var pre = _.invoke(controller.pre, 'bind', controller) || [];
             var before = _.invoke(controller.before, 'bind', controller) || [];
             var after = _.invoke(controller.after, 'bind', controller) || [];
             var fn = function(req, res, next) {
-              // Omit disallowed params in body and query
-              if (disallowedParams.length) {
-                req.body = _.omit(req.body, disallowedParams);
-                req.query = _.omit(req.query, disallowedParams);
-              }
+              var requiredParams = routeOptions.requiredParams || [];
+              var ignoredParams = routeOptions.ignoredParams || [];
 
-              // Pick allowed params in body and query
-              if (allowedParams.length) {
-                req.body = _.pick(req.body, allowedParams);
-                req.query = _.pick(req.query, allowedParams);
+              // Omit disallowed params in body and query
+              if (ignoredParams.length) {
+                req.body = _.omit(req.body, ignoredParams);
+                req.query = _.omit(req.query, ignoredParams);
               }
 
               // Reject request if required params are not present

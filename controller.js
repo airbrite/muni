@@ -272,23 +272,6 @@ module.exports = Backbone.Model.extend({
   // Helpers
   // ---
 
-  // Gets any route options that may have been defined
-  getRouteOption: function(action, option) {
-    // Find route option definitions
-    var routeOption = _.result(this, option);
-    if (_.has(routeOption, action)) {
-      var array = routeOption[action];
-      if (option === 'allowedParams') {
-        array = _.union(array, _.keys(_.result(this, 'queryParams')));
-      } else if (option === 'disallowedParams') {
-        array = _.without(array, _.keys(_.result(this, 'queryParams')));
-      }
-      return array;
-    } else {
-      return [];
-    }
-  },
-
   // For `created` and `updated` date range query string
   buildTimestampQuery: function(query) {
     var result = {};
