@@ -116,14 +116,20 @@ module.exports = Controller.extend({
     _.merge(options, this.parseQueryString(req));
 
     return collection.fetch(options).tap(function() {
+      var total = _.parseInt(collection.total);
+      var page = Math.ceil(_.parseInt(options.skip) / _.parseInt(options.limit)) + 1;
+      var pages = Math.ceil(_.parseInt(collection.total) / _.parseInt(options.limit));
+      var limit = _.parseInt(options.limit) || 0;
+      var skip = _.parseInt(options.skip) || 0;
+
       res.paging = {
-        total: _.parseInt(collection.total),
-        count: _.parseInt(collection.models.length),
-        limit: _.parseInt(options.limit),
-        offset: _.parseInt(options.skip),
-        page: Math.ceil(_.parseInt(options.skip) / _.parseInt(options.limit)) + 1,
-        pages: Math.ceil(_.parseInt(collection.total) / _.parseInt(options.limit)),
-        has_more: _.parseInt(collection.models.length) < _.parseInt(collection.total)
+        total: total,
+        count: page,
+        limit: limit,
+        offset: skip,
+        page: page,
+        pages: pages,
+        has_more: page < pages
       };
     }).bind(this).then(this.render(req, res, next)).catch(next);
   },
