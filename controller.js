@@ -358,6 +358,11 @@ module.exports = Backbone.Model.extend({
         return;
       }
 
+      // Make sure val is a string (should usually be from express)
+      if (!_.isString(val)) {
+        val = val.toString();
+      }
+
       // Support `,` as `$or` for each param
       var vals = val.split(',');
 
