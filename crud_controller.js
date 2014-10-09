@@ -35,12 +35,7 @@ module.exports = Controller.extend({
   },
 
   // Sets up default CRUD routes
-  // Adds `requireUser` middleware to all routes
-  // Adds `requireJSON` middleware for post/put routes
   setupRoutes: function() {
-    // Make sure to call `super` as a best practice when overriding
-    Controller.prototype.setupRoutes.call(this);
-
     // Get the base url path
     var basePath = _.result(this, 'basePath');
 
@@ -48,73 +43,45 @@ module.exports = Controller.extend({
     _.each(this.crud, function(action) {
       switch (action) {
         case 'T':
-          // Create
+          // Count
           this.routes.get[basePath + '/count'] = {
-            action: this.count,
-            middleware: this.getRouteOption('count', 'middleware'),
-            allowedParams: this.getRouteOption('count', 'allowedParams'),
-            requiredParams: this.getRouteOption('count', 'requiredParams'),
-            disallowedParams: this.getRouteOption('count', 'disallowedParams')
+            action: this.count
           };
           break;
         case 'C':
           // Create
           this.routes.post[basePath] = {
-            action: this.create,
-            middleware: this.getRouteOption('create', 'middleware'),
-            allowedParams: this.getRouteOption('create', 'allowedParams'),
-            requiredParams: this.getRouteOption('create', 'requiredParams'),
-            disallowedParams: this.getRouteOption('create', 'disallowedParams')
+            action: this.create
           };
           break;
         case 'R':
           // Find
           this.routes.get[basePath + '.:format?'] = {
-            action: this.find,
-            middleware: this.getRouteOption('find', 'middleware'),
-            allowedParams: this.getRouteOption('find', 'allowedParams'),
-            requiredParams: this.getRouteOption('find', 'requiredParams'),
-            disallowedParams: this.getRouteOption('find', 'disallowedParams')
+            action: this.find
           };
           break;
         case 'O':
           // FindOne
           this.routes.get[basePath + '/:id.:format?'] = {
-            action: this.findOne,
-            middleware: this.getRouteOption('findOne', 'middleware'),
-            allowedParams: this.getRouteOption('findOne', 'allowedParams'),
-            requiredParams: this.getRouteOption('findOne', 'requiredParams'),
-            disallowedParams: this.getRouteOption('findOne', 'disallowedParams')
+            action: this.findOne
           };
           break;
         case 'U':
           // Update
           this.routes.put[basePath + '/:id'] = {
-            action: this.update,
-            middleware: this.getRouteOption('update', 'middleware'),
-            allowedParams: this.getRouteOption('update', 'allowedParams'),
-            requiredParams: this.getRouteOption('update', 'requiredParams'),
-            disallowedParams: this.getRouteOption('update', 'disallowedParams')
+            action: this.update
           };
           break;
         case 'P':
           // Patch
           this.routes.patch[basePath + '/:id'] = {
-            action: this.update,
-            middleware: this.getRouteOption('update', 'middleware'),
-            allowedParams: this.getRouteOption('update', 'allowedParams'),
-            requiredParams: this.getRouteOption('update', 'requiredParams'),
-            disallowedParams: this.getRouteOption('update', 'disallowedParams')
+            action: this.update
           };
           break;
         case 'D':
           // Destroy
           this.routes.delete[basePath + '/:id'] = {
-            action: this.destroy,
-            middleware: this.getRouteOption('destroy', 'middleware'),
-            allowedParams: this.getRouteOption('destroy', 'allowedParams'),
-            requiredParams: this.getRouteOption('destroy', 'requiredParams'),
-            disallowedParams: this.getRouteOption('destroy', 'disallowedParams')
+            action: this.destroy
           };
           break;
         default:
@@ -149,14 +116,20 @@ module.exports = Controller.extend({
     _.merge(options, this.parseQueryString(req));
 
     return collection.fetch(options).tap(function() {
+      var total = _.parseInt(collection.total);
+      var page = Math.ceil(_.parseInt(options.skip) / _.parseInt(options.limit)) + 1;
+      var pages = Math.ceil(_.parseInt(collection.total) / _.parseInt(options.limit));
+      var limit = _.parseInt(options.limit) || 0;
+      var skip = _.parseInt(options.skip) || 0;
+
       res.paging = {
-        total: _.parseInt(collection.total),
-        count: _.parseInt(collection.models.length),
-        limit: _.parseInt(options.limit),
-        offset: _.parseInt(options.skip),
-        page: Math.ceil(_.parseInt(options.skip) / _.parseInt(options.limit)) + 1,
-        pages: Math.ceil(_.parseInt(collection.total) / _.parseInt(options.limit)),
-        has_more: _.parseInt(collection.models.length) < _.parseInt(collection.total)
+        total: total,
+        count: page,
+        limit: limit,
+        offset: skip,
+        page: page,
+        pages: pages,
+        has_more: page < pages
       };
     }).bind(this).then(this.render(req, res, next)).catch(next);
   },

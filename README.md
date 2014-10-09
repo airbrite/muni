@@ -1,7 +1,5 @@
 # Bootie
 
-Bootie Bootie Bootie Bootie Bootie Everywhere!
-
 #### The components of Bootie are as follows:
 
 - Controller
@@ -240,12 +238,6 @@ See the [Backbone.js documentation](http://backbonejs.org) for more information 
 ### Prototype functions:
 
 None
-
----
-
-## Database Manager
-
-`database.js`
 
 ---
 
