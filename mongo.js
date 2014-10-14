@@ -24,7 +24,7 @@ var Mongo = module.exports = function(url, options) {
     auto_reconnect: true,
     poolSize: 5, // default is 5
     connectTimeoutMS: 30000,
-    socketTimeoutMS: 30000
+    socketTimeoutMS: 300000
 
     // NOTE 2014-10-07
     // For some reason, the mongo driver refuses to read these options
@@ -64,6 +64,8 @@ Mongo.mongodb = mongodb;
 Mongo.prototype = Object.create(EventEmitter.prototype);
 
 _.extend(Mongo.prototype, {
+  debug: false,
+
   // Connection
   // ---
 
@@ -227,7 +229,9 @@ _.extend(Mongo.prototype, {
       'hint',
       'explain',
       'timeout',
-      'snapshot'
+      'snapshot',
+      'batchSize',
+      'maxTimeMS'
     ]);
 
     return this.collection(collectionName).then(function(collection) {
@@ -299,6 +303,10 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
+    if (this.debug) {
+      console.info('#count: %j', query, {});
+    }
+
     return this._cursor(collectionName, query, options).then(function(cursor) {
       return cursor.countAsync();
     }).then(function(count) {
@@ -321,6 +329,10 @@ _.extend(Mongo.prototype, {
 
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
+
+    if (this.debug) {
+      console.info('#find: %j with options: %j', query, options, {});
+    }
 
     return this._cursor(
       collectionName,
@@ -355,6 +367,10 @@ _.extend(Mongo.prototype, {
 
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
+
+    if (this.debug) {
+      console.info('#findOne: %j', query, {});
+    }
 
     // If require is true, throw an error if no document is found
     var require = false;
@@ -432,6 +448,10 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
+    if (this.debug) {
+      console.info('#update: %j', query, {});
+    }
+
     // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
@@ -478,6 +498,10 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
+    if (this.debug) {
+      console.info('#findAndModify: %j', query, {});
+    }
+
     // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
@@ -512,6 +536,10 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
+    if (this.debug) {
+      console.info('#remove: %j', query, {});
+    }
+
     return this.collection(collectionName).then(function(collection) {
       return collection.removeAsync(query, options);
     }).then(function(result) {
@@ -535,6 +563,10 @@ _.extend(Mongo.prototype, {
 
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
+
+    if (this.debug) {
+      console.info('#aggregate: %j', query, {});
+    }
 
     return this.collection(collectionName).bind(this).then(function(collection) {
       return collection.aggregateAsync(query, options);
