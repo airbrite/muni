@@ -356,6 +356,9 @@ module.exports = Backbone.Model.extend({
         fields[field] = 1;
       });
     }
+    if (_.isObject(options.fields)) {
+      _.extend(fields, options.fields);
+    }
 
     // Filter params
     var queryParams = _.extend(_.result(this, 'queryParams'), {
