@@ -117,6 +117,7 @@ module.exports = Controller.extend({
 
     return collection.fetch(options).tap(function() {
       var total = _.parseInt(collection.total);
+      var count = _.parseInt(collection.length);
       var page = Math.ceil(_.parseInt(options.skip) / _.parseInt(options.limit)) + 1;
       var pages = Math.ceil(_.parseInt(collection.total) / _.parseInt(options.limit));
       var limit = _.parseInt(options.limit) || 0;
@@ -124,7 +125,7 @@ module.exports = Controller.extend({
 
       res.paging = {
         total: total,
-        count: page,
+        count: count,
         limit: limit,
         offset: skip,
         page: page,

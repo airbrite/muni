@@ -9,9 +9,9 @@ var assert = require('chai').assert;
 var sinon = require('sinon');
 var Promise = require('bluebird');
 var sinonAsPromised = require('sinon-as-promised')(Promise);
-var Model = require('../model');
+var Model = require('../../model');
 
-require('../mixins');
+require('../../mixins');
 
 // Eyes
 console.inspect = require('eyes').inspector({
@@ -21,7 +21,7 @@ console.inspect = require('eyes').inspector({
 });
 
 // Test helpers
-var helpers = require('./helpers');
+var helpers = require('../helpers');
 
 describe('Model', function() {
   // Set max timeout allowed

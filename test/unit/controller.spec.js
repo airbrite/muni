@@ -10,10 +10,10 @@ var sinon = require('sinon');
 var Promise = require('bluebird');
 var sinonAsPromised = require('sinon-as-promised')(Promise);
 
-var Model = require('../model');
-var Controller = require('../controller');
+var Model = require('../../model');
+var Controller = require('../../controller');
 
-require('../mixins');
+require('../../mixins');
 
 // Eyes
 console.inspect = require('eyes').inspector({
@@ -23,7 +23,7 @@ console.inspect = require('eyes').inspector({
 });
 
 // Test helpers
-var helpers = require('./helpers');
+var helpers = require('../helpers');
 
 describe('Controller', function() {
   // Set max timeout allowed
@@ -48,7 +48,10 @@ describe('Controller', function() {
         limit: 100,
         query: {},
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -64,7 +67,10 @@ describe('Controller', function() {
         limit: 2,
         query: {},
         skip: 3,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -80,7 +86,10 @@ describe('Controller', function() {
         limit: 100,
         query: {},
         skip: 0,
-        sort: [['updated', 'asc']]
+        sort: [
+          ['updated', 'asc']
+        ],
+        fields: {}
       });
     });
 
@@ -103,7 +112,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -126,7 +138,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -149,7 +164,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -172,7 +190,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -195,7 +216,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -220,7 +244,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -250,7 +277,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -280,7 +310,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -308,7 +341,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -333,7 +369,10 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
@@ -358,13 +397,82 @@ describe('Controller', function() {
           }]
         },
         skip: 0,
-        sort: [['created', 'desc']]
+        sort: [
+          ['created', 'desc']
+        ],
+        fields: {}
       });
     });
 
+    it('should #parseQueryString with optional options object', function() {
+      controller.queryParams = function() {
+        return {
+          foo: 'float'
+        };
+      };
+
+      var qo = controller.parseQueryString(req, {
+        queryParams: {
+          foo: 'integer'
+        },
+        limit: 2,
+        skip: 3,
+        sort: [
+          ['updated', 'asc']
+        ],
+        fields: {
+          foo: 1,
+          bar: 1
+        }
+      });
+
+      assert.deepEqual(qo, {
+        fields: {
+          foo: 1,
+          bar: 1
+        },
+        limit: 2,
+        query: {},
+        skip: 3,
+        sort: [
+          [
+            'created',
+            'desc'
+          ]
+        ]
+      });
+    });
+
+    it('should parse fields', function() {
+      req.query = {
+        fields: 'foo,bar'
+      };
+
+      var qo = controller.parseQueryString(req, {
+        fields: {
+          foo: 1,
+          bar: 1
+        }
+      });
+
+      assert.deepEqual(qo, {
+        fields: {
+          bar: 1,
+          foo: 1
+        },
+        limit: 100,
+        query: {},
+        skip: 0,
+        sort: [
+          [
+            'created',
+            'desc'
+          ]
+        ]
+      });
+
+    });
 
   });
-
-
 
 });
