@@ -10,10 +10,10 @@ var sinon = require('sinon');
 var Promise = require('bluebird');
 var sinonAsPromised = require('sinon-as-promised')(Promise);
 
-var Model = require('../model');
-var Controller = require('../controller');
+var Model = require('../../model');
+var Controller = require('../../controller');
 
-require('../mixins');
+require('../../mixins');
 
 // Eyes
 console.inspect = require('eyes').inspector({
@@ -23,7 +23,7 @@ console.inspect = require('eyes').inspector({
 });
 
 // Test helpers
-var helpers = require('./helpers');
+var helpers = require('../helpers');
 
 describe('Controller', function() {
   // Set max timeout allowed

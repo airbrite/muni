@@ -9,10 +9,10 @@ var assert = require('chai').assert;
 var sinon = require('sinon');
 var Promise = require('bluebird');
 var sinonAsPromised = require('sinon-as-promised')(Promise);
-var Mongo = require('../mongo');
+var Mongo = require('../../mongo');
 
 // Test helpers
-var helpers = require('./helpers');
+var helpers = require('../helpers');
 
 describe('Mongo', function() {
   // Set max timeout allowed

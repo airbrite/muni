@@ -4,7 +4,9 @@
   "description": "Bootie",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -R spec test"
+    "test": "npm run test-unit && npm run test-integration",
+    "test-unit": "mocha test/unit/ -R spec --recursive",
+    "test-integration": "mocha test/integration/ -R spec --recursive"
   },
   "homepage": "https://github.com/airbrite/bootie",
   "repository": {
