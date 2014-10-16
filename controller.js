@@ -302,18 +302,23 @@ module.exports = Backbone.Model.extend({
 
   // Parses req.query (querystring) for since/until, sort/order, skip/limit
   // Also builds a query using allowed queryParams if applicable
-  parseQueryString: function(req) {
+  parseQueryString: function(req, options) {
     var query = {};
     var queries = [];
-    var options = {};
+    options = options || {};
+
+    // Need to make sure these are strings, they get parsed to int later
+    options.skip = options.skip ? options.skip.toString() : options.skip;
+    options.limit = options.limit ? options.limit.toString() : options.limit;
 
     // Reserved Params
+    var fields = {};
     var created = req.query.created || {}; // accepts both s and ms
     var updated = req.query.updated || {}; // accepts both s and ms
-    var sortBy = req.query.sort || this.sortParam; // validate sortableParams
-    var orderBy = req.query.order || this.sortOrder; // validate [asc, desc] or [1, -1]
-    var skip = req.query.skip || req.query.offset || this.skip;
-    var limit = req.query.limit || req.query.count || this.limit;
+    var sortBy = options.sortParam || req.query.sort || this.sortParam;
+    var orderBy = options.sortOrder || req.query.order || this.sortOrder;
+    var skip = options.skip || req.query.skip || req.query.offset || this.skip;
+    var limit = options.limit || req.query.limit || req.query.count || this.limit;
     skip = _.parseInt(skip) || 0;
     limit = _.parseInt(limit) || 0;
     limit = Math.min(limit, this.limit); // Hard limit at 100
@@ -345,10 +350,20 @@ module.exports = Backbone.Model.extend({
       });
     }
 
+    // Fields
+    if (_.isString(req.query.fields)) {
+      _.each(req.query.fields.split(','), function(field) {
+        fields[field] = 1;
+      });
+    }
+
     // Filter params
     var queryParams = _.extend(_.result(this, 'queryParams'), {
       'user_id': 'string'
     });
+    if (_.isObject(options.queryParams)) {
+      _.extend(queryParams, options.queryParams);
+    }
     var filterParams = _.pick(req.query, _.keys(queryParams));
     var logicalOperator = '$' + (req.query.logical || 'and').toLowerCase().replace(/[@\s]/g, '');
 
@@ -435,7 +450,8 @@ module.exports = Backbone.Model.extend({
       'query': query,
       'sort': sortOptions,
       'limit': limit,
-      'skip': skip
+      'skip': skip,
+      'fields': fields
     };
   }
 });
