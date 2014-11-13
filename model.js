@@ -330,7 +330,7 @@ module.exports = Backbone.Model.extend({
       }
 
       // Support nested object
-      if (_.isObject(val) && !_.isArray(val)) {
+      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
         return this.removeAttributes(val, shouldRemove);
       }
 
@@ -461,6 +461,10 @@ module.exports = Backbone.Model.extend({
   // Bubble up the `validationError` from Backbone
   save: Promise.method(function() {
     var originalArguments = arguments;
+
+    // Remove read only attributes
+    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+    this.removeAttributes(this.attributes, readOnlyAttributes);
 
     var beforeFn, afterFn;
     if (this.isNew()) {

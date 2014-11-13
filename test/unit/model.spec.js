@@ -387,6 +387,25 @@ describe('Model', function() {
     assert.isUndefined(testModel.attributes.array_objects_empty);
   });
 
+  it('#removeAttributes with nested object', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema'),
+      hiddenAttributes: function() {
+        return {
+          string: true,
+          integer: false,
+          array_objects: true,
+          object: true,
+          array_objects_empty: true
+        };
+      }
+    });
+    var testModel = new TestModel();
+    var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
+    testModel.removeAttributes(testModel.attributes, hiddenAttributes);
+    assert.isUndefined(testModel.attributes.object);
+  });
 
 
   describe('#validateAttributes', function() {
