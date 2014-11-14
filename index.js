@@ -18,7 +18,6 @@ var Bootie = {};
 Bootie.Promise = require('bluebird');
 Bootie.Backbone = require('backbone');
 Bootie._ = require('lodash');
-Bootie.colors = require('colors');
 Bootie.uuid = require('uuid');
 
 Bootie.mixins = require('./mixins');
