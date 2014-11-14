@@ -407,6 +407,28 @@ describe('Model', function() {
     assert.isUndefined(testModel.attributes.object);
   });
 
+  it('#removeExpandableAttributes', function() {
+    var TestModel = Model.extend({
+      defaults: helpers.requireFixture('defaults'),
+      schema: helpers.requireFixture('schema'),
+      expandableAttributes: function() {
+        return {
+          expandable: true
+        };
+      }
+    });
+    var testModel = new TestModel();
+    testModel.set('expandable', {
+      _id: 'foo',
+      foo: 'bar',
+      troll: 'lol'
+    });
+    var expandableAttributes = _.result(testModel, 'expandableAttributes');
+    testModel.removeExpandableAttributes(testModel.attributes, expandableAttributes);
+    assert.deepEqual(testModel.attributes.expandable, {
+      _id: 'foo'
+    });
+  });
 
   describe('#validateAttributes', function() {
     var testModel;
