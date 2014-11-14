@@ -38,6 +38,7 @@ module.exports = function() {
     array_objects_empty: [{}],
     array_objects: [{
       foo: 'string'
-    }]
+    }],
+    expandable: {}
   };
 };

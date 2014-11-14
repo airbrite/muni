@@ -29,6 +29,10 @@ module.exports = Backbone.Model.extend({
   // Attributes that should be saved to the database but NOT rendered to JSON
   hiddenAttributes: {},
 
+  // Attributes that can be expanded (relations) and should NOT be saved to the database
+  // Does not support nested objects
+  expandableAttributes: {},
+
   // The defaults hash (or function) can be used
   // to specify the default attributes for your model.
   // When creating an instance of the model,
@@ -334,8 +338,31 @@ module.exports = Backbone.Model.extend({
         return this.removeAttributes(val, shouldRemove);
       }
 
-      if (shouldRemove === true) {
+      if (shouldRemove) {
         delete attrs[key];
+      }
+    }, this);
+  },
+
+  // Removes expandable attributes
+  // Does not work for objects embedded inside arrays
+  removeExpandableAttributes: function(attrs, options) {
+    _.each(attrs, function(val, key) {
+      // shouldRemove is either an object or a boolean
+      var shouldRemove = options[key];
+      if (_.isUndefined(shouldRemove)) {
+        return;
+      }
+
+      // Support nested object
+      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
+        return this.removeExpandableAttributes(val, shouldRemove);
+      }
+
+      // Make sure attribute is an object
+      // Strip all nested properties except for `_id`
+      if (_.isObject(attrs[key]) && shouldRemove) {
+        attrs[key] = _.pick(attrs[key], ['_id']);
       }
     }, this);
   },
@@ -462,9 +489,9 @@ module.exports = Backbone.Model.extend({
   save: Promise.method(function() {
     var originalArguments = arguments;
 
-    // Remove read only attributes
-    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    this.removeAttributes(this.attributes, readOnlyAttributes);
+    // Remove expandable attributes
+    var expandableAttributes = _.result(this, 'expandableAttributes');
+    this.removeExpandableAttributes(this.attributes, expandableAttributes);
 
     var beforeFn, afterFn;
     if (this.isNew()) {
