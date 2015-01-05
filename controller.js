@@ -61,6 +61,7 @@ module.exports = Backbone.Model.extend({
   initialize: function() {
     // Routes
     this.routes = {
+      all: {},
       get: {},
       post: {},
       put: {},
