@@ -98,7 +98,15 @@ module.exports = Backbone.Collection.extend({
       query, mongoOptions,
       this.wrapResponse(options)
     ).bind(this).then(function(resp) {
-      this.total = resp[1] || 0;
+      this.limit = _.parseInt(mongoOptions.limit) || 0;
+      this.skip = _.parseInt(mongoOptions.skip) || 0;
+      this.total = _.parseInt(resp[1]) || 0;
+      this.count = this.length;
+      this.page = Math.ceil((this.skip / this.limit) || 0) + 1;
+      this.pages = _.isFinite(Math.ceil(this.total / this.limit)) ?
+        Math.ceil(this.total / this.limit) :
+        1;
+      this.hasMore = this.page < this.pages;
       return this;
     });
   }),
@@ -131,8 +139,7 @@ module.exports = Backbone.Collection.extend({
 
     return this.db.count(
       this.model.prototype.urlRoot,
-      query,
-      {},
+      query, {},
       this.wrapResponse(options)
     );
   })
