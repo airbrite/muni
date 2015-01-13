@@ -50,6 +50,19 @@ module.exports = Backbone.Collection.extend({
     return ret;
   },
 
+  // Convert attributes into a pojo,
+  // then remove attributes that should be hidden
+  render: function(options) {
+    return this.map(function(model) {
+      return model.render(options);
+    });
+  },
+
+  // Alias for `render`
+  toResponse: function() {
+    return this.render();
+  },
+
   // Override the backbone sync method for use with mongodb
   // options contains 2 callbacks: `success` and `error`
   // Both callbacks have parameters (model, resp, options)
