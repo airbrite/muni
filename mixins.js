@@ -33,7 +33,8 @@ _.mixin({
   }),
 
   centsToDollars: function(value) {
-    return accounting.formatNumber(accounting.toFixed(value / 100, 2), 2);
+    // 2 decimal points and no thousand separator
+    return parseFloat(accounting.toFixed(value / 100, 2));
   },
 
   dollarsToCents: function(value) {
