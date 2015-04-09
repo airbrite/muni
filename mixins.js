@@ -1,5 +1,6 @@
 'use strict';
 
+var util = require('util');
 var _ = require('lodash');
 var uuid = require('uuid');
 var moment = require('moment');
@@ -12,7 +13,7 @@ var mixins = module.exports = {};
 
 // This mixes in several helper functions to `_`
 _.mixin({
-  uuid: uuid.v4,
+  isError: util.isError,
 
   defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
     return _.merge(value, other, deep);
@@ -153,6 +154,6 @@ _.mixin({
   },
 
   randomHash: function() {
-    return crypto.createHash('sha256').update(this.uuid()).digest('hex');
+    return crypto.createHash('sha256').update(uuid.v4()).digest('hex');
   }
 });
