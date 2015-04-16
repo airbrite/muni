@@ -19,9 +19,14 @@ Bootie.Promise = require('bluebird');
 Bootie.Backbone = require('backbone');
 Bootie._ = require('lodash');
 Bootie.uuid = require('uuid');
-
 Bootie.mixins = require('./mixins');
 
+// MongoDB ObjectId
+Bootie.ObjectId = require('mongodb').ObjectID;
+Bootie.isObjectId = function(id) {
+  // Check if a string is a valid ObjectId
+  return require('mongodb-objectid-helper').isObjectId(id);
+};
 
 // All external libraries
 // ---
