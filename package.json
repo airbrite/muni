@@ -1,6 +1,6 @@
 {
   "name": "bootie",
-  "version": "0.3.34",
+  "version": "0.3.35",
   "description": "Bootie",
   "main": "index.js",
   "scripts": {
@@ -22,20 +22,20 @@
     "bluebird": "2.9.24",
     "express": "4.12.3",
     "hbs": "3.0.1",
-    "lodash": "3.6.0",
+    "lodash": "3.7.0",
     "moment": "2.10.2",
-    "mongodb": "1.4.19",
+    "mongodb": "1.4.35",
     "mongodb-objectid-helper": "0.2.0",
     "redis": "0.12.1",
     "request": "2.55.0",
     "urlsafe-base64": "1.0.0",
     "uuid": "2.0.1",
-    "xml2js": "0.4.6"
+    "xml2js": "0.4.7"
   },
   "devDependencies": {
     "mocha": "2.2.4",
     "chai": "2.2.0",
-    "chai-as-promised": "4.3.0",
+    "chai-as-promised": "5.0.0",
     "sinon": "1.14.1",
     "sinon-as-promised": "3.0.0",
     "sinon-chai": "2.7.0",
