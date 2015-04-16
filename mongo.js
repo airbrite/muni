@@ -6,7 +6,7 @@ var Promise = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var mongodb = require('mongodb');
 var MongoClient = require('mongodb').MongoClient;
-var ObjectId = require('mongodb').ObjectID;
+var ObjectID = require('mongodb').ObjectID;
 var moment = require('moment');
 var objectIdHelper = require('mongodb-objectid-helper');
 
@@ -25,26 +25,6 @@ var Mongo = module.exports = function(url, options) {
     poolSize: 5, // default is 5
     connectTimeoutMS: 30000,
     socketTimeoutMS: 300000
-
-    // NOTE 2014-10-07
-    // For some reason, the mongo driver refuses to read these options
-    // So I'm resorting to using the url string options
-    //
-    // server: {
-    //   auto_reconnect: true,
-    //   socketOptions: {
-    //     keepAlive: 1,
-    //     connectTimeoutMS: 30000,
-    //     socketTimeoutMS: 30000
-    //   }
-    // },
-    // replset: {
-    //   socketOptions: {
-    //     keepAlive: 1,
-    //     connectTimeoutMS: 30000,
-    //     socketTimeoutMS: 30000
-    //   }
-    // }
   });
 
   this.queryOptions = querystring.stringify(options);
@@ -65,6 +45,10 @@ Mongo.prototype = Object.create(EventEmitter.prototype);
 
 _.extend(Mongo.prototype, {
   debug: false,
+
+  // ObjectId/ObjectID
+  ObjectId: ObjectID,
+  ObjectID: ObjectID,
 
   // Connection
   // ---
@@ -133,11 +117,11 @@ _.extend(Mongo.prototype, {
 
   // Create and return an ObjectId (not a string)
   newObjectId: function(str) {
-    return new ObjectId(str);
+    return new this.ObjectId(str);
   },
 
   newObjectIdHexString: function(str) {
-    return new ObjectId(str).toHexString();
+    return new this.ObjectId(str).toHexString();
   },
 
   // Check if a string is a valid ObjectId
@@ -160,7 +144,7 @@ _.extend(Mongo.prototype, {
     _.each(obj, function(val, key) {
       if (_.isString(val)) {
         if (this.isObjectId(val)) {
-          obj[key] = new ObjectId(val);
+          obj[key] = this.newObjectId(val);
         } else if (this.isValidISO8601String(val)) {
           obj[key] = new Date(val);
         }
