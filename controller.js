@@ -37,7 +37,11 @@ module.exports = Backbone.Model.extend({
   skip: 0,
   limit: 100,
 
-  xmlBuilder: new xml2js.Builder(),
+  xmlBuilder: new xml2js.Builder({
+    renderOpts: {
+      pretty: false
+    }
+  }),
 
   // Route specific middleware definitions
   // Object or Function
