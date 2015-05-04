@@ -355,7 +355,7 @@ _.extend(Mongo.prototype, {
       options
     ).bind(this).tap(function(cursor) {
       if (!count) {
-        return cursor;
+        return;
       }
       return cursor.countAsync().then(function(result) {
         total = result || total;
