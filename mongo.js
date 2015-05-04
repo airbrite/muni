@@ -247,10 +247,17 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    return this._cursor(collectionName, query, options).then(function(cursor) {
-      return cursor.countAsync();
-    }).then(function(count) {
-      var total = count;
+    var total = 0;
+    // Open a cursor
+    return this._cursor(collectionName, query, options).tap(function(cursor) {
+      // Count number of docs
+      return cursor.countAsync().then(function(result) {
+        total = result || total;
+      });
+    }).tap(function(cursor) {
+      // Close cursor
+      return cursor.closeAsync();
+    }).then(function(cursor) {
       var page = options.limit && options.limit <= total ? options.limit : total;
       var limit = options.limit || 0;
       var skip = options.skip || 0;
@@ -284,11 +291,19 @@ _.extend(Mongo.prototype, {
       console.info('#count: %j', query, {});
     }
 
-    return this._cursor(collectionName, query, options).then(function(cursor) {
-      return cursor.countAsync();
-    }).then(function(count) {
-      callback && callback(null, count);
-      return count;
+    var total = 0;
+    // Open a cursor
+    return this._cursor(collectionName, query, options).tap(function(cursor) {
+      // Count number of docs
+      return cursor.countAsync().then(function(result) {
+        total = result || total;
+      });
+    }).tap(function(cursor) {
+      // Close cursor
+      return cursor.closeAsync();
+    }).then(function(cursor) {
+      callback && callback(null, total);
+      return total;
     }).catch(function(err) {
       callback && callback(err);
       throw err;
@@ -309,25 +324,42 @@ _.extend(Mongo.prototype, {
 
     if (this.debug) {
       console.info('#find: %j with options: %j', query, options, {});
+    // Optionally perform a count
+    var count = true;
+    if (_.isBoolean(options.count)) {
+      count = options.count;
+      delete options.count;
     }
 
+    var total = 0;
+    var docs = [];
+    // Open a cursor
     return this._cursor(
       collectionName,
       query,
       options
     ).bind(this).tap(function(cursor) {
-      options.cursor = cursor;
-      return cursor.countAsync().then(function(count) {
-        options.total = count || 0;
-      });
-    }).then(function(cursor) {
-      return cursor.toArrayAsync();
-    }).then(function(results) {
-      if (!options.explain) {
-        this.uncast(results);
+      // Count number of docs if necessary
+      if (!count) {
+        return cursor;
       }
-      callback && callback(null, [results, options.total, options.cursor]);
-      return [results, options.total, options.cursor];
+      return cursor.countAsync().then(function(result) {
+        total = result || total;
+      });
+    }).tap(function(cursor) {
+      // Fetch docs
+      return cursor.toArrayAsync().then(function(results) {
+        docs = results || docs;
+      });
+    }).tap(function(cursor) {
+      // Close cursor
+      return cursor.closeAsync();
+    }).then(function(cursor) {
+      if (!options.explain) {
+        this.uncast(docs);
+      }
+      callback && callback(null, [docs, total, cursor]);
+      return [docs, total, cursor];
     }).catch(function(err) {
       callback && callback(err);
       throw err;
@@ -356,18 +388,30 @@ _.extend(Mongo.prototype, {
       delete options.require;
     }
 
+    var doc = {};
+    // Open a cursor
     return this._cursor(
       collectionName,
       query,
       options
-    ).bind(this).then(function(cursor) {
-      return cursor.nextObjectAsync();
-    }).then(this.uncast).then(function(doc) {
-      if (!doc && require) {
+    ).bind(this).tap(function(cursor) {
+      // Fetch doc
+      return cursor.nextObjectAsync().then(function(result) {
+        doc = result || doc;
+      });
+    }).tap(function(cursor) {
+      // Close cursor
+      return cursor.closeAsync();
+    }).then(function(cursor) {
+      if (_.isEmpty(doc) && require) {
         var requireErr = new Error('Document not found for query: ' +
           JSON.stringify(query) + '.');
         requireErr.code = 404;
         throw requireErr;
+      }
+
+      if (!options.explain) {
+        this.uncast(doc);
       }
 
       callback && callback(null, doc);
