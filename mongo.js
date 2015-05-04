@@ -269,7 +269,7 @@ _.extend(Mongo.prototype, {
         total = result || total;
       });
     }).tap(function(cursor) {
-      return cursor.closeAsync();
+      cursor.closeAsync();
     }).then(function(cursor) {
       var page = options.limit && options.limit <= total ? options.limit : total;
       var limit = options.limit || 0;
@@ -312,7 +312,7 @@ _.extend(Mongo.prototype, {
         total = result || total;
       });
     }).tap(function(cursor) {
-      return cursor.closeAsync();
+      cursor.closeAsync();
     }).then(function(cursor) {
       callback && callback(null, total);
       return total;
@@ -365,7 +365,7 @@ _.extend(Mongo.prototype, {
         docs = results || docs;
       });
     }).tap(function(cursor) {
-      return cursor.closeAsync();
+      cursor.closeAsync();
     }).then(function(cursor) {
       if (!options.explain) {
         this.uncast(docs);
@@ -411,7 +411,7 @@ _.extend(Mongo.prototype, {
         doc = result || doc;
       });
     }).tap(function(cursor) {
-      return cursor.closeAsync();
+      cursor.closeAsync();
     }).then(function(cursor) {
       if (_.isEmpty(doc) && require) {
         var requireErr = new Error('Document not found for query: ' +
