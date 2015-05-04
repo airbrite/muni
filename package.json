@@ -4,7 +4,9 @@
   "description": "Bootie",
   "main": "index.js",
   "scripts": {
-    "test": "npm run test-unit && npm run test-integration",
+    "lint": "jshint .",
+    "pretest": "npm run lint",
+    "test": "npm run test-unit",
     "test-unit": "mocha test/unit/ -R spec --recursive",
     "test-integration": "mocha test/integration/ -R spec --recursive"
   },
@@ -34,13 +36,14 @@
     "xml2js": "0.4.7"
   },
   "devDependencies": {
-    "mocha": "2.2.4",
-    "chai": "2.2.0",
-    "chai-as-promised": "5.0.0",
-    "sinon": "1.14.1",
-    "sinon-as-promised": "3.0.0",
-    "sinon-chai": "2.7.0",
-    "eyes": "git://github.com/airbrite/eyes.js.git"
+    "chai": "*",
+    "chai-as-promised": "*",
+    "eyes": "git://github.com/airbrite/eyes.js.git",
+    "jshint": "*",
+    "mocha": "*",
+    "sinon": "*",
+    "sinon-as-promised": "*",
+    "sinon-chai": "*"
   },
   "author": {
     "name": "Peter Shih",

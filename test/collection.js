@@ -8,9 +8,7 @@ var Collection = require("../collection");
 var Mongo = require("../mongo");
 
 // TODO FIX TESTS
-return;
-
-describe("Collections", function() {
+describe.skip("Collections", function() {
 
   // Local variables
   var savedId;
