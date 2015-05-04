@@ -20,6 +20,7 @@
     "accounting": "0.4.1",
     "backbone": "1.1.2",
     "bluebird": "2.9.24",
+    "debug": "2.1.3",
     "express": "4.12.3",
     "hbs": "3.0.1",
     "lodash": "3.7.0",
