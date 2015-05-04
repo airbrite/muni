@@ -11,7 +11,7 @@ var MongoClient = require('mongodb').MongoClient;
 // the original method name suffixed with "Async".
 Promise.promisifyAll(MongoClient);
 
-// options are used for mongodb connection options
+// Object `options` are used for mongodb connection options
 var Mongo = module.exports = function(url, options) {
   options = options || {};
 
@@ -24,6 +24,8 @@ var Mongo = module.exports = function(url, options) {
     socketTimeoutMS: 300000
   });
 
+  // Turn query options into a URL query string
+  // To append to the mongodb connection URL
   this.queryOptions = querystring.stringify(options);
 
   // Public properties for direct access allowed
@@ -40,6 +42,15 @@ Mongo.prototype = Object.create(EventEmitter.prototype);
 
 _.extend(Mongo.prototype, {
   debug: false,
+
+  // Log if debug
+  log: function() {
+    if (this.debug) {
+      console.log.apply(console, arguments);
+    }
+
+    return;
+  },
 
   // Connection
   // ---
@@ -70,12 +81,10 @@ _.extend(Mongo.prototype, {
 
       this.db = db;
       this.emit('connect', this.url, options.collection);
-      // console.log('Connected to MongoDB with URL: %s', this.url)
       callback && callback(null, this.db);
       return this.db;
     }).catch(function(err) {
       this.emit('error', err);
-      // console.error('Error: %s connecting to MongoDB with URL: %s', err.message, this.url)
       callback && callback(err);
       throw err;
     });
@@ -106,6 +115,7 @@ _.extend(Mongo.prototype, {
   // Helpers
   // ---
 
+  // Proxy (note: `Id` not `ID`)
   ObjectId: require('mongodb').ObjectID,
 
   // Create and return an ObjectId (not a string)
@@ -229,6 +239,11 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
+    this.log(
+      '#findCursor: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     return this._cursor(collectionName, query, options).then(function(cursor) {
       callback && callback(null, cursor);
       return cursor;
@@ -247,22 +262,24 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
+    this.log(
+      '#pagination: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     var total = 0;
-    // Open a cursor
     return this._cursor(collectionName, query, options).tap(function(cursor) {
-      // Count number of docs
       return cursor.countAsync().then(function(result) {
         total = result || total;
       });
     }).tap(function(cursor) {
-      // Close cursor
       return cursor.closeAsync();
     }).then(function(cursor) {
       var page = options.limit && options.limit <= total ? options.limit : total;
       var limit = options.limit || 0;
       var skip = options.skip || 0;
 
-      var obj = {
+      var paging = {
         total: _.parseInt(total),
         count: _.parseInt(page),
         limit: _.parseInt(limit),
@@ -270,15 +287,15 @@ _.extend(Mongo.prototype, {
         has_more: _.parseInt(page) < _.parseInt(total)
       };
 
-      callback && callback(null, obj);
-      return obj;
+      callback && callback(null, paging);
+      return paging;
     }).catch(function(err) {
       callback && callback(err);
       throw err;
     });
   }),
 
-  // Count
+  // Count total matching documents matching query
   count: Promise.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
@@ -287,19 +304,17 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    if (this.debug) {
-      console.info('#count: %j', query, {});
-    }
-
+    this.log(
+      '#count: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     var total = 0;
-    // Open a cursor
     return this._cursor(collectionName, query, options).tap(function(cursor) {
-      // Count number of docs
       return cursor.countAsync().then(function(result) {
         total = result || total;
       });
     }).tap(function(cursor) {
-      // Close cursor
       return cursor.closeAsync();
     }).then(function(cursor) {
       callback && callback(null, total);
@@ -310,10 +325,8 @@ _.extend(Mongo.prototype, {
     });
   }),
 
-  // Find all docs matching query and turn into an array with total
-  // results is either an array of documents or an array of explanations
-  // total is an integer
-  // the actual return value is an array in format: [result, total]
+  // Find all documents matching query and turn into an array
+  // Optionally also count total matching documents matching query
   find: Promise.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
@@ -322,8 +335,6 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    if (this.debug) {
-      console.info('#find: %j with options: %j', query, options, {});
     // Optionally perform a count
     var count = true;
     if (_.isBoolean(options.count)) {
@@ -331,15 +342,20 @@ _.extend(Mongo.prototype, {
       delete options.count;
     }
 
+    this.log(
+      '#find: %s with query: %s with options: %s and count: %s',
+      collectionName,
+      JSON.stringify(query),
+      JSON.stringify(options),
+      count
+    );
     var total = 0;
     var docs = [];
-    // Open a cursor
     return this._cursor(
       collectionName,
       query,
       options
     ).bind(this).tap(function(cursor) {
-      // Count number of docs if necessary
       if (!count) {
         return cursor;
       }
@@ -347,12 +363,10 @@ _.extend(Mongo.prototype, {
         total = result || total;
       });
     }).tap(function(cursor) {
-      // Fetch docs
       return cursor.toArrayAsync().then(function(results) {
         docs = results || docs;
       });
     }).tap(function(cursor) {
-      // Close cursor
       return cursor.closeAsync();
     }).then(function(cursor) {
       if (!options.explain) {
@@ -367,8 +381,7 @@ _.extend(Mongo.prototype, {
   }),
 
 
-  // Find a single doc matching query
-  // doc is an uncasted document
+  // Find and return a single document matching query with options
   findOne: Promise.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
@@ -377,10 +390,6 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    if (this.debug) {
-      console.info('#findOne: %j', query, {});
-    }
-
     // If require is true, throw an error if no document is found
     var require = false;
     if (_.isBoolean(options.require)) {
@@ -388,19 +397,21 @@ _.extend(Mongo.prototype, {
       delete options.require;
     }
 
+    this.log(
+      '#findOne: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     var doc = {};
-    // Open a cursor
     return this._cursor(
       collectionName,
       query,
       options
     ).bind(this).tap(function(cursor) {
-      // Fetch doc
       return cursor.nextObjectAsync().then(function(result) {
         doc = result || doc;
       });
     }).tap(function(cursor) {
-      // Close cursor
       return cursor.closeAsync();
     }).then(function(cursor) {
       if (_.isEmpty(doc) && require) {
@@ -437,6 +448,11 @@ _.extend(Mongo.prototype, {
     // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
+    this.log(
+      '#insert: %s with query: %s',
+      collectionName,
+      JSON.stringify(obj)
+    );
     return this.collection(collectionName).bind(this).then(function(collection) {
       return collection.insertAsync(obj, options);
     }).then(this.uncast).then(function(docs) {
@@ -466,16 +482,16 @@ _.extend(Mongo.prototype, {
     options.safe = true;
     options = _.pick(options, ['safe', 'multi', 'upsert', 'w']);
 
-    // Deep clone the query
+    // Deep clone the query and obj
     query = this.cast(_.cloneDeep(query));
-
-    if (this.debug) {
-      console.info('#update: %j', query, {});
-    }
-
-    // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
+    this.log(
+      '#update: %s with query: %s with obj: %s',
+      collectionName,
+      JSON.stringify(query),
+      JSON.stringify(obj)
+    );
     return this.collection(collectionName).then(function(collection) {
       return collection.updateAsync(query, obj, options);
     }).then(function(result) {
@@ -516,16 +532,16 @@ _.extend(Mongo.prototype, {
     options.new = true;
     options = _.pick(options, ['safe', 'new', 'upsert', 'remove', 'w']);
 
-    // Deep clone the query
+    // Deep clone the query and obj
     query = this.cast(_.cloneDeep(query));
-
-    if (this.debug) {
-      console.info('#findAndModify: %j', query, {});
-    }
-
-    // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
+    this.log(
+      '#findAndModify: %s with query: %s with obj: %s',
+      collectionName,
+      JSON.stringify(query),
+      JSON.stringify(obj)
+    );
     return this.collection(collectionName).bind(this).then(function(collection) {
       return collection.findAndModifyAsync(query, [], obj, options);
     }).then(function(result) {
@@ -557,10 +573,11 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    if (this.debug) {
-      console.info('#remove: %j', query, {});
-    }
-
+    this.log(
+      '#remove: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     return this.collection(collectionName).then(function(collection) {
       return collection.removeAsync(query, options);
     }).then(function(result) {
@@ -585,10 +602,11 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    if (this.debug) {
-      console.info('#aggregate: %j', query, {});
-    }
-
+    this.log(
+      '#aggregate: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     return this.collection(collectionName).bind(this).then(function(collection) {
       return collection.aggregateAsync(query, options);
     }).then(this.uncast).then(function(results) {
@@ -607,6 +625,11 @@ _.extend(Mongo.prototype, {
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
+    this.log(
+      '#getNextSequence: %s with query: %s',
+      collectionName,
+      JSON.stringify(query)
+    );
     return this.findAndModify(collectionName, query, {
       '$inc': {
         seq: 1
@@ -625,6 +648,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
+    this.log('#eraseCollection: %s', collectionName, {});
     return this.remove(collectionName, {}).then(function(num) {
       callback && callback(null, num);
       return num;
@@ -636,17 +660,18 @@ _.extend(Mongo.prototype, {
 
   // Add index if it doesn't already exist
   // indexName is the string name of the index
-  ensureIndex: Promise.method(function(collectionName, index) {
+  ensureIndex: Promise.method(function(collectionName, indexName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
     options = _.pick(options, ['unique', 'background', 'dropDups', 'w']);
 
-    return this.collection(collectionName).bind(this).then(function(collection) {
-      return collection.ensureIndexAsync(index, options);
-    }).then(function(indexName) {
-      callback && callback(null, indexName);
-      return indexName;
+    this.log('#ensureIndex: %s for index: %s', collectionName, indexName, {});
+    return this.collection(collectionName).then(function(collection) {
+      return collection.ensureIndexAsync(indexName, options);
+    }).then(function(result) {
+      callback && callback(null, result);
+      return result;
     }).catch(function(err) {
       callback && callback(err);
       throw err;
@@ -659,6 +684,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
+    this.log('#dropIndex: %s for index: %s', collectionName, indexName, {});
     return this.collection(collectionName).then(function(collection) {
       return collection.dropIndexAsync(indexName);
     }).then(function(result) {
@@ -676,6 +702,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
+    this.log('#dropAllIndexes: %s', collectionName, {});
     return this.collection(collectionName).then(function(collection) {
       return collection.dropAllIndexesAsync();
     }).then(function(success) {
@@ -698,7 +725,7 @@ _.extend(Mongo.prototype, {
     var options = args.length > 1 && _.isObject(_.last(args)) ? args.pop() : {};
     options = _.pick(options, ['full']);
 
-    return this.collection(collectionName).bind(this).then(function(collection) {
+    return this.collection(collectionName).then(function(collection) {
       return collection.indexInformationAsync(options);
     }).then(function(indexInformation) {
       callback && callback(null, indexInformation);
