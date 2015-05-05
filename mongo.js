@@ -400,7 +400,7 @@ _.extend(Mongo.prototype, {
       collectionName,
       JSON.stringify(query)
     );
-    var doc = {};
+    var doc;
     return this._cursor(
       collectionName,
       query,
@@ -412,7 +412,7 @@ _.extend(Mongo.prototype, {
     }).tap(function(cursor) {
       cursor.closeAsync();
     }).then(function(cursor) {
-      if (_.isEmpty(doc) && require) {
+      if (!doc && require) {
         var requireErr = new Error('Document not found for query: ' +
           JSON.stringify(query) + '.');
         requireErr.code = 404;
