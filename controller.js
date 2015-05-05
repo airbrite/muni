@@ -26,10 +26,12 @@ var Backbone = require('backbone');
 var Model = require('./model');
 var Collection = require('./collection');
 var xml2js = require('xml2js');
+var debug = {
+  log: require('debug')('bootie:log'),
+  error: require('debug')('bootie:error')
+};
 
 module.exports = Backbone.Model.extend({
-  debug: false,
-
   path: '/',
 
   sortParam: 'created',
@@ -179,42 +181,29 @@ module.exports = Backbone.Model.extend({
 
   // Default middleware for handling error responses
   errorResponse: function(err, req, res, next) {
-    var data = err.message || 'Internal Server Error';
-    var code = 500;
-    if (_.isNumber(err.code)) {
-      code = err.code;
-    } else if (_.isNumber(res.code)) {
-      code = res.code;
+    err.message = err.message || 'Internal Server Error';
+    err.code = err.code || res.code || 500;
+    if (!_.isNumber(err.code)) {
+      err.code = 500;
     }
-    var error = {
-      message: data,
-      code: code
-    };
-    if (_.isString(err.type)) {
-      error.type = err.type;
-    }
+
     var envelope = {
       meta: {
-        code: code,
-        error: error
+        code: err.code,
+        error: {
+          code: err.code,
+          message: err.message
+        }
       },
-      data: data
+      data: err.message
     };
 
-    // TODO
-    // We should log these errors somewhere remotely
-    if (this.debug) {
-      if (code >= 500) {
-        if (err && err.stack) {
-          console.error('Request Error: %j', err.stack, {});
-        }
-      } else {
-        console.error('Request Error (%d): %s', code, err.message);
-      }
+    if (err && err.code >= 500 && err.stack) {
+      debug.error('Controller Response Error:', err);
     }
 
     // Set code and data
-    res.code = code;
+    res.code = err.code;
     res.data = envelope;
 
     return next();
@@ -250,7 +239,7 @@ module.exports = Backbone.Model.extend({
           xml = this.xmlBuilder.buildObject(xmlData);
           res.status(res.code).send(xml);
         } catch (e) {
-          console.error('XML building error: %s', e.stack);
+          debug.error('XML building error:', e);
           res.status(res.code);
         }
       }.bind(this)
@@ -302,6 +291,11 @@ module.exports = Backbone.Model.extend({
       result['$' + operator] = timestamp;
     });
 
+    debug.log(
+      '#buildTimestampQuery with query: %s and result: %s',
+      JSON.stringify(query),
+      JSON.stringify(result)
+    );
     return result;
   },
 
@@ -454,12 +448,19 @@ module.exports = Backbone.Model.extend({
       [sortBy, orderBy]
     ];
 
-    return {
+    var result = {
       'query': query,
       'sort': sortOptions,
       'limit': limit,
       'skip': skip,
       'fields': fields
     };
+
+    debug.log(
+      '#parseQueryString with req.query: %s and result: %s',
+      JSON.stringify(req.query),
+      JSON.stringify(result)
+    );
+    return result;
   }
 });

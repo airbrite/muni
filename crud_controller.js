@@ -16,8 +16,6 @@ var Model = require('./model');
 var Collection = require('./collection');
 
 module.exports = Controller.extend({
-  debug: true,
-
   // All subclasses of crud controller need `urlRoot` defined
   // The mongodb collection name
   urlRoot: 'models',
