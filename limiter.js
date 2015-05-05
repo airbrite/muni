@@ -1,10 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
-var debug = {
-  log: require('debug')('bootie:log'),
-  error: require('debug')('bootie:error')
-};
+var debug = require('./debug');
 
 // Clients
 // ---

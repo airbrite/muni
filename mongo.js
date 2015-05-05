@@ -6,10 +6,7 @@ var querystring = require('querystring');
 var Promise = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var MongoClient = require('mongodb').MongoClient;
-var debug = {
-  log: require('debug')('bootie:log'),
-  error: require('debug')('bootie:error')
-};
+var debug = require('./debug');
 
 // The promisified method name will be
 // the original method name suffixed with "Async".

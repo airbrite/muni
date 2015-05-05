@@ -6,10 +6,7 @@ var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
 var Model = require('./model');
-var debug = {
-  log: require('debug')('bootie:log'),
-  error: require('debug')('bootie:error')
-};
+var debug = require('./debug');
 
 module.exports = Backbone.Collection.extend({
   model: Model,

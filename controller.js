@@ -26,10 +26,7 @@ var Backbone = require('backbone');
 var Model = require('./model');
 var Collection = require('./collection');
 var xml2js = require('xml2js');
-var debug = {
-  log: require('debug')('bootie:log'),
-  error: require('debug')('bootie:error')
-};
+var debug = require('./debug');
 
 module.exports = Backbone.Model.extend({
   path: '/',
@@ -240,7 +237,7 @@ module.exports = Backbone.Model.extend({
           res.status(res.code).send(xml);
         } catch (e) {
           debug.error('XML building error:', e);
-          res.status(res.code);
+          res.status(res.code).end();
         }
       }.bind(this)
     });

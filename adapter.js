@@ -15,10 +15,7 @@ var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
 var request = require('request');
-var debug = {
-  log: require('debug')('bootie:log'),
-  error: require('debug')('bootie:error')
-};
+var debug = require('./debug');
 
 module.exports = Backbone.Model.extend({
   urlRoot: '',
