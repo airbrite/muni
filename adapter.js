@@ -15,6 +15,7 @@ var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
 var request = require('request');
+var debug = require('./debug');
 
 module.exports = Backbone.Model.extend({
   urlRoot: '',
@@ -109,32 +110,35 @@ module.exports = Backbone.Model.extend({
     var requestOptions = this.buildRequestOptions(options);
 
     // Fire the request
-    request(requestOptions, function(error, response, body) {
+    request(requestOptions, function(err, response, body) {
       this.LAST_REQUEST = requestOptions;
-      this.LAST_ERROR = error;
+      this.LAST_ERROR = err;
       this.LAST_RESPONSE = response;
       this.LAST_BODY = body;
 
-      // Usually a connection error (server unresponsive)
-      if (error) {
-        var message = error.message ||
+      // Usually a connection err (server unresponsive)
+      if (err) {
+        var message = err.message ||
           response.meta &&
-          response.meta.error_message;
-        console.warn('Request error: %s', message);
+          response.meta.err_message;
+        debug.error('Adapter Request Error:', err);
 
-        callback && callback(error);
-        return deferred.reject(error);
+        callback && callback(err);
+        return deferred.reject(err);
       }
 
       // Usually an intentional error from the server
       if (response.statusCode >= 400) {
-        error = new Error(this.extractError(body));
-        error.code = response.statusCode;
-        console.warn('Request failed with code: %d and message: %s',
-          error.code, error.message);
+        err = new Error(this.extractError(body));
+        err.code = response.statusCode;
+        debug.error(
+          'Adapter Request Error with Code: %d and Message: %s',
+          err.code,
+          err.message
+        );
 
-        callback && callback(error);
-        return deferred.reject(error);
+        callback && callback(err);
+        return deferred.reject(err);
       }
 
       // Success

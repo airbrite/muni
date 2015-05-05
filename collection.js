@@ -6,10 +6,9 @@ var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
 var Model = require('./model');
+var debug = require('./debug');
 
 module.exports = Backbone.Collection.extend({
-  debug: false,
-
   model: Model,
 
   initialize: function() {
@@ -89,7 +88,7 @@ module.exports = Backbone.Collection.extend({
 
     // Build query with optional: limit, skip, sort
     var mongoOptions = _.pick(options, ['limit', 'skip', 'sort', 'fields']) || {};
-    console.info('Collection [%s] read with query: %s and options: %s',
+    debug.log('Collection [%s] read with query: %s and options: %s',
       this.model.prototype.urlRoot,
       JSON.stringify(query),
       JSON.stringify(mongoOptions));

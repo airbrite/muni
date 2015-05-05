@@ -9,10 +9,9 @@
 var _ = require('lodash');
 var Promise = require('bluebird');
 var Backbone = require('backbone');
+var debug = require('./debug');
 
 module.exports = Backbone.Model.extend({
-  debug: false,
-
   // mongodb id attribute, usually `_id`
   idAttribute: '_id',
   userIdAttribute: 'user_id',
@@ -478,7 +477,7 @@ module.exports = Backbone.Model.extend({
     }).then(function() {
       return this.afterFetch.apply(this, originalArguments);
     }).catch(function(err) {
-      console.error('#fetch: %s', err.message);
+      debug.error('#fetch:', err);
       throw err;
     });
   }),
@@ -521,7 +520,7 @@ module.exports = Backbone.Model.extend({
 
   // Inserts a mongodb document
   create: Promise.method(function(model, options) {
-    console.info('Model [%s] create called', this.urlRoot);
+    debug.log('Model [%s] create called', this.urlRoot);
     return this.db.insert(
       this.urlRoot,
       model.toJSON(),
@@ -547,7 +546,7 @@ module.exports = Backbone.Model.extend({
     }
 
     var mongoOptions = _.pick(options, ['require']) || {};
-    console.info('Model [%s] update with query: %s',
+    debug.log('Model [%s] update with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
@@ -585,7 +584,7 @@ module.exports = Backbone.Model.extend({
     };
 
     var mongoOptions = _.pick(options, ['require']) || {};
-    console.info('Model [%s] patch with query: %s',
+    debug.log('Model [%s] patch with query: %s',
       this.urlRoot, JSON.stringify(query));
     return this.db.findAndModify(
       this.urlRoot,
@@ -610,7 +609,7 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    console.info('Model [%s] delete with query: %s',
+    debug.log('Model [%s] delete with query: %s',
       this.urlRoot, JSON.stringify(query));
 
     return this.db.remove(
@@ -644,7 +643,7 @@ module.exports = Backbone.Model.extend({
     }
 
     var mongoOptions = _.pick(options, ['require']) || {};
-    console.info('Model [%s] read with query: %s',
+    debug.log('Model [%s] read with query: %s',
       this.urlRoot, JSON.stringify(query));
 
     return this.db.findOne(

@@ -6,8 +6,7 @@ var querystring = require('querystring');
 var Promise = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var MongoClient = require('mongodb').MongoClient;
-var debug = require('debug')('bootie:debug');
-var error = require('debug')('bootie:error');
+var debug = require('./debug');
 
 // The promisified method name will be
 // the original method name suffixed with "Async".
@@ -61,24 +60,24 @@ _.extend(Mongo.prototype, {
     }
 
     // Open a reuseable connection
-    debug('#connect: %s', this.url);
+    debug.log('#connect: %s', this.url);
     return MongoClient.connectAsync(
       this.url
     ).bind(this).then(function(db) {
       if (this.db) {
-        debug('#connect reuse and close: %s', this.url);
+        debug.log('#connect reuse and close: %s', this.url);
         db.close();
         callback && callback(null, this.db);
         return this.db;
       }
 
-      debug('#connect pool: %s', this.url);
+      debug.log('#connect pool: %s', this.url);
       this.db = db;
       this.emit('connect', this.url, options.collection);
       callback && callback(null, this.db);
       return this.db;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       this.emit('error', err);
       callback && callback(err);
       throw err;
@@ -181,7 +180,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, collection);
       return collection;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -234,7 +233,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug(
+    debug.log(
       '#findCursor: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -243,7 +242,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, cursor);
       return cursor;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -258,7 +257,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug(
+    debug.log(
       '#pagination: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -286,7 +285,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, paging);
       return paging;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -301,7 +300,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug(
+    debug.log(
       '#count: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -317,7 +316,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, total);
       return total;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -340,7 +339,7 @@ _.extend(Mongo.prototype, {
       delete options.count;
     }
 
-    debug(
+    debug.log(
       '#find: %s with query: %s with options: %s and count: %s',
       collectionName,
       JSON.stringify(query),
@@ -373,7 +372,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, [docs, total, cursor]);
       return [docs, total, cursor];
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -396,7 +395,7 @@ _.extend(Mongo.prototype, {
       delete options.require;
     }
 
-    debug(
+    debug.log(
       '#findOne: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -427,7 +426,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, doc);
       return doc;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -448,7 +447,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
-    debug(
+    debug.log(
       '#insert: %s with query: %s',
       collectionName,
       JSON.stringify(obj)
@@ -459,7 +458,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, docs);
       return docs;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -487,7 +486,7 @@ _.extend(Mongo.prototype, {
     query = this.cast(_.cloneDeep(query));
     obj = this.cast(_.cloneDeep(obj));
 
-    debug(
+    debug.log(
       '#update: %s with query: %s with obj: %s',
       collectionName,
       JSON.stringify(query),
@@ -537,7 +536,7 @@ _.extend(Mongo.prototype, {
     query = this.cast(_.cloneDeep(query));
     obj = this.cast(_.cloneDeep(obj));
 
-    debug(
+    debug.log(
       '#findAndModify: %s with query: %s with obj: %s',
       collectionName,
       JSON.stringify(query),
@@ -559,7 +558,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, doc);
       return doc;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -575,7 +574,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug(
+    debug.log(
       '#remove: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -589,7 +588,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, num);
       return num;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -605,7 +604,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug(
+    debug.log(
       '#aggregate: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -616,7 +615,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, results);
       return results;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -629,7 +628,7 @@ _.extend(Mongo.prototype, {
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
-    debug(
+    debug.log(
       '#getNextSequence: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -642,7 +641,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, doc.seq);
       return doc.seq;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -653,12 +652,12 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug('#eraseCollection: %s', collectionName, {});
+    debug.log('#eraseCollection: %s', collectionName, {});
     return this.remove(collectionName, {}).then(function(num) {
       callback && callback(null, num);
       return num;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -672,14 +671,14 @@ _.extend(Mongo.prototype, {
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
     options = _.pick(options, ['unique', 'background', 'dropDups', 'w']);
 
-    debug('#ensureIndex: %s for index: %s', collectionName, indexName, {});
+    debug.log('#ensureIndex: %s for index: %s', collectionName, indexName, {});
     return this._collection(collectionName).then(function(collection) {
       return collection.ensureIndexAsync(indexName, options);
     }).then(function(result) {
       callback && callback(null, result);
       return result;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -691,14 +690,14 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug('#dropIndex: %s for index: %s', collectionName, indexName, {});
+    debug.log('#dropIndex: %s for index: %s', collectionName, indexName, {});
     return this._collection(collectionName).then(function(collection) {
       return collection.dropIndexAsync(indexName);
     }).then(function(result) {
       callback && callback(null, result);
       return result;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -710,14 +709,14 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug('#dropAllIndexes: %s', collectionName, {});
+    debug.log('#dropAllIndexes: %s', collectionName, {});
     return this._collection(collectionName).then(function(collection) {
       return collection.dropAllIndexesAsync();
     }).then(function(success) {
       callback && callback(null, success);
       return success;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -740,7 +739,7 @@ _.extend(Mongo.prototype, {
       callback && callback(null, indexInformation);
       return indexInformation;
     }).catch(function(err) {
-      error(err);
+      debug.error(err);
       callback && callback(err);
       throw err;
     });
