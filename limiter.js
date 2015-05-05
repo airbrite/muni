@@ -1,32 +1,35 @@
 'use strict';
 
 var _ = require('lodash');
+var debug = {
+  log: require('debug')('bootie:log'),
+  error: require('debug')('bootie:error')
+};
 
 // Clients
 // ---
-// Keys are IP addresses
 var clients = {};
 
 // Options
 // ---
-// ips - array of strings - ips to assign for each bucket
+// keys - array of strings - id or ip
 // limit - number of requests allowed in window
 // window - rate limit window in seconds
 // reject - true/false - whether to respond early with code 429
 var options = {
   whitelist: {
-    ips: [],
-    limit: 1000,
-    window: 60 * 15
+    keys: [],
+    limit: 3600,
+    window: 60
   },
   blacklist: {
-    ips: [],
+    keys: [],
     limit: 0,
-    window: 0
+    window: 60
   },
   normal: {
-    limit: 500,
-    window: 60 * 15
+    limit: 60,
+    window: 60
   },
   reject: true
 };
@@ -39,18 +42,18 @@ module.exports = function(opts) {
     'reject'
   ]));
 
-  console.info('Limiter: %s', JSON.stringify(options));
+  debug.log('Limiter with options: %s', JSON.stringify(options));
 
   return middleware;
 };
 
 function middleware(req, res, next) {
-  var ip = req.ip;
-  var type = typeForIp(ip);
-  var client = clients[ip] ? clients[ip] : (clients[ip] = new Client(ip, type));
+  var key = (req.user && req.user.id) || req.ip;
+  var type = typeForKey(key);
+  var client = clients[key] ? clients[key] : (clients[key] = new Client(key, type));
   var bypass = req.get('X-Rate-Limit-Bypass') ? true : false;
 
-  console.info('Limiter: %s', JSON.stringify(client));
+  debug.log('Limiter request: %s', JSON.stringify(client));
 
   // X-Rate-Limit-Limit: the rate limit ceiling for that given request
   // X-Rate-Limit-Remaining: the number of requests left for the window
@@ -96,25 +99,25 @@ function rejected(req, res, next) {
   });
 }
 
-function typeForIp(ip) {
-  if (_.contains(options.whitelist.ips, ip)) {
+function typeForKey(key) {
+  if (_.contains(options.whitelist.keys, key)) {
     return 'whitelist';
   }
-  if (_.contains(options.blacklist.ips, ip)) {
+  if (_.contains(options.blacklist.keys, key)) {
     return 'blacklist';
   }
   return 'normal';
 }
 
-function Client(ip, type) {
+function Client(key, type) {
   this.used = 0;
-  this.ip = ip;
+  this.key = key;
   this.type = type;
   this.limit = options[type].limit;
   this.duration = options[type].window * 1000;
   this.resets = (new Date()).getTime() + this.duration;
 
   setTimeout(function() {
-    delete clients[ip];
+    delete clients[key];
   }, this.duration);
 }
