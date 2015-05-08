@@ -3,6 +3,8 @@
 // Force NODE_ENV to be `test`
 process.env.NODE_ENV = 'test';
 
+var Bluebird = require('bluebird');
+
 // Chai
 var chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -10,9 +12,8 @@ chai.use(require('chai-datetime'));
 var assert = chai.assert;
 
 // Sinon
-var Bootie = require('bootie');
 var sinon = require('sinon');
-require('sinon-as-promised')(Bootie.Promise);
+require('sinon-as-promised')(Bluebird);
 
 // Test Helpers
 var helpers = require('../helpers');

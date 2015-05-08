@@ -3,7 +3,7 @@
 // Dependencies
 // ---
 var _ = require('lodash');
-var Promise = require('bluebird');
+var Bluebird = require('bluebird');
 var Backbone = require('backbone');
 var Model = require('./model');
 var debug = require('./debug');
@@ -71,14 +71,14 @@ module.exports = Backbone.Collection.extend({
   // ---
   // A `request` event is fired before with parameters (model, op, options)
   // A `sync` event is fired after with parameters (model, resp, options)
-  sync: Promise.method(function(method, model, options) {
+  sync: Bluebird.method(function(method, model, options) {
     var op = this[method].call(this, model, options);
     model.trigger('request', model, op, options);
     return op;
   }),
 
   // Finds mongodb documents
-  read: Promise.method(function(collection, options) {
+  read: Bluebird.method(function(collection, options) {
     var query = {};
 
     // Build query against where query
@@ -112,7 +112,7 @@ module.exports = Backbone.Collection.extend({
 
   // Count (not part of `sync`)
   // This is an extension to Backbone
-  count: Promise.method(function(options) {
+  count: Bluebird.method(function(options) {
     options = options || {};
 
     // This is for `wrapResponse`
