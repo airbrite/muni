@@ -1,0 +1,5 @@
+--reporter spec
+--require test/support/common
+--bail
+--check-leaks
+--recursive
