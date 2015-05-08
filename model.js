@@ -7,7 +7,7 @@
 // Dependencies
 // ---
 var _ = require('lodash');
-var Promise = require('bluebird');
+var Bluebird = require('bluebird');
 var Backbone = require('backbone');
 var debug = require('./debug');
 
@@ -390,7 +390,7 @@ module.exports = Backbone.Model.extend({
 
   // Used to set attributes from a request body
   // Assume `this.attributes` is populated with existing data
-  setFromRequest: Promise.method(function(body) {
+  setFromRequest: Bluebird.method(function(body) {
     body = _.mergeSafe(body, this.attributes);
 
     // Remove read only attributes
@@ -414,35 +414,35 @@ module.exports = Backbone.Model.extend({
   // ---
   // These can either return a promise or a value
 
-  beforeFetch: Promise.method(function() {
+  beforeFetch: Bluebird.method(function() {
     return this;
   }),
 
-  afterFetch: Promise.method(function() {
+  afterFetch: Bluebird.method(function() {
     return this;
   }),
 
-  beforeCreate: Promise.method(function() {
+  beforeCreate: Bluebird.method(function() {
     return this;
   }),
 
-  beforeUpdate: Promise.method(function() {
+  beforeUpdate: Bluebird.method(function() {
     return this;
   }),
 
-  afterCreate: Promise.method(function() {
+  afterCreate: Bluebird.method(function() {
     return this;
   }),
 
-  afterUpdate: Promise.method(function() {
+  afterUpdate: Bluebird.method(function() {
     return this;
   }),
 
-  beforeSave: Promise.method(function() {
+  beforeSave: Bluebird.method(function() {
     return this;
   }),
 
-  afterSave: Promise.method(function() {
+  afterSave: Bluebird.method(function() {
     return this;
   }),
 
@@ -455,7 +455,7 @@ module.exports = Backbone.Model.extend({
   // ---
   // A `request` event is fired before with parameters (model, op, options)
   // A `sync` event is fired after with parameters (model, resp, options)
-  sync: Promise.method(function(method, model, options) {
+  sync: Bluebird.method(function(method, model, options) {
     // Force all `update` to actually be `patch` if configured
     if (this.updateUsingPatch && method === 'update') {
       method = 'patch';
@@ -467,10 +467,10 @@ module.exports = Backbone.Model.extend({
   }),
 
   // Adds before/after fetch lifecycle methods
-  fetch: Promise.method(function() {
+  fetch: Bluebird.method(function() {
     var originalArguments = arguments;
 
-    return Promise.bind(this).then(function() {
+    return Bluebird.bind(this).then(function() {
       return this.beforeFetch.apply(this, originalArguments);
     }).then(function() {
       return Backbone.Model.prototype.fetch.apply(this, originalArguments);
@@ -485,7 +485,7 @@ module.exports = Backbone.Model.extend({
 
   // Return a rejected promise if validation fails
   // Bubble up the `validationError` from Backbone
-  save: Promise.method(function() {
+  save: Bluebird.method(function() {
     var originalArguments = arguments;
 
     // Remove expandable attributes
@@ -501,14 +501,14 @@ module.exports = Backbone.Model.extend({
       afterFn = this.afterUpdate;
     }
 
-    return Promise.bind(this).then(function() {
+    return Bluebird.bind(this).then(function() {
       return beforeFn.apply(this, originalArguments);
     }).then(function() {
       return this.beforeSave.apply(this, originalArguments);
     }).then(function() {
       var op = Backbone.Model.prototype.save.apply(this, originalArguments);
       if (!op) {
-        return Promise.reject(this.validationError);
+        return Bluebird.reject(this.validationError);
       }
       return op;
     }).then(function() {
@@ -519,7 +519,7 @@ module.exports = Backbone.Model.extend({
   }),
 
   // Inserts a mongodb document
-  create: Promise.method(function(model, options) {
+  create: Bluebird.method(function(model, options) {
     debug.log('Model [%s] create called', this.urlRoot);
     return this.db.insert(
       this.urlRoot,
@@ -530,7 +530,7 @@ module.exports = Backbone.Model.extend({
 
   // Updates a mongodb document
   // NOTE: This replaces the entire document with the model attributes
-  update: Promise.method(function(model, options) {
+  update: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
       var err = new Error('No ID for Model');
@@ -559,7 +559,7 @@ module.exports = Backbone.Model.extend({
 
   // Updates a mongodb document
   // NOTE: This sets only explicitly provided model attributes
-  patch: Promise.method(function(model, options) {
+  patch: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
       var err = new Error('No ID for Model');
@@ -597,7 +597,7 @@ module.exports = Backbone.Model.extend({
 
   // Removes a mongodb document
   // Must have ID
-  delete: Promise.method(function(model, options) {
+  delete: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
       var err = new Error('No ID for Model');
@@ -622,7 +622,7 @@ module.exports = Backbone.Model.extend({
   // Finds a single mongodb document
   // If `options.query` is provided and is an object,
   // it is used as the query
-  read: Promise.method(function(model, options) {
+  read: Bluebird.method(function(model, options) {
     var query = {};
     if (_.isObject(options.query)) {
       // Build query

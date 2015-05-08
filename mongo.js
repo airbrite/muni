@@ -3,14 +3,14 @@
 var _ = require('lodash');
 var moment = require('moment');
 var querystring = require('querystring');
-var Promise = require('bluebird');
+var Bluebird = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var MongoClient = require('mongodb').MongoClient;
 var debug = require('./debug');
 
 // The promisified method name will be
 // the original method name suffixed with "Async".
-Promise.promisifyAll(MongoClient);
+Bluebird.promisifyAll(MongoClient);
 
 // Object `options` are used for mongodb connection options
 var Mongo = module.exports = function(url, options) {
@@ -48,7 +48,7 @@ _.extend(Mongo.prototype, {
   // Connect
   // Called by collection
   // Might be called multiple times at app boot until `this.db` is first set
-  connect: Promise.method(function() {
+  connect: Bluebird.method(function() {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 0 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -168,7 +168,7 @@ _.extend(Mongo.prototype, {
 
   // Open a collection
   // Called by every method (e.g. find, insert, update, etc...)
-  _collection: Promise.method(function(collectionName) {
+  _collection: Bluebird.method(function(collectionName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
@@ -176,7 +176,7 @@ _.extend(Mongo.prototype, {
       collection: collectionName
     }).bind(this).then(function() {
       var collection = this.db.collection(collectionName);
-      Promise.promisifyAll(collection);
+      Bluebird.promisifyAll(collection);
       callback && callback(null, collection);
       return collection;
     }).catch(function(err) {
@@ -193,7 +193,7 @@ _.extend(Mongo.prototype, {
   // - fields - `{name: 1, email: 0}`
   // - sort - `[['created', 'desc']]`
   // - limit - `100`
-  _cursor: Promise.method(function(collectionName, query) {
+  _cursor: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
@@ -218,14 +218,14 @@ _.extend(Mongo.prototype, {
     return this._collection(collectionName).then(function(collection) {
       return collection.find(query, options);
     }).then(function(cursor) {
-      Promise.promisifyAll(cursor);
+      Bluebird.promisifyAll(cursor);
       return cursor;
     });
   }),
 
   // Find and return a cursor
   // NOTE: The cursor does NOT automatically `uncast` $oid in results
-  findCursor: Promise.method(function(collectionName, query) {
+  findCursor: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -249,7 +249,7 @@ _.extend(Mongo.prototype, {
   }),
 
   // Get pagination data (V1)
-  pagination: Promise.method(function(collectionName, query) {
+  pagination: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -292,7 +292,7 @@ _.extend(Mongo.prototype, {
   }),
 
   // Count total matching documents matching query
-  count: Promise.method(function(collectionName, query) {
+  count: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -324,7 +324,7 @@ _.extend(Mongo.prototype, {
 
   // Find all documents matching query and turn into an array
   // Optionally also count total matching documents matching query
-  find: Promise.method(function(collectionName, query) {
+  find: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -380,7 +380,7 @@ _.extend(Mongo.prototype, {
 
 
   // Find and return a single document matching query with options
-  findOne: Promise.method(function(collectionName, query) {
+  findOne: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -435,7 +435,7 @@ _.extend(Mongo.prototype, {
   // Insert a document (safe: true)
   // obj can be either an array or an object
   // docs is an array of uncasted documents
-  insert: Promise.method(function(collectionName, obj) {
+  insert: Bluebird.method(function(collectionName, obj) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -466,7 +466,7 @@ _.extend(Mongo.prototype, {
 
   // Update one or more docs
   // num is number of documents updated
-  update: Promise.method(function(collectionName, query, obj) {
+  update: Bluebird.method(function(collectionName, query, obj) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 3 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -515,7 +515,7 @@ _.extend(Mongo.prototype, {
 
   // Update and return one doc
   // obj is an uncasted document
-  findAndModify: Promise.method(function(collectionName, query, obj) {
+  findAndModify: Bluebird.method(function(collectionName, query, obj) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 3 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -566,7 +566,7 @@ _.extend(Mongo.prototype, {
 
   // Remove a document and returns count
   // num is number of documents removed
-  remove: Promise.method(function(collectionName, query) {
+  remove: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -596,7 +596,7 @@ _.extend(Mongo.prototype, {
 
   // Aggregate
   // results is an array of uncasted items
-  aggregate: Promise.method(function(collectionName, query) {
+  aggregate: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -623,7 +623,7 @@ _.extend(Mongo.prototype, {
 
   // Get next sequence for counter
   // seq is a number
-  getNextSequence: Promise.method(function(collectionName, query) {
+  getNextSequence: Bluebird.method(function(collectionName, query) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -648,7 +648,7 @@ _.extend(Mongo.prototype, {
   }),
 
   // Erases all records from a collection, if any
-  eraseCollection: Promise.method(function(collectionName) {
+  eraseCollection: Bluebird.method(function(collectionName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
@@ -665,7 +665,7 @@ _.extend(Mongo.prototype, {
 
   // Add index if it doesn't already exist
   // indexName is the string name of the index
-  ensureIndex: Promise.method(function(collectionName, indexName) {
+  ensureIndex: Bluebird.method(function(collectionName, indexName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
@@ -686,7 +686,7 @@ _.extend(Mongo.prototype, {
 
   // Remove index
   // result - { nIndexesWas: 2, ok: 1 }
-  dropIndex: Promise.method(function(collectionName, indexName) {
+  dropIndex: Bluebird.method(function(collectionName, indexName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
@@ -705,7 +705,7 @@ _.extend(Mongo.prototype, {
 
   // Remove index
   // success - true/false
-  dropAllIndexes: Promise.method(function(collectionName) {
+  dropAllIndexes: Bluebird.method(function(collectionName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
@@ -727,7 +727,7 @@ _.extend(Mongo.prototype, {
   // { _id_: [ [ '_id', 1 ] ] }
   // indexInformation is an array if `options.full`
   // [ { v: 1, key: { _id: 1 }, name: '_id_', ns: 'test.tests' } ]
-  indexInformation: Promise.method(function(collectionName) {
+  indexInformation: Bluebird.method(function(collectionName) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 1 && _.isObject(_.last(args)) ? args.pop() : {};

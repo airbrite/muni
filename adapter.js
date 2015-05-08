@@ -12,7 +12,7 @@
 // Dependencies
 // ---
 var _ = require('lodash');
-var Promise = require('bluebird');
+var Bluebird = require('bluebird');
 var Backbone = require('backbone');
 var request = require('request');
 var debug = require('./debug');
@@ -106,7 +106,7 @@ module.exports = Backbone.Model.extend({
   // Send the http request
   sendRequest: function(options, callback) {
     // Create a promise to defer to later
-    var deferred = Promise.defer();
+    var deferred = Bluebird.defer();
     var requestOptions = this.buildRequestOptions(options);
 
     // Fire the request

@@ -7,8 +7,8 @@
     "lint": "jshint .",
     "pretest": "npm run lint",
     "test": "npm run test-unit",
-    "test-unit": "mocha test/unit/ -R spec --recursive",
-    "test-integration": "mocha test/integration/ -R spec --recursive"
+    "test-unit": "mocha --reporter spec --require test/support/common --bail --check-leaks --recursive test/unit/",
+    "test-integration": "mocha --reporter spec --require test/support/common --bail --check-leaks --recursive test/integration/"
   },
   "homepage": "https://github.com/airbrite/bootie",
   "repository": {
@@ -38,6 +38,7 @@
   "devDependencies": {
     "chai": "*",
     "chai-as-promised": "*",
+    "chai-datetime": "*",
     "eyes": "git://github.com/airbrite/eyes.js.git",
     "jshint": "*",
     "mocha": "*",

@@ -2,13 +2,6 @@
 
 var fs = require('fs');
 var _ = require('lodash');
-var chai = require('chai');
-var chaiAsPromised = require("chai-as-promised");
-chai.use(chaiAsPromised);
-var assert = require('chai').assert;
-var sinon = require('sinon');
-var Promise = require('bluebird');
-var sinonAsPromised = require('sinon-as-promised')(Promise);
 var Model = require('../../model');
 
 require('../../mixins');
