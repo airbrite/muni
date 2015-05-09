@@ -2,120 +2,167 @@
 
 var _ = require('lodash');
 var express = require('express');
+var BootieError = require('./error');
+var debug = require('./debug');
 
-// Exposes 2 additional attributes
-// routes - an array of mapped routes
-// url - a string representing the base url with optional version
+/**
+ * Extends `Express.Router` with additional features
+ * Controllers can define routes that will be connected here
+ *
+ * Added Properties:
+ *
+ * - `url` a string representing the base url with optional version
+ * - `controllers` an object (map) of controllers: `name -> instance`
+ * - `routes` an array of connected routes
+ *
+ * @param {Object} options
+ * @return {Router} An instance of `Express.Router`
+ */
+
 module.exports = function(options) {
   options = options || {};
 
-  // Create a new express router
+  // Create a new `Express.Router`
   var router = express.Router(options);
 
-  // Array of active routes
-  router.routes = [];
+  // Additional properties
+  _.extend(router, {
+    url: options.version ? '/' + options.version : '',
+    controllers: options.controllers || {},
+    routes: [],
 
-  // Base URL of the router with optional version
-  router.url = "";
-  if (options.version) {
-    router.url += "/" + options.version;
-  }
+    /**
+     * Return a list of missing parameters that were required
+     *
+     * @param {Object} req
+     * @param {Array} requiredParams
+     * @return {Array}
+     */
 
-  // Controllers
-  router.controllers = options.controllers;
+    _buildMissingParams: function(req, requiredParams) {
+      // Find all missing parameters
+      var missingParams = [];
+      _.each(requiredParams, function(requiredParam) {
+        if (!req.param(requiredParam)) {
+          missingParams.push(requiredParam);
+        }
+      });
+      return missingParams;
+    },
 
-  // Add routes
-  router.addControllerRoutes = function() {
-    // Set of active routes
-    var paths = {};
+    /**
+     * Return an Error containing missing parameters that were required
+     *
+     * @param {Array} missingParams
+     * @return {BootieError}
+     */
 
-    // Each controller has a `routes` object
-    // Automagically hook up all routes defined in controllers
-    if (router.controllers) {
+    _buildMissingParamsError: function(missingParams) {
+      var errParts = [];
+      missingParams = _.map(missingParams, function(missingParam) {
+        return '`' + missingParam + '`';
+      });
+      errParts.push("Missing");
+      errParts.push(missingParams.join(', '));
+      errParts.push("parameter(s).");
+      return new BootieError(errParts.join(' '), 400);
+    },
+
+    /**
+     * Return a route handler/callback
+     *
+     * @param {Controller} controller
+     * @param {Object} routeOptions
+     * @return {Function}
+     */
+
+    _buildHandler: function(controller, routeOptions) {
+      return function(req, res, next) {
+        var requiredParams = routeOptions.requiredParams || [];
+        var ignoredParams = routeOptions.ignoredParams || [];
+
+        // Omit disallowed params in body and query
+        if (ignoredParams.length) {
+          req.body = _.omit(req.body, ignoredParams);
+          req.query = _.omit(req.query, ignoredParams);
+        }
+
+        // Reject request if required params are missing
+        if (requiredParams.length) {
+          // Find all missing parameters
+          // If there are missing parameters,
+          // respond with an error before routing
+          var missingParams = router._buildMissingParams(req, requiredParams);
+          if (missingParams.length) {
+            return next(router._buildMissingParamsError(missingParams));
+          }
+        }
+
+        // Execute the route for the request
+        return routeOptions.action.call(controller, req, res, next);
+      };
+    },
+
+    /**
+     * Iterates over all controllers and connects any routes defined
+     */
+
+    addControllerRoutes: function() {
+      // Used for de-duping
+      var paths = {};
+
+      // Each controller has a `routes` object
+      // Connect all routes defined in controllers
       _.each(router.controllers, function(controller) {
-        var routes = controller.routes;
-
-        _.each(routes, function(route, method) {
+        _.each(controller.routes, function(route, method) {
           _.each(route, function(routeOptions, path) {
             // If path/method has already been defined, skip
             if (paths[path] === method) {
+              debug.log('Skipping duplicate route: [%s] %s', method, path);
               return;
             }
 
             // If no route action is defined, skip
             if (!routeOptions.action) {
+              debug.log('No action defined for route: [%s] %s', method, path);
               return;
             }
 
-            // Hook up the route/path/method to the controller action/middleware
+            // Setup controller scoped middleware
+            // These apply to all routes in the controller
             var pre = _.invoke(controller.pre, 'bind', controller) || [];
             var before = _.invoke(controller.before, 'bind', controller) || [];
             var after = _.invoke(controller.after, 'bind', controller) || [];
-            var fn = function(req, res, next) {
-              var requiredParams = routeOptions.requiredParams || [];
-              var ignoredParams = routeOptions.ignoredParams || [];
 
-              // Omit disallowed params in body and query
-              if (ignoredParams.length) {
-                req.body = _.omit(req.body, ignoredParams);
-                req.query = _.omit(req.query, ignoredParams);
-              }
+            // Setup route scoped middleware
+            // These apply only to this route
+            var middleware = routeOptions.middleware || [];
 
-              // Reject request if required params are not present
-              if (requiredParams.length) {
-                // Find all missing parameters
-                var missingParams = [];
-                _.each(requiredParams, function(requiredParam) {
-                  if (!req.body[requiredParam] && !req.query[requiredParam]) {
-                    missingParams.push(requiredParam);
-                  }
-                });
+            // Build the route handler (callback)
+            var handler = router._buildHandler(controller, routeOptions);
 
-                // If there are missing parameters,
-                // respond with an error before routing
-                if (missingParams.length) {
-                  var err;
-                  var errParts = [];
-                  missingParams = _.map(missingParams, function(missingParam) {
-                    return '`' + missingParam + '`';
-                  });
-                  errParts.push("Missing");
-                  errParts.push(missingParams.join(', '));
-                  errParts.push("parameter(s).");
-                  err = new Error(errParts.join(' '));
-                  err.code = 400;
-                  return next(err);
-                }
-              }
+            // Connect the route
+            router[method](path, pre, middleware, before, handler, after);
 
-              // Execute the route for the request
-              routeOptions.action.call(controller, req, res, next);
-            };
-
-            // Define the express route
-            router[method](
-              path,
-              pre,
-              routeOptions.middleware || [],
-              before,
-              fn,
-              after
-            );
-
-            // Add route to set of active routes
+            // Add route to set of connected routes
             router.routes.push({
               url: router.url,
               method: method,
               path: path
             });
 
-            // Set this path/method as being active
+            // Use for de-duping
             paths[path] = method;
           });
         });
       });
+
+      // Debug logging
+      _.each(router.routes, function(route) {
+        debug.log('Route [%s] %s', route.method, route.url + route.path);
+      });
     }
-  };
+  });
 
   return router;
 };
