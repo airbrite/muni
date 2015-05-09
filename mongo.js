@@ -212,7 +212,8 @@ _.extend(Mongo.prototype, {
       'timeout',
       'snapshot',
       'batchSize',
-      'maxTimeMS'
+      'maxTimeMS',
+      'readPreference'
     ]);
 
     return this._collection(collectionName).then(function(collection) {

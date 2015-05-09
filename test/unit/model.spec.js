@@ -1,17 +1,9 @@
 'use strict';
 
-var fs = require('fs');
 var _ = require('lodash');
+var Bluebird = require('bluebird');
 var Model = require('../../model');
-
-require('../../mixins');
-
-// Eyes
-console.inspect = require('eyes').inspector({
-  maxLength: 32768,
-  sortObjectKeys: true,
-  hideFunctions: true
-});
+var ObjectId = require('mongodb').ObjectID;
 
 // Test helpers
 var helpers = require('../helpers');
@@ -20,344 +12,219 @@ describe('Model', function() {
   // Set max timeout allowed
   this.timeout(10000);
 
-  it('should set an empty array', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    return testModel.setFromRequest({
-      array_strings: []
-    }).then(function() {
-      assert.deepEqual(testModel.get('array_strings'), []);
-    });
+  var TestModel = Model.extend({
+    defaults: helpers.requireFixture('defaults'),
+    schema: helpers.requireFixture('schema')
   });
 
-  // return;
-
-  it('should set defaults with null', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    // `i_am_null` is type `ufloat` except defaulted to `null
-    // It should still be set as `null`
-    // Because `null` is special and overrides type
-    assert.strictEqual(testModel.get('i_am_null'), null);
-  });
-
-  it('#getDeep shallow', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    var val = testModel.get('string');
-    assert.strictEqual(val, 'i am a string');
-
-  });
-
-  it('#getDeep nested object', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-    var val = testModel.get('object.omg.wtf');
-    assert.strictEqual(val, 'bbq');
-  });
-
-  it('#getDeep nested array', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-    var val = testModel.get('array_objects.1.foo');
-    assert.strictEqual(val, 'baz');
-  });
-
-  it('#getDeep nested undefined', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-    var val = testModel.get('object.i_dont_exist.who_am_i');
-    assert.isUndefined(val);
-  });
-
-  it('#combinedDefaults', function() {
-    var TestModel = Model.extend({
-      defaults: function() {
-        return {
-          uno: 'one'
-        };
-      },
-      baseDefaults: function() {
-        return {
-          dos: 'two'
-        };
-      }
-    });
-    var testModel = new TestModel();
-
-    assert.deepEqual(testModel.combinedDefaults(), {
-      uno: 'one',
-      dos: 'two'
-    });
-  });
-
-  it('#combinedSchema', function() {
-    var TestModel = Model.extend({
-      schema: function() {
-        return {
-          uno: 'string'
-        };
-      },
-      baseSchema: function() {
-        return {
-          dos: 'number'
-        };
-      }
-    });
-    var testModel = new TestModel();
-
-    assert.deepEqual(testModel.combinedSchema(), {
-      uno: 'string',
-      dos: 'number'
-    });
-  });
-
-  it('should set changedFromRequest after setFromRequest', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    var body = {
-      string: 'i changed',
-      i_dont_exist: 'trollolol',
-      boolean: true,
-      object: {
-        omg: {
-          wtf: 'lol'
-        }
-      },
-      array_objects: [{
-        foo: 'bar'
-      }, {
-        foo: 'changed'
-      }]
-    };
-
-    testModel.setFromRequest(body);
-
-    assert.deepEqual(testModel.changedFromRequest, {
-      string: 'i changed',
-      object: {
-        foo: 'bar',
-        omg: {
-          wtf: 'lol'
-        }
-      },
-      array_objects: [{
-        foo: 'bar'
-      }, {
-        foo: 'changed'
-      }]
-    });
-  });
-
-
-
-  it('#setFromRequest with readOnlyAttributes', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema'),
-      readOnlyAttributes: function() {
-        return {
-          string: true,
-          object: {
-            omg: {
-              wtf: true
-            }
-          }
-        };
-      }
-    });
-    var testModel = new TestModel();
-
-    var body = {
-      string: 'readonly',
-      integer: 9876,
-      object: {
-        omg: {
-          wtf: 'lol'
-        }
-      },
-      object_defaults_empty: {
-        first: {
-          second: {
-            third: {
-              such: 'win',
-              wtf: 'lol'
-            },
-            tres: {
-              yo: 12345
-            }
-          }
-        }
-      }
-    };
-
-    testModel.setFromRequest(body);
-
-    assert.deepEqual(testModel.attributes.object, {
+  describe('Fetch and Save and Destroy', function() {
+    var data = {
+      _id: '5411ed2b08eed46469029c85',
       foo: 'bar',
-      omg: {}
-    });
-    assert.strictEqual(testModel.attributes.integer, 9876);
-    assert.strictEqual(testModel.attributes.string, 'i am a string');
-  });
-
-  it('#setFromRequest with unset', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    var body = {
-      string: null,
-      integer: null,
-      timestamp: null,
-      object: null,
-      boolean: null
+      hello: 'world'
     };
-
-    testModel.setFromRequest(body);
-
-    assert.isNull(testModel.get('string'));
-    assert.isNull(testModel.get('timestamp'));
-    assert.isNull(testModel.get('object'));
-    assert.isNull(testModel.get('integer'));
-    assert.isNull(testModel.get('boolean'));
-  });
-
-  // this is no longer the case
-  // we don't do `deep` extends anymore
-  it.skip('#setFromRequest with omitted nested key should not unset the omitted key', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    var body = {
-      object: {
-        omg: {
-          wtf: 'lol'
-        }
-      }
-    };
-
-    testModel.setFromRequest(body);
-
-    assert.deepEqual(testModel.attributes.object, {
+    var insertData = {
       foo: 'bar',
-      omg: {
-        wtf: 'lol'
-      }
-    });
-  });
-
-  // see test above
-  it.skip('#setFromRequest with omitted nested key should not trigger change', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
-    });
-    var testModel = new TestModel();
-
-    var body = {
-      object: {
-        // foo: 'bar'
-        omg: {
-          wtf: 'bbq'
-        }
-      }
+      hello: 'world'
     };
 
-    testModel.setFromRequest(body);
-
-    assert.deepEqual(testModel.changedFromRequest, {});
-  });
-
-  it('#setFromRequest with empty object should work', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
+    var testModel;
+    beforeEach(function() {
+      testModel = new Model();
+      testModel.db = {
+        findOne: function() {},
+        findAndModify: function() {},
+        insert: function() {},
+        delete: function() {}
+      };
+      sinon.stub(testModel.db, 'findOne', function(a, b, c, cb) {
+        cb && cb(null, data);
+        return Bluebird.resolve(data);
+      });
+      sinon.stub(testModel.db, 'findAndModify', function(a, b, c, d, cb) {
+        cb && cb(null, data);
+        return Bluebird.resolve(data);
+      });
+      sinon.stub(testModel.db, 'insert', function(a, b, cb) {
+        cb && cb(null, data);
+        return Bluebird.resolve(data);
+      });
     });
-    var testModel = new TestModel();
 
-    var body = {
-      object: {}
-    };
-
-    testModel.setFromRequest(body);
-
-    assert.deepEqual(testModel.get('object'), {});
-  });
-
-  it('#setFromRequest with empty array should work', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema')
+    it('should #fetch', function() {
+      testModel.set(data);
+      return testModel.fetch().then(function(model) {
+        assert.deepEqual(model.render(), data);
+      });
     });
-    var testModel = new TestModel();
 
-    var body = {
-      array_strings: []
-    };
+    it('should #save new (insert)', function() {
+      testModel.set(insertData);
+      return testModel.save().then(function(model) {
+        assert.deepEqual(model.render(), data);
+      });
+    });
 
-    testModel.setFromRequest(body);
+    it('should #save existing (update)', function() {
+      testModel.updateUsingPatch = false;
+      testModel.set(data);
+      return testModel.save().then(function(model) {
+        assert.deepEqual(model.render(), data);
+      });
+    });
 
-    assert.deepEqual(testModel.get('array_strings'), []);
+    it('should #save existing (patch)', function() {
+      testModel.set(data);
+      return testModel.save().then(function(model) {
+        assert.deepEqual(model.render(), data);
+      });
+    });
+
+    it.skip('should #destroy existing', function() {});
   });
 
-  it('#render', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema'),
-      hiddenAttributes: function() {
-        return {
-          string: true,
-          object: {
-            omg: {
-              wtf: true
-            }
+  describe.skip('Before/After Lifecycle', function() {
+  });
+
+
+  describe('Private', function() {
+    var testModel;
+    beforeEach(function() {
+      testModel = new TestModel();
+    });
+
+    it('#_defaultsDeep', function() {
+      var obj = {
+        foo: {
+          bar: {
+            baz: false
           }
-        };
-      }
+        },
+        array: [{
+          foo: 'bar'
+        }, {
+          hello: 'moto'
+        }],
+        object: {
+          array: [1, 2, 3]
+        }
+      };
+
+      testModel._defaultsDeep(obj, {
+        omg: 'troll',
+        foo: {
+          bar: {
+            lol: true
+          },
+          wtf: 'doge'
+        },
+        array: [{
+          noob: 'tube'
+        }, {
+          hello: 'android'
+        }],
+        object: {
+          array: [3, 4, 5]
+        }
+      });
+
+      assert.deepEqual(obj, {
+        omg: 'troll',
+        foo: {
+          bar: {
+            baz: false,
+            lol: true
+          },
+          wtf: 'doge'
+        },
+        array: [{
+          foo: 'bar',
+          noob: 'tube'
+        }, {
+          hello: 'moto'
+        }],
+        object: {
+          array: [1, 2, 3]
+        }
+      });
     });
-    var testModel = new TestModel();
 
-    var json = testModel.render();
-    assert.isUndefined(json.string);
-    assert.isUndefined(json.object.omg.wtf);
-  });
+    it('#_mergeSafe', function() {
+      var obj = {
+        foo: {
+          bar: {
+            baz: false
+          }
+        },
+        array: [{
+          foo: 'bar'
+        }, {
+          hello: 'moto'
+        }],
+        object: {
+          array: [1, 2, 3]
+        }
+      };
 
-  it('#removeAttributes', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema'),
-      hiddenAttributes: function() {
+      testModel._mergeSafe(obj, {
+        omg: 'troll',
+        foo: {
+          bar: {
+            lol: true
+          },
+          wtf: 'doge'
+        },
+        array: [{
+          noob: 'tube'
+        }, {
+          hello: 'android'
+        }],
+        object: {
+          array: [3, 4, 5]
+        }
+      });
+
+      assert.deepEqual(obj, {
+        omg: 'troll',
+        foo: {
+          bar: {
+            baz: false,
+            lol: true
+          },
+          wtf: 'doge'
+        },
+        array: [{
+          foo: 'bar'
+        }, {
+          hello: 'moto'
+        }],
+        object: {
+          array: [1, 2, 3]
+        }
+      });
+    });
+
+    it('#_isObjectId', function() {
+      var oid = new ObjectId();
+      assert.isTrue(testModel._isObjectId(oid.toHexString()));
+      assert.isTrue(testModel._isObjectId('53b4694cda836700006b61f2'));
+      assert.isFalse(testModel._isObjectId('trollolol'));
+    });
+
+    it('#_isTimestamp', function() {
+      assert.isTrue(testModel._isTimestamp(1407397793555));
+      assert.isFalse(testModel._isTimestamp(1407397793));
+    });
+
+    it('#_isValidISO8601String', function() {
+      assert.isTrue(testModel._isValidISO8601String('2013-11-18T09:04:24.447Z'));
+      assert.isFalse(testModel._isValidISO8601String('Thu, 07 Aug 2014 07:49:53 GMT'));
+    });
+
+    it.skip('#_wrapResponse', function() {});
+
+    it('#_removeAttributes', function() {
+      testModel.hiddenAttributes = function() {
         return {
           string: true,
           integer: false,
@@ -369,22 +236,18 @@ describe('Model', function() {
           },
           array_objects_empty: true
         };
-      }
-    });
-    var testModel = new TestModel();
-    var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
-    testModel.removeAttributes(testModel.attributes, hiddenAttributes);
-    assert.isUndefined(testModel.attributes.string);
-    assert.isUndefined(testModel.attributes.array_objects);
-    assert.isUndefined(testModel.attributes.object.omg.wtf);
-    assert.isUndefined(testModel.attributes.array_objects_empty);
-  });
+      };
 
-  it('#removeAttributes with nested object', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema'),
-      hiddenAttributes: function() {
+      var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
+      testModel._removeAttributes(testModel.attributes, hiddenAttributes);
+      assert.isUndefined(testModel.attributes.string);
+      assert.isUndefined(testModel.attributes.array_objects);
+      assert.isUndefined(testModel.attributes.object.omg.wtf);
+      assert.isUndefined(testModel.attributes.array_objects_empty);
+    });
+
+    it('#_removeAttributes with nested object', function() {
+      testModel.hiddenAttributes = function() {
         return {
           string: true,
           integer: false,
@@ -392,45 +255,38 @@ describe('Model', function() {
           object: true,
           array_objects_empty: true
         };
-      }
-    });
-    var testModel = new TestModel();
-    var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
-    testModel.removeAttributes(testModel.attributes, hiddenAttributes);
-    assert.isUndefined(testModel.attributes.object);
-  });
+      };
 
-  it('#removeExpandableAttributes', function() {
-    var TestModel = Model.extend({
-      defaults: helpers.requireFixture('defaults'),
-      schema: helpers.requireFixture('schema'),
-      expandableAttributes: function() {
+      var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
+      testModel._removeAttributes(testModel.attributes, hiddenAttributes);
+      assert.isUndefined(testModel.attributes.object);
+    });
+
+    it('#_removeExpandableAttributes', function() {
+      testModel.expandableAttributes = function() {
         return {
           expandable: true
         };
-      }
-    });
-    var testModel = new TestModel();
-    testModel.set('expandable', {
-      _id: 'foo',
-      foo: 'bar',
-      troll: 'lol'
-    });
-    var expandableAttributes = _.result(testModel, 'expandableAttributes');
-    testModel.removeExpandableAttributes(testModel.attributes, expandableAttributes);
-    assert.deepEqual(testModel.attributes.expandable, {
-      _id: 'foo'
+      };
+
+      testModel.set('expandable', {
+        _id: 'foo',
+        foo: 'bar',
+        troll: 'lol'
+      });
+      var expandableAttributes = _.result(testModel, 'expandableAttributes');
+      testModel._removeExpandableAttributes(testModel.attributes, expandableAttributes);
+      assert.deepEqual(testModel.attributes.expandable, {
+        _id: 'foo'
+      });
     });
   });
 
-  describe('#validateAttributes', function() {
-    var testModel;
 
+
+  describe('Validate Attributes', function() {
+    var testModel;
     beforeEach(function() {
-      var TestModel = Model.extend({
-        defaults: helpers.requireFixture('defaults'),
-        schema: helpers.requireFixture('schema')
-      });
       testModel = new TestModel();
     });
 
@@ -448,7 +304,7 @@ describe('Model', function() {
         }
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         object: {
           foo: 'i should also show up'
@@ -476,7 +332,7 @@ describe('Model', function() {
         }
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         object_defaults_empty: {
           first: {
@@ -503,7 +359,7 @@ describe('Model', function() {
         boolean: null
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
 
       assert.deepEqual(attrs, {
         string: null,
@@ -523,7 +379,7 @@ describe('Model', function() {
         string: 1234
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {});
     });
 
@@ -534,7 +390,7 @@ describe('Model', function() {
         invalid_key: 'asdf'
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {});
     });
 
@@ -545,7 +401,7 @@ describe('Model', function() {
         timestamp: -123
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {});
     });
 
@@ -556,7 +412,7 @@ describe('Model', function() {
         date: '2014-08-07T07:49:53.555Z'
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         date: new Date('2014-08-07T07:49:53.555Z')
       });
@@ -575,7 +431,7 @@ describe('Model', function() {
         }
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         object_empty: {
           n: 1,
@@ -596,7 +452,7 @@ describe('Model', function() {
         }
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         object: {
           foo: 'baz'
@@ -613,7 +469,7 @@ describe('Model', function() {
         }]
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         array_empty: ['any', 'thing', 1, {
           foo: 'bar'
@@ -628,7 +484,7 @@ describe('Model', function() {
         array_strings: ['z', 'x', 1, 'v']
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         array_strings: ['z', 'x', null, 'v']
       });
@@ -641,7 +497,7 @@ describe('Model', function() {
         array_numbers: [5, 6, 'a', 8]
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         array_numbers: [5, 6, 0, 8]
       });
@@ -654,7 +510,7 @@ describe('Model', function() {
         array_booleans: [true, false, 1, 0, 'true']
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         array_booleans: [true, false, true, false, true]
       });
@@ -671,7 +527,7 @@ describe('Model', function() {
         }]
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         array_objects_empty: [{
           foo: 'bar'
@@ -696,7 +552,7 @@ describe('Model', function() {
         }]
       };
 
-      testModel.validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
         array_objects: [{
           foo: 'bar'
@@ -704,6 +560,296 @@ describe('Model', function() {
           foo: 'baz'
         }]
       });
+    });
+  });
+
+
+
+  describe('Set and Get', function() {
+    var testModel;
+    beforeEach(function() {
+      testModel = new TestModel();
+    });
+
+    it('should set an empty array', function() {
+      return testModel.setFromRequest({
+        array_strings: []
+      }).then(function() {
+        assert.deepEqual(testModel.get('array_strings'), []);
+      });
+    });
+
+    it('should set defaults with null', function() {
+      // `i_am_null` is type `ufloat` except defaulted to `null
+      // It should still be set as `null`
+      // Because `null` is special and overrides type
+      assert.strictEqual(testModel.get('i_am_null'), null);
+    });
+
+    it('#getDeep shallow', function() {
+
+      var val = testModel.get('string');
+      assert.strictEqual(val, 'i am a string');
+
+    });
+
+    it('#getDeep nested object', function() {
+      var val = testModel.get('object.omg.wtf');
+      assert.strictEqual(val, 'bbq');
+    });
+
+    it('#getDeep nested array', function() {
+      var val = testModel.get('array_objects.1.foo');
+      assert.strictEqual(val, 'baz');
+    });
+
+    it('#getDeep nested undefined', function() {
+      var val = testModel.get('object.i_dont_exist.who_am_i');
+      assert.isUndefined(val);
+    });
+  });
+
+
+
+  describe('Schema and Defaults', function() {
+    var testModel;
+    beforeEach(function() {
+      testModel = new Model();
+    });
+
+    it('#combinedDefaults', function() {
+      _.extend(testModel, {
+        defaults: function() {
+          return {
+            uno: 'one'
+          };
+        },
+        baseDefaults: function() {
+          return {
+            dos: 'two'
+          };
+        }
+      });
+
+      assert.deepEqual(testModel.combinedDefaults(), {
+        uno: 'one',
+        dos: 'two'
+      });
+    });
+
+    it('#combinedSchema', function() {
+      _.extend(testModel, {
+        schema: function() {
+          return {
+            uno: 'string'
+          };
+        },
+        baseSchema: function() {
+          return {
+            dos: 'number'
+          };
+        }
+      });
+
+      assert.deepEqual(testModel.combinedSchema(), {
+        uno: 'string',
+        dos: 'number'
+      });
+    });
+  });
+
+
+
+  describe('Rendering', function() {
+    var testModel;
+    beforeEach(function() {
+      testModel = new TestModel();
+      testModel.hiddenAttributes = function() {
+        return {
+          string: true,
+          object: {
+            omg: {
+              wtf: true
+            }
+          }
+        };
+      };
+    });
+
+    it('#render', function() {
+      var json = testModel.render();
+      assert.isUndefined(json.string);
+      assert.isUndefined(json.object.omg.wtf);
+    });
+
+    it('#toResponse', function() {
+      var json = testModel.toResponse();
+      assert.isUndefined(json.string);
+      assert.isUndefined(json.object.omg.wtf);
+    });
+  });
+
+
+
+  describe('setFromRequest', function() {
+    var testModel;
+    beforeEach(function() {
+      testModel = new TestModel();
+    });
+
+    it('should set changedFromRequest after setFromRequest', function() {
+      var body = {
+        string: 'i changed',
+        i_dont_exist: 'trollolol',
+        boolean: true,
+        object: {
+          omg: {
+            wtf: 'lol'
+          }
+        },
+        array_objects: [{
+          foo: 'bar'
+        }, {
+          foo: 'changed'
+        }]
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.deepEqual(testModel.changedFromRequest, {
+        string: 'i changed',
+        object: {
+          foo: 'bar',
+          omg: {
+            wtf: 'lol'
+          }
+        },
+        array_objects: [{
+          foo: 'bar'
+        }, {
+          foo: 'changed'
+        }]
+      });
+    });
+
+    it('#setFromRequest with readOnlyAttributes', function() {
+      testModel.readOnlyAttributes = function() {
+        return {
+          string: true,
+          object: {
+            omg: {
+              wtf: true
+            }
+          }
+        };
+      };
+
+      var body = {
+        string: 'readonly',
+        integer: 9876,
+        object: {
+          omg: {
+            wtf: 'lol'
+          }
+        },
+        object_defaults_empty: {
+          first: {
+            second: {
+              third: {
+                such: 'win',
+                wtf: 'lol'
+              },
+              tres: {
+                yo: 12345
+              }
+            }
+          }
+        }
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.deepEqual(testModel.attributes.object, {
+        foo: 'bar',
+        omg: {}
+      });
+      assert.strictEqual(testModel.attributes.integer, 9876);
+      assert.strictEqual(testModel.attributes.string, 'i am a string');
+    });
+
+    it('#setFromRequest with unset', function() {
+      var body = {
+        string: null,
+        integer: null,
+        timestamp: null,
+        object: null,
+        boolean: null
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.isNull(testModel.get('string'));
+      assert.isNull(testModel.get('timestamp'));
+      assert.isNull(testModel.get('object'));
+      assert.isNull(testModel.get('integer'));
+      assert.isNull(testModel.get('boolean'));
+    });
+
+    // this is no longer the case
+    // we don't do `deep` extends anymore
+    it.skip('#setFromRequest with omitted nested key should not unset the omitted key', function() {
+      var body = {
+        object: {
+          omg: {
+            wtf: 'lol'
+          }
+        }
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.deepEqual(testModel.attributes.object, {
+        foo: 'bar',
+        omg: {
+          wtf: 'lol'
+        }
+      });
+    });
+
+    // see test above
+    it.skip('#setFromRequest with omitted nested key should not trigger change', function() {
+      var body = {
+        object: {
+          // foo: 'bar'
+          omg: {
+            wtf: 'bbq'
+          }
+        }
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.deepEqual(testModel.changedFromRequest, {});
+    });
+
+    it('#setFromRequest with empty object should work', function() {
+      var body = {
+        object: {}
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.deepEqual(testModel.get('object'), {});
+    });
+
+    it('#setFromRequest with empty array should work', function() {
+      var body = {
+        array_strings: []
+      };
+
+      testModel.setFromRequest(body);
+
+      assert.deepEqual(testModel.get('array_strings'), []);
     });
   });
 });

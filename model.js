@@ -4,110 +4,95 @@
 // ---
 // https://github.om/jsantell/backbone-promised/blob/master/index.js
 
-// Dependencies
-// ---
 var _ = require('lodash');
 var Bluebird = require('bluebird');
 var Backbone = require('backbone');
+var moment = require('moment');
 var debug = require('./debug');
+var BootieError = require('./error');
 
 module.exports = Backbone.Model.extend({
-  // mongodb id attribute, usually `_id`
-  idAttribute: '_id',
-  userIdAttribute: 'user_id',
+  /**
+   * Deep version of lodash `defaults`
+   *
+   * @return {Object}
+   */
 
-  // The mongodb collection name
-  urlRoot: 'models',
+  _defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
+    return _.merge(value, other, deep);
+  }),
 
-  // Flag to force all updates to be patches on `sync`
-  updateUsingPatch: true,
+  /**
+   * Do not merge arrays and empty objects
+   * Arrays always want to be overwritten explicitly (empty or not)
+   * Objects want to be overwritten explicitly when empty
+   *
+   * @return {Object}
+   */
 
-  // Attributes that are not settable from the request
-  readOnlyAttributes: {},
-
-  // Attributes that should be saved to the database but NOT rendered to JSON
-  hiddenAttributes: {},
-
-  // Attributes that can be expanded (relations) and should NOT be saved to the database
-  // Does not support nested objects
-  expandableAttributes: {},
-
-  // The defaults hash (or function) can be used
-  // to specify the default attributes for your model.
-  // When creating an instance of the model,
-  // any unspecified attributes will be set to their default value.
-  //
-  // Remember that in JavaScript, objects are passed by reference,
-  // so if you include an object as a default value,
-  // it will be shared among all instances.
-  // Instead, define defaults as a function.
-  //
-  // See `model.spec.js` for how to use
-
-  defaults: function() {},
-
-  // Defaults that should be applied to all models
-  // Object or Function
-  baseDefaults: function() {},
-
-  combinedDefaults: function() {
-    var defaults = _.result(this, 'defaults');
-    _.merge(defaults, _.result(this, 'baseDefaults'));
-    return defaults;
-  },
-
-  // Define the types of each attribute
-  // Object or Function
-  // See `model.spec.js` for how to use
-  schema: function() {},
-
-  // Attributes that should be included in all responses
-  // Object or Function
-  baseSchema: function() {},
-
-  combinedSchema: function() {
-    var schema = _.result(this, 'schema');
-    _.merge(schema, _.result(this, 'baseSchema'));
-    return schema;
-  },
-
-  // Override to support `defaultsDeep` and `combinedDefaults`
-  // http://backbonejs.org/docs/backbone.html#section-35
-  constructor: function(attributes, options) {
-    var attrs = attributes || {};
-    options || (options = {});
-    this.cid = _.uniqueId('c');
-    this.attributes = {};
-    if (options.collection) this.collection = options.collection;
-    if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = _.defaultsDeep({}, attrs, _.result(this, 'combinedDefaults'));
-    this.set(attrs, options);
-    this.changed = {};
-    this.initialize.apply(this, arguments);
-  },
-
-  initialize: function() {
-    this.db; // reference to a mongodb client/connection
-    this.cache; // reference to a redis client/connection
-    this.changedFromRequest = {};
-    this.previousFromRequest = {};
-  },
-
-  // Set defaults and apply/validate schema
-  parse: function(resp, options) {
-    // Mongodb sometimes returns an array of one document
-    if (_.isArray(resp)) {
-      resp = resp[0];
+  _mergeSafe: _.partialRight(_.merge, function deep(value, other) {
+    if (_.isArray(value)) {
+      // If array, do not deep merge
+      return value;
+    } else if (_.isObject(value) && _.isEmpty(value)) {
+      // If empty object, do not merge
+      return value;
     }
+    return _.merge(value, other, deep);
+  }),
 
-    resp = _.defaultsDeep({}, resp, _.result(this, 'combinedDefaults'));
+  /**
+   * Check if a string is a valid ObjectId
+   *
+   * @param {String} id
+   * @return {Boolean}
+   */
 
-    return resp;
+  _isObjectId: function(id) {
+    return require('mongodb-objectid-helper').isObjectId(id);
   },
 
-  // Responsible for setting attributes after a database call
-  // Takes the mongodb response and calls the Backbone success method
-  wrapResponse: function(options) {
+  /**
+   * Check if a string is a unix timestamp in milliseconds
+   *
+   * @param {String} value
+   * @return {Boolean}
+   */
+
+  _isTimestamp: function(value) {
+    if (value && value >= 0 && value.toString().length === 13) {
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * Check if a string is in ISO8601 date format
+   *
+   * Examples:
+   *
+   * - YYYY-MM-DDTHH:mm:ss.SSSZ
+   * - 2013-11-18T09:04:24.447Z
+   *
+   * @param {String} str
+   * @return {Boolean}
+   */
+
+  _isValidISO8601String: function(str) {
+    // 2013-11-18T09:04:24.447Z
+    // YYYY-MM-DDTHH:mm:ss.SSSZ
+    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
+  },
+
+  /**
+   * Responsible for setting attributes after a database call
+   * Takes the mongodb response and calls the Backbone success method
+   *
+   * @param {Object} options
+   * @return {Function}
+   */
+
+  _wrapResponse: function(options) {
     return function(err, resp) {
       if (err) {
         options.error(err);
@@ -117,86 +102,81 @@ module.exports = Backbone.Model.extend({
     };
   },
 
-  // Getters and Setters
-  // ---
+  /**
+   * Remove attributes
+   *
+   * Does not work for objects embedded inside arrays
+   *
+   * @param {Object} attrs   [description]
+   * @param {Object} attrsToRemove [description]
+   */
 
-
-  set: function(key, val, options) {
-    var attrs;
-    if (key === null) return this;
-
-    if (typeof key === 'object') {
-      attrs = key;
-      options = val;
-    } else {
-      (attrs = {})[key] = val;
-    }
-
-    options || (options = {});
-
-    // Don't override unset
-    if (options.unset) {
-      return Backbone.Model.prototype.set.apply(this, arguments);
-    }
-
-    // Apply schema
-    var schema = _.result(this, 'combinedSchema');
-    this.validateAttributes(attrs, schema);
-
-    return Backbone.Model.prototype.set.call(this, attrs, options);
-  },
-
-  // Tested and working with both shallow and deep keypaths
-  get: function(attr) {
-    if (!_.isString(attr)) {
-      return undefined;
-    }
-
-    return this.getDeep(this.attributes, attr);
-  },
-
-  // Support dot notation of accessing nested keypaths
-  getDeep: function(attrs, attr) {
-    var keys = attr.split('.');
-    var key;
-    var val = attrs;
-    var context = this;
-
-    for (var i = 0, n = keys.length; i < n; i++) {
-      // get key
-      key = keys[i];
-
-      // Hold reference to the context when diving deep into nested keys
-      if (i > 0) {
-        context = val;
+  _removeAttributes: function(attrs, attrsToRemove) {
+    _.each(attrs, function(val, key) {
+      // shouldRemove is either an object or a boolean
+      var shouldRemove = attrsToRemove[key];
+      if (_.isUndefined(shouldRemove)) {
+        return;
       }
 
-      // get value for key
-      val = val[key];
-
-      // value for key does not exist
-      // break out of loop early
-      if (_.isUndefined(val) || _.isNull(val)) {
-        break;
+      // Support nested object
+      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
+        return this._removeAttributes(val, shouldRemove);
       }
-    }
 
-    // Eval computed properties that are functions
-    if (_.isFunction(val)) {
-      // Call it with the proper context (see above)
-      val = val.call(context);
-    }
-
-    return val;
+      if (shouldRemove) {
+        delete attrs[key];
+      }
+    }, this);
   },
 
-  // TODO setDeep
+  /**
+   * Remove expandable attributes
+   *
+   * Does not work for objects embedded inside arrays
+   *
+   * @param {Object} attrs   [description]
+   * @param {Object} attrsToRemove [description]
+   */
 
-  // Note: Mutates attrs
-  // Verifies that all attr keys are defined in the schema
-  // If an attr does not have a corresponding schema, it is removed
-  validateAttributes: function(attrs, schema) {
-    if (!_.isObject(attrs) || _.isUndefined(schema) || _.isNull(schema)) {
+  _removeExpandableAttributes: function(attrs, attrsToRemove) {
+    _.each(attrs, function(val, key) {
+      // shouldRemove is either an object or a boolean
+      var shouldRemove = attrsToRemove[key];
+      if (_.isUndefined(shouldRemove)) {
+        return;
+      }
+
+      // Support nested object
+      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
+        return this._removeExpandableAttributes(val, shouldRemove);
+      }
+
+      // Make sure attribute is an object
+      // Strip all nested properties except for `_id`
+      if (_.isObject(attrs[key]) && shouldRemove) {
+        attrs[key] = _.pick(attrs[key], ['_id']);
+      }
+    }, this);
+  },
+
+
+  /**
+   * Verifies that all attributes are defined in the schema
+   * If an attribute is not defined in the schema, it is removed
+   *
+   * Note: Mutates `attrs` in place
+   *
+   * @param {Object} attrs
+   * @param {Object} schema
+   * @return {Object}
+   */
+
+  _validateAttributes: function(attrs, schema) {
+    if (!_.isObject(attrs) ||
+      _.isUndefined(schema) ||
+      _.isNull(schema) ||
+      _.isEmpty(schema)) {
       return;
     }
 
@@ -240,14 +220,14 @@ module.exports = Backbone.Model.extend({
         // Ex. [{...}]
         if (_.isObject(schemaType)) {
           _.each(val, function(arrVal) {
-            this.validateAttributes(arrVal, schemaType);
+            this._validateAttributes(arrVal, schemaType);
           }, this);
           return;
         }
 
         // Recursively validate the array
         // Ex: ['string'] or ['integer']
-        return this.validateAttributes(val, schemaType);
+        return this._validateAttributes(val, schemaType);
       } else if (_.isObject(schemaType)) {
         // Empty object is a loosely defined schema, no-op
         // That means allow anything inside
@@ -258,13 +238,13 @@ module.exports = Backbone.Model.extend({
 
         // Recursively validate the object
         // Ex: {...}
-        return this.validateAttributes(val, schemaType);
+        return this._validateAttributes(val, schemaType);
       }
 
       // All other types are defined as a string
       switch (schemaType) {
         case 'id':
-          isValid = _.isObjectId(val);
+          isValid = this._isObjectId(val);
           break;
         case 'string':
           isValid = _.isString(val);
@@ -295,11 +275,11 @@ module.exports = Backbone.Model.extend({
           isValid = _.isBoolean(val);
           break;
         case 'timestamp':
-          isValid = _.isTimestamp(val);
+          isValid = this._isTimestamp(val);
           break;
         case 'date':
           // Also support ISO8601 strings, convert to date
-          if (_.isString(val) && _.isValidISO8601String(val)) {
+          if (_.isString(val) && this._isValidISO8601String(val)) {
             attrs[key] = val = new Date(val);
           }
           isValid = _.isDate(val);
@@ -322,80 +302,269 @@ module.exports = Backbone.Model.extend({
     }, this);
   },
 
-  // Removes attributes
-  // Does not work for objects embedded inside arrays
-  removeAttributes: function(attrs, options) {
-    _.each(attrs, function(val, key) {
-      // shouldRemove is either an object or a boolean
-      var shouldRemove = options[key];
-      if (_.isUndefined(shouldRemove)) {
-        return;
-      }
 
-      // Support nested object
-      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
-        return this.removeAttributes(val, shouldRemove);
-      }
 
-      if (shouldRemove) {
-        delete attrs[key];
-      }
-    }, this);
+  // Reserved attribute definitions
+  idAttribute: '_id',
+  userIdAttribute: 'user_id',
+
+  // The mongodb collection name
+  urlRoot: 'models',
+
+  // Flag to force all updates to be patches on `sync`
+  updateUsingPatch: true,
+
+  // Attributes that are not settable from the request
+  readOnlyAttributes: {},
+
+  // Attributes that should be saved to the database but NOT rendered to JSON
+  hiddenAttributes: {},
+
+  // Attributes that can be expanded (relations) and should NOT be saved to the database
+  // Does not support nested objects
+  expandableAttributes: {},
+
+  /**
+   * The defaults hash (or function) can be used
+   * to specify the default attributes for your model.
+   * When creating an instance of the model,
+   * any unspecified attributes will be set to their default value.
+   *
+   * Remember that in JavaScript, objects are passed by reference,
+   * so if you include an object as a default value,
+   * it will be shared among all instances.
+   * Instead, define defaults as a function.
+   *
+   * @return {Object}
+   */
+
+  defaults: function() {
+    return {};
   },
 
-  // Removes expandable attributes
-  // Does not work for objects embedded inside arrays
-  removeExpandableAttributes: function(attrs, options) {
-    _.each(attrs, function(val, key) {
-      // shouldRemove is either an object or a boolean
-      var shouldRemove = options[key];
-      if (_.isUndefined(shouldRemove)) {
-        return;
-      }
-
-      // Support nested object
-      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
-        return this.removeExpandableAttributes(val, shouldRemove);
-      }
-
-      // Make sure attribute is an object
-      // Strip all nested properties except for `_id`
-      if (_.isObject(attrs[key]) && shouldRemove) {
-        attrs[key] = _.pick(attrs[key], ['_id']);
-      }
-    }, this);
+  // DEPRECATED 2015-05-08
+  // Use `defaults` instead
+  // Defaults that should be applied to all models
+  baseDefaults: function() {
+    return {};
   },
 
-  // Override backbone's `toJSON` to support `cloneDeep`
+  // DEPRECATED 2015-05-08
+  combinedDefaults: function() {
+    var defaults = _.result(this, 'defaults');
+    _.merge(defaults, _.result(this, 'baseDefaults'));
+    return defaults;
+  },
+
+  /**
+   * Define the types of each attribute
+   *
+   * See `model.spec.js` for how to use
+   *
+   * @return {Object}
+   */
+
+  schema: function() {
+    return {};
+  },
+
+  // DEPRECATED 2015-05-08
+  // Use `schema` instead
+  // Attributes that should be included in all responses
+  baseSchema: function() {
+    return {};
+  },
+
+  // DEPRECATED 2015-05-08
+  combinedSchema: function() {
+    var schema = _.result(this, 'schema');
+    _.merge(schema, _.result(this, 'baseSchema'));
+    return schema;
+  },
+
+  // Override to support `defaultsDeep` and `combinedDefaults`
+  // http://backbonejs.org/docs/backbone.html#section-35
+  constructor: function(attributes, options) {
+    var attrs = attributes || {};
+    options || (options = {});
+    this.cid = _.uniqueId('c');
+    this.attributes = {};
+    if (options.collection) this.collection = options.collection;
+    if (options.parse) attrs = this.parse(attrs, options) || {};
+    attrs = this._defaultsDeep({}, attrs, _.result(this, 'combinedDefaults'));
+    this.set(attrs, options);
+    this.changed = {};
+    this.initialize.apply(this, arguments);
+  },
+
+  initialize: function() {
+    this.db; // reference to a mongodb client/connection
+    this.cache; // reference to a redis client/connection
+    this.changedFromRequest = {};
+    this.previousFromRequest = {};
+  },
+
+  /**
+   * Backbone `parse` extended with support for defaults
+   *
+   * @param {Object|Array} resp
+   * @param {Object} options
+   * @return {Object}
+   */
+
+  parse: function(resp, options) {
+    // Mongodb sometimes returns an array of one document
+    if (_.isArray(resp)) {
+      resp = resp[0];
+    }
+    resp = this._defaultsDeep({}, resp, _.result(this, 'combinedDefaults'));
+    return resp;
+  },
+
+  /**
+   * Backbone `set` extended with support for schema
+   *
+   * TODO @ptshih Extend with lodash `set` (nested/deep)
+   *
+   * @return {*}
+   */
+
+  set: function(key, val, options) {
+    var attrs;
+    if (key === null) return this;
+
+    if (typeof key === 'object') {
+      attrs = key;
+      options = val;
+    } else {
+      (attrs = {})[key] = val;
+    }
+
+    options || (options = {});
+
+    // Don't override unset
+    if (options.unset) {
+      return Backbone.Model.prototype.set.apply(this, arguments);
+    }
+
+    // Apply schema
+    var schema = _.result(this, 'combinedSchema');
+    this._validateAttributes(attrs, schema);
+
+    return Backbone.Model.prototype.set.call(this, attrs, options);
+  },
+
+  /**
+   * Backbone `get` extended with support for deep/nested get
+   *
+   * Examples:
+   *
+   * - 'foo'
+   * - 'foo.bar'
+   * - 'foo.bar.0'
+   * - 'foo.bar.1.baz'
+   *
+   * Lodash Examples:
+   *
+   * - 'foo'
+   * - 'foo.bar'
+   * - 'foo.bar[0]'
+   * - 'foo.bar[1].baz'
+   *
+   * @param {String} attr
+   * @return {*}
+   */
+
+  get: function(attr) {
+    return this.getDeep(this.attributes, attr);
+  },
+
+  // DEPRECATED 2015-05-08
+  // Soon `get` will use lodash `get` instead of `getDeep`
+  getDeep: function(attrs, attr) {
+    if (!_.isString(attr)) {
+      return undefined;
+    }
+
+    var keys = attr.split('.');
+    var key;
+    var val = attrs;
+    var context = this;
+
+    for (var i = 0, n = keys.length; i < n; i++) {
+      // get key
+      key = keys[i];
+
+      // Hold reference to the context when diving deep into nested keys
+      if (i > 0) {
+        context = val;
+      }
+
+      // get value for key
+      val = val[key];
+
+      // value for key does not exist
+      // break out of loop early
+      if (_.isUndefined(val) || _.isNull(val)) {
+        break;
+      }
+    }
+
+    // Eval computed properties that are functions
+    if (_.isFunction(val)) {
+      // Call it with the proper context (see above)
+      val = val.call(context);
+    }
+
+    return val;
+  },
+
+  /**
+   * Backbone `toJSON` extended with support for lodash `cloneDeep`
+   */
+
   toJSON: function(options) {
     var json = _.cloneDeep(this.attributes);
     return json;
   },
 
-  // Convert attributes into a pojo,
-  // then remove attributes that should be hidden
+  /**
+   * Converts model attributes into a pojo (json object)
+   * Also removes all attributes that are defined to be hidden
+   * Uses `toJSON`
+   *
+   * @return {Object} POJO/JSON
+   */
+
   render: function() {
     var json = this.toJSON();
     var hiddenAttributes = _.result(this, 'hiddenAttributes');
-    this.removeAttributes(json, hiddenAttributes);
+    this._removeAttributes(json, hiddenAttributes);
     return json;
   },
 
-  // Alias for `render`
+  /**
+   * Alias for `render`
+   */
+
   toResponse: function() {
     return this.render();
   },
 
+  /**
+   * Used to set attributes from a request body
+   * Assume `this.attributes` is populated with existing data
+   *
+   * @param {Object} body This is the request params/body
+   * @return {Promise.<Model>}
+   */
 
-
-  // Used to set attributes from a request body
-  // Assume `this.attributes` is populated with existing data
   setFromRequest: Bluebird.method(function(body) {
-    body = _.mergeSafe(body, this.attributes);
+    body = this._mergeSafe(body, this.attributes);
 
     // Remove read only attributes
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
-    this.removeAttributes(body, readOnlyAttributes);
+    this._removeAttributes(body, readOnlyAttributes);
 
     // Set new attributes
     this.set(body);
@@ -408,11 +577,11 @@ module.exports = Backbone.Model.extend({
     return this;
   }),
 
-
-
-  // Lifecycle methods
-  // ---
-  // These can either return a promise or a value
+  /**
+   * Lifecycle Methods
+   *
+   * These can either return a promise or a value
+   */
 
   beforeFetch: Bluebird.method(function() {
     return this;
@@ -446,15 +615,30 @@ module.exports = Backbone.Model.extend({
     return this;
   }),
 
-  // Override the backbone sync method for use with mongodb
-  // options contains 2 callbacks: `success` and `error`
-  // Both callbacks have parameters (model, resp, options)
-  // `resp` is either a `document` or an `error` object
-  //
-  // Events
-  // ---
-  // A `request` event is fired before with parameters (model, op, options)
-  // A `sync` event is fired after with parameters (model, resp, options)
+  /**
+   * Override the backbone sync method for use with mongodb
+   *
+   * Also, if `updateUsingPatch` is enabled,
+   * All updates (PUT) will be aliased to patches (PATCH)
+   *
+   * The `options` object can contains 2 callbacks:
+   * Both callbacks have parameters (model, resp, options)
+   * `resp` is either a `document` or an `error` object
+   *
+   * - `success`
+   * - `error`
+   *
+   * Events:
+   *
+   * - A `request` event is fired before with parameters (model, op, options)
+   * - A `sync` event is fired after with parameters (model, resp, options)
+   *
+   * @param {String} method
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Collection>}
+   */
+
   sync: Bluebird.method(function(method, model, options) {
     // Force all `update` to actually be `patch` if configured
     if (this.updateUsingPatch && method === 'update') {
@@ -466,31 +650,38 @@ module.exports = Backbone.Model.extend({
     return op;
   }),
 
-  // Adds before/after fetch lifecycle methods
+  /**
+   * Backbone `fetch` extended and promisified
+   * Support `before` and `after` lifecycle methods
+   *
+   * @return {Promise.<Model>}
+   */
+
   fetch: Bluebird.method(function() {
     var originalArguments = arguments;
 
-    return Bluebird.bind(this).then(function() {
+    return Bluebird.bind(this).tap(function() {
       return this.beforeFetch.apply(this, originalArguments);
-    }).then(function() {
+    }).tap(function() {
       return Backbone.Model.prototype.fetch.apply(this, originalArguments);
-    }).then(function() {
+    }).tap(function() {
       return this.afterFetch.apply(this, originalArguments);
-    }).catch(function(err) {
-      debug.error('#fetch:', err);
-      throw err;
-    });
+    }).return(this);
   }),
 
+  /**
+   * Backbone `save` extended and promisified
+   *
+   * @return {Promise.<Model>}
+   */
 
-  // Return a rejected promise if validation fails
-  // Bubble up the `validationError` from Backbone
   save: Bluebird.method(function() {
+    debug.log('Model [%s] save called', this.urlRoot);
     var originalArguments = arguments;
 
     // Remove expandable attributes
     var expandableAttributes = _.result(this, 'expandableAttributes');
-    this.removeExpandableAttributes(this.attributes, expandableAttributes);
+    this._removeExpandableAttributes(this.attributes, expandableAttributes);
 
     var beforeFn, afterFn;
     if (this.isNew()) {
@@ -501,39 +692,55 @@ module.exports = Backbone.Model.extend({
       afterFn = this.afterUpdate;
     }
 
-    return Bluebird.bind(this).then(function() {
+    return Bluebird.bind(this).tap(function() {
       return beforeFn.apply(this, originalArguments);
-    }).then(function() {
+    }).tap(function() {
       return this.beforeSave.apply(this, originalArguments);
-    }).then(function() {
-      var op = Backbone.Model.prototype.save.apply(this, originalArguments);
-      if (!op) {
-        return Bluebird.reject(this.validationError);
-      }
-      return op;
-    }).then(function() {
+    }).tap(function() {
+      return Backbone.Model.prototype.save.apply(this, originalArguments);
+    }).tap(function() {
       return afterFn.apply(this, originalArguments);
-    }).then(function() {
+    }).tap(function() {
       return this.afterSave.apply(this, originalArguments);
-    });
+    }).return(this);
   }),
 
-  // Inserts a mongodb document
+  /**
+   * Inserts a mongodb document
+   *
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Model>}
+   */
+
   create: Bluebird.method(function(model, options) {
     debug.log('Model [%s] create called', this.urlRoot);
+
     return this.db.insert(
       this.urlRoot,
       model.toJSON(),
-      this.wrapResponse(options)
+      this._wrapResponse(options)
     ).return(this);
   }),
 
-  // Updates a mongodb document
-  // NOTE: This replaces the entire document with the model attributes
+  /**
+   * Updates a mongodb document
+   *
+   * NOTE: This replaces the entire document with the model attributes
+   *
+   * The parameter `options` has the following properties:
+   *
+   * - `require` If true, will throw an error if document is not found
+   *
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Model>}
+   */
+
   update: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new Error('No ID for Model');
+      var err = new BootieError('Cannot update a new model.', 400);
       options.error(err);
       throw err;
     }
@@ -545,24 +752,44 @@ module.exports = Backbone.Model.extend({
       query[this.userIdAttribute] = model.get(this.userIdAttribute);
     }
 
+    // Mongo options
+    // Don't support `multi`, this is a single model
     var mongoOptions = _.pick(options, ['require']) || {};
-    debug.log('Model [%s] update with query: %s',
-      this.urlRoot, JSON.stringify(query));
+
+    debug.log(
+      'Model [%s] update with query: %s and options: %s',
+      this.urlRoot,
+      JSON.stringify(query),
+      JSON.stringify(mongoOptions)
+    );
+
     return this.db.findAndModify(
       this.urlRoot,
       query,
       model.toJSON(),
       mongoOptions,
-      this.wrapResponse(options)
+      this._wrapResponse(options)
     ).return(this);
   }),
 
-  // Updates a mongodb document
-  // NOTE: This sets only explicitly provided model attributes
+  /**
+   * Sets a mongodb document
+   *
+   * NOTE: This sets only explicitly provided model attributes
+   *
+   * The parameter `options` has the following properties:
+   *
+   * - `require` If true, will throw an error if document is not found
+   *
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Model>}
+   */
+
   patch: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new Error('No ID for Model');
+      var err = new BootieError('Cannot patch a new model.', 400);
       options.error(err);
       throw err;
     }
@@ -583,24 +810,40 @@ module.exports = Backbone.Model.extend({
       '$set': attrs
     };
 
+    // Mongo options
+    // Don't support `multi`, this is a single model
     var mongoOptions = _.pick(options, ['require']) || {};
-    debug.log('Model [%s] patch with query: %s',
-      this.urlRoot, JSON.stringify(query));
+
+    debug.log(
+      'Model [%s] patch with query: %s and options: %s',
+      this.urlRoot,
+      JSON.stringify(query),
+      JSON.stringify(options)
+    );
+
     return this.db.findAndModify(
       this.urlRoot,
       query,
       obj,
       mongoOptions,
-      this.wrapResponse(options)
+      this._wrapResponse(options)
     ).return(this);
   }),
 
-  // Removes a mongodb document
-  // Must have ID
+  /**
+   * Deletes a mongodb document
+   *
+   * Note this Promise returns a Number not a Model
+   *
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Number>} Number of documents deleted
+   */
+
   delete: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new Error('No ID for Model');
+      var err = new BootieError('Cannot delete a new model.', 400);
       options.error(err);
       throw err;
     }
@@ -609,19 +852,33 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    debug.log('Model [%s] delete with query: %s',
-      this.urlRoot, JSON.stringify(query));
+    debug.log(
+      'Model [%s] delete with query: %s',
+      this.urlRoot,
+      JSON.stringify(query)
+    );
 
     return this.db.remove(
       this.urlRoot,
       query,
-      this.wrapResponse(options)
+      this._wrapResponse(options)
     );
   }),
 
-  // Finds a single mongodb document
-  // If `options.query` is provided and is an object,
-  // it is used as the query
+  /**
+   * Finds a single mongodb document
+   *
+   * The parameter `options` has the following properties:
+   *
+   * - `query` The query to use for the database
+   * - `require` If true, will throw an error if document is not found
+   * - `readPreference` Use a read preference when running this query
+   *
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Model>}
+   */
+
   read: Bluebird.method(function(model, options) {
     var query = {};
     if (_.isObject(options.query)) {
@@ -630,7 +887,7 @@ module.exports = Backbone.Model.extend({
     } else {
       if (model.isNew()) {
         // If no ID in query, error out
-        var err = new Error('Trying to fetch a model with no `_id` attribute.');
+        var err = new BootieError('Cannot read a new model.', 400);
         options.error(err);
         throw err;
       }
@@ -642,15 +899,24 @@ module.exports = Backbone.Model.extend({
       }
     }
 
-    var mongoOptions = _.pick(options, ['require']) || {};
-    debug.log('Model [%s] read with query: %s',
-      this.urlRoot, JSON.stringify(query));
+    // Mongo options
+    var mongoOptions = _.pick(options, [
+      'require',
+      'readPreference'
+    ]) || {};
+
+    debug.log(
+      'Model [%s] read with query: %s and options: %s',
+      this.urlRoot,
+      JSON.stringify(mongoOptions),
+      JSON.stringify(query)
+    );
 
     return this.db.findOne(
       this.urlRoot,
       query,
       mongoOptions,
-      this.wrapResponse(options)
+      this._wrapResponse(options)
     ).return(this);
   })
 });

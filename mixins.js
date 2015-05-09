@@ -15,24 +15,6 @@ var mixins = module.exports = {};
 _.mixin({
   isError: util.isError,
 
-  defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
-    return _.merge(value, other, deep);
-  }),
-
-  // Do not merge arrays and empty objects
-  // Arrays always want to be overwritten explicitly (empty or not)
-  // Objects want to be overwritten explicitly when empty
-  mergeSafe: _.partialRight(_.merge, function deep(value, other) {
-    if (_.isArray(value)) {
-      // If array, do not deep merge
-      return value;
-    } else if (_.isObject(value) && _.isEmpty(value)) {
-      // If empty object, do not merge
-      return value;
-    }
-    return _.merge(value, other, deep);
-  }),
-
   centsToDollars: function(value) {
     // 2 decimal points and no thousand separator
     return parseFloat(accounting.toFixed(value / 100, 2));
@@ -101,23 +83,11 @@ _.mixin({
     return /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(value);
   },
 
-  // Check if a String or ObjectId is a valid ObjectId
-  isObjectId: function(value) {
-    return objectIdHelper.isObjectId(value);
-  },
-
   isUnixTime: function(value) {
     if (value && value >= 0 && value.toString().length > 11) {
       return false;
     }
     return true;
-  },
-
-  isTimestamp: function(value) {
-    if (value && value >= 0 && value.toString().length === 13) {
-      return true;
-    }
-    return false;
   },
 
   sanitizeEmail: function(email) {
@@ -135,11 +105,7 @@ _.mixin({
     }
   },
 
-  isValidISO8601String: function(str) {
-    // 2013-11-18T09:04:24.447Z
-    // YYYY-MM-DDTHH:mm:ss.SSSZ
-    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
-  },
+
 
   escapeRegExp: function(str) {
     return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
