@@ -1,7 +1,5 @@
 'use strict';
 
-// Dependencies
-// ---
 var _ = require('lodash');
 var Bluebird = require('bluebird');
 var Backbone = require('backbone');
@@ -9,20 +7,14 @@ var Model = require('./model');
 var debug = require('./debug');
 
 module.exports = Backbone.Collection.extend({
-  model: Model,
+  /**
+   * Takes the mongodb response and calls the Backbone success method
+   *
+   * @param {Object} options
+   * @return {Function}
+   */
 
-  initialize: function() {
-    this.db; // reference to a mongodb client/connection
-    this.cache; // reference to a redis client/connection
-  },
-
-  // Copied from Backbone, not currently overridden
-  parse: function(resp, options) {
-    return resp;
-  },
-
-  // Takes the mongodb response and calls the Backbone success method
-  wrapResponse: function(options) {
+  _wrapResponse: function(options) {
     return function(err, resp) {
       if (err) {
         options.error(err);
@@ -32,53 +24,113 @@ module.exports = Backbone.Collection.extend({
     };
   },
 
-  // Override `Collection.set` to assign
-  // a collection's user to all models in the collection
+
+
+  model: Model,
+
+  initialize: function() {
+    this.db; // reference to a mongodb client/connection
+    this.cache; // reference to a redis client/connection
+  },
+
+  /**
+   * Copied from Backbone, not currently overridden
+   */
+
+  parse: function(resp, options) {
+    return resp;
+  },
+
+  /**
+   * Override to assign `db` and `user` to all models in the collection on `set`
+   * Note that the prototype must be called first and returned at the end
+   */
+
   set: function() {
     var ret = Backbone.Collection.prototype.set.apply(this, arguments);
 
     this.each(function(model) {
-      // Pass `db` to all models in the collection
-      model.db = this.db;
-      // Pass `collection.user` to all models in the collection
+      // Assign `db` to all models in the collection
+      if (this.db) {
+        model.db = this.db;
+      }
+
+      // Assign `user` to all models in the collection
       if (this.user) {
         model.user = this.user;
       }
-    }.bind(this));
+    }, this);
 
     return ret;
   },
 
-  // Convert attributes into a pojo,
-  // then remove attributes that should be hidden
+  /**
+   * Creates an array of pojos
+   * By calling `Model.render` on all models in collection
+   *
+   * @param {Object} options
+   * @return {Array} [description]
+   */
+
   render: function(options) {
     return this.map(function(model) {
       return model.render(options);
     });
   },
 
-  // Alias for `render`
+  /**
+   * Alias for `render`
+   */
+
   toResponse: function() {
     return this.render();
   },
 
-  // Override the backbone sync method for use with mongodb
-  // options contains 2 callbacks: `success` and `error`
-  // Both callbacks have parameters (model, resp, options)
-  // `resp` is either a `document` or an `error` object
-  //
-  // Events
-  // ---
-  // A `request` event is fired before with parameters (model, op, options)
-  // A `sync` event is fired after with parameters (model, resp, options)
+  /**
+   * Override the backbone sync method for use with mongodb
+   *
+   * The `options` object can contains 2 callbacks:
+   * Both callbacks have parameters (model, resp, options)
+   * `resp` is either a `document` or an `error` object
+   *
+   * - `success`
+   * - `error`
+   *
+   * Events:
+   *
+   * - A `request` event is fired before with parameters (model, op, options)
+   * - A `sync` event is fired after with parameters (model, resp, options)
+   *
+   * @param {String} method
+   * @param {Model} model
+   * @param {Object} options
+   * @return {Promise.<Collection>}
+   */
+
   sync: Bluebird.method(function(method, model, options) {
     var op = this[method].call(this, model, options);
     model.trigger('request', model, op, options);
     return op;
   }),
 
-  // Finds mongodb documents
+  /**
+   * Override the backbone read method for use with mongodb
+   *
+   * The parameter `options` has the following properties:
+   *
+   * - `limit` Limit number of documents returned in query
+   * - `skip` Skip N documents ahead in query
+   * - `sort` Set to sort the documents coming back from the query `[['a', 1]]`
+   * - `fields` Restrict the fields to return in the query `{'a': 1}`
+   * - `readPreference` Use a read preference when running this query
+   *
+   * @param {Collection} collection
+   * @param {Object} options
+   * @return {Promise.<Collection>}
+   */
+
   read: Bluebird.method(function(collection, options) {
+    options = options || {};
     var query = {};
 
     // Build query against where query
@@ -86,17 +138,27 @@ module.exports = Backbone.Collection.extend({
       query = options.query;
     }
 
-    // Build query with optional: limit, skip, sort
-    var mongoOptions = _.pick(options, ['limit', 'skip', 'sort', 'fields']) || {};
+    // Restrict mongo options
+    var mongoOptions = _.pick(options, [
+      'limit',
+      'skip',
+      'sort',
+      'fields',
+      'readPreference'
+    ]) || {};
+
     debug.log('Collection [%s] read with query: %s and options: %s',
       this.model.prototype.urlRoot,
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
+
     return this.db.find(
       this.model.prototype.urlRoot,
-      query, mongoOptions,
-      this.wrapResponse(options)
-    ).bind(this).then(function(resp) {
+      query,
+      mongoOptions,
+      this._wrapResponse(options)
+    ).bind(this).tap(function(resp) {
+      // Assign pagination properties to the collection
       this.limit = _.parseInt(mongoOptions.limit) || 0;
       this.skip = _.parseInt(mongoOptions.skip) || 0;
       this.total = _.parseInt(resp[1]) || 0;
@@ -106,16 +168,27 @@ module.exports = Backbone.Collection.extend({
         Math.ceil(this.total / this.limit) :
         1;
       this.hasMore = this.page < this.pages;
-      return this;
-    });
+    }).return(this);
   }),
 
-  // Count (not part of `sync`)
-  // This is an extension to Backbone
+  /**
+   * A new method for counting with mongodb
+   * This is an extension to backbone
+   *
+   * * The parameter `options` has the following properties:
+   *
+   * - `limit` Limit number of documents returned in query
+   * - `skip` Skip N documents ahead in query
+   * - `readPreference` Use a read preference when running this query
+   *
+   * @param {Object} options
+   * @return {Promise.<Number>} Number of documents matching query
+   */
+
   count: Bluebird.method(function(options) {
     options = options || {};
 
-    // This is for `wrapResponse`
+    // This is for `_wrapResponse`
     // `options` may contain `success` and `error` callbacks
     var successCallback = options.success;
     var errorCallback = options.error;
@@ -136,10 +209,23 @@ module.exports = Backbone.Collection.extend({
       query = options.query;
     }
 
+    // Restrict mongo options
+    var mongoOptions = _.pick(options, [
+      'limit',
+      'skip',
+      'readPreference'
+    ]) || {};
+
+    debug.log('Collection [%s] count with query: %s and options: %s',
+      this.model.prototype.urlRoot,
+      JSON.stringify(query),
+      JSON.stringify(mongoOptions));
+
     return this.db.count(
       this.model.prototype.urlRoot,
-      query, {},
-      this.wrapResponse(options)
+      query,
+      mongoOptions,
+      this._wrapResponse(options)
     );
   })
 });

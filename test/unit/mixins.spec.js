@@ -39,26 +39,9 @@ describe("Mixins", function() {
     assert.isTrue(_.isValidEmail(sanitizedEmail));
   });
 
-  it('#isTimestamp', function() {
-    assert.isTrue(_.isTimestamp(1407397793555));
-    assert.isFalse(_.isTimestamp(1407397793));
-  });
-
   it('#isUnixTime', function() {
     assert.isTrue(_.isUnixTime(1407397793));
     assert.isFalse(_.isUnixTime(1407397793555));
-  });
-
-  it('#isValidISO8601String', function() {
-    assert.isTrue(_.isValidISO8601String('2013-11-18T09:04:24.447Z'));
-    assert.isFalse(_.isValidISO8601String('Thu, 07 Aug 2014 07:49:53 GMT'));
-  });
-
-  it('#isObjectId', function() {
-    var oid = new ObjectId();
-    assert.isTrue(_.isObjectId(oid.toHexString()));
-    assert.isTrue(_.isObjectId('53b4694cda836700006b61f2'));
-    assert.isFalse(_.isObjectId('trollolol'));
   });
 
   it('#isUUID', function() {
@@ -85,116 +68,5 @@ describe("Mixins", function() {
     var str = 'i am + base $@#4 23425@#$@--//=';
     assert.isTrue(_.validateBase64(_.encodeBase64(str)));
     assert.isFalse(_.validateBase64(str));
-  });
-
-  it('#defaultsDeep', function() {
-    var obj = {
-      foo: {
-        bar: {
-          baz: false
-        }
-      },
-      array: [{
-        foo: 'bar'
-      }, {
-        hello: 'moto'
-      }],
-      object: {
-        array: [1, 2, 3]
-      }
-    };
-
-    _.defaultsDeep(obj, {
-      omg: 'troll',
-      foo: {
-        bar: {
-          lol: true
-        },
-        wtf: 'doge'
-      },
-      array: [{
-        noob: 'tube'
-      }, {
-        hello: 'android'
-      }],
-      object: {
-        array: [3, 4, 5]
-      }
-    });
-
-    assert.deepEqual(obj, {
-      omg: 'troll',
-      foo: {
-        bar: {
-          baz: false,
-          lol: true
-        },
-        wtf: 'doge'
-      },
-      array: [{
-        foo: 'bar',
-        noob: 'tube'
-      }, {
-        hello: 'moto'
-      }],
-      object: {
-        array: [1, 2, 3]
-      }
-    });
-  });
-
-  it('#mergeSafe', function() {
-    var obj = {
-      foo: {
-        bar: {
-          baz: false
-        }
-      },
-      array: [{
-        foo: 'bar'
-      }, {
-        hello: 'moto'
-      }],
-      object: {
-        array: [1, 2, 3]
-      }
-    };
-
-    _.mergeSafe(obj, {
-      omg: 'troll',
-      foo: {
-        bar: {
-          lol: true
-        },
-        wtf: 'doge'
-      },
-      array: [{
-        noob: 'tube'
-      }, {
-        hello: 'android'
-      }],
-      object: {
-        array: [3, 4, 5]
-      }
-    });
-
-    assert.deepEqual(obj, {
-      omg: 'troll',
-      foo: {
-        bar: {
-          baz: false,
-          lol: true
-        },
-        wtf: 'doge'
-      },
-      array: [{
-        foo: 'bar'
-      }, {
-        hello: 'moto'
-      }],
-      object: {
-        array: [1, 2, 3]
-      }
-    });
   });
 });

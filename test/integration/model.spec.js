@@ -3,8 +3,8 @@
 
 var _ = require('lodash');
 var should = require("chai").should();
-var Model = require("../model");
-var Mongo = require("../mongo");
+var Model = require("../../model");
+var Mongo = require("../../mongo");
 
 // TODO FIX TESTS
 describe.skip("Models", function() {
