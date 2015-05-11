@@ -133,7 +133,6 @@ module.exports = Backbone.Model.extend({
   sendRequest: function(options, callback) {
     // Create a promise to defer to later
     var deferred = Bluebird.defer();
-    var requestOptions = this._buildRequestOptions(options);
 
     // Fire the request
     request(this._buildRequestOptions(options), function(err, response, body) {
