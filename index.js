@@ -66,6 +66,10 @@ Bootie.Adapter = require('./adapter');
 // [Annotated Source](error.html)
 Bootie.Error = require('./error');
 
+// Debug and error logging
+Bootie.debug = require('./debug');
+Bootie.log = Bootie.debug.log;
+Bootie.error = Bootie.debug.error;
 
 // Mixin Backbone.Events so that Bootie can be a pubsub bus
 var pjson = require('./package.json');
