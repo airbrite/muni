@@ -10,6 +10,7 @@ var Backbone = require('backbone');
 var moment = require('moment');
 var debug = require('./debug');
 var BootieError = require('./error');
+var Mixins = require('./mixins');
 
 module.exports = Backbone.Model.extend({
   /**
@@ -40,49 +41,6 @@ module.exports = Backbone.Model.extend({
     }
     return _.merge(value, other, deep);
   }),
-
-  /**
-   * Check if a string is a valid ObjectId
-   *
-   * @param {String} id
-   * @return {Boolean}
-   */
-
-  _isObjectId: function(id) {
-    return require('mongodb-objectid-helper').isObjectId(id);
-  },
-
-  /**
-   * Check if a string is a unix timestamp in milliseconds
-   *
-   * @param {String} value
-   * @return {Boolean}
-   */
-
-  _isTimestamp: function(value) {
-    if (value && value >= 0 && value.toString().length === 13) {
-      return true;
-    }
-    return false;
-  },
-
-  /**
-   * Check if a string is in ISO8601 date format
-   *
-   * Examples:
-   *
-   * - YYYY-MM-DDTHH:mm:ss.SSSZ
-   * - 2013-11-18T09:04:24.447Z
-   *
-   * @param {String} str
-   * @return {Boolean}
-   */
-
-  _isValidISO8601String: function(str) {
-    // 2013-11-18T09:04:24.447Z
-    // YYYY-MM-DDTHH:mm:ss.SSSZ
-    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
-  },
 
   /**
    * Responsible for setting attributes after a database call
@@ -244,7 +202,7 @@ module.exports = Backbone.Model.extend({
       // All other types are defined as a string
       switch (schemaType) {
         case 'id':
-          isValid = this._isObjectId(val);
+          isValid = Mixins.isObjectId(val);
           break;
         case 'string':
           isValid = _.isString(val);
@@ -275,11 +233,11 @@ module.exports = Backbone.Model.extend({
           isValid = _.isBoolean(val);
           break;
         case 'timestamp':
-          isValid = this._isTimestamp(val);
+          isValid = Mixins.isTimestamp(val);
           break;
         case 'date':
           // Also support ISO8601 strings, convert to date
-          if (_.isString(val) && this._isValidISO8601String(val)) {
+          if (_.isString(val) && Mixins.isValidISO8601String(val)) {
             attrs[key] = val = new Date(val);
           }
           isValid = _.isDate(val);

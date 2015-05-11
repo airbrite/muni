@@ -7,6 +7,7 @@ var Bluebird = require('bluebird');
 var EventEmitter = require('events').EventEmitter;
 var MongoClient = require('mongodb').MongoClient;
 var debug = require('./debug');
+var Mixins = require('./mixins');
 
 // The promisified method name will be
 // the original method name suffixed with "Async".
@@ -89,30 +90,6 @@ _.extend(Mongo.prototype, {
   // Helpers
   // ---
 
-  // Proxy (note: `Id` not `ID`)
-  ObjectId: require('mongodb').ObjectID,
-
-  // Create and return an ObjectId (not a string)
-  newObjectId: function(str) {
-    return new this.ObjectId(str);
-  },
-
-  newObjectIdHexString: function(str) {
-    return new this.ObjectId(str).toHexString();
-  },
-
-  // Check if a string is a valid ObjectId
-  isObjectId: function(id) {
-    return require('mongodb-objectid-helper').isObjectId(id);
-  },
-
-  // Check if a string is a valid ISO8601 date string
-  isValidISO8601String: function(str) {
-    // 2013-11-18T09:04:24.447Z
-    // YYYY-MM-DDTHH:mm:ss.SSSZ
-    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
-  },
-
   // Automatically cast to HexString to ObjectId
   // Automatically cast ISO8601 date strings to Javascript Date
   // Will mutate the original object
@@ -120,9 +97,9 @@ _.extend(Mongo.prototype, {
   cast: function(obj) {
     _.each(obj, function(val, key) {
       if (_.isString(val)) {
-        if (this.isObjectId(val)) {
-          obj[key] = this.newObjectId(val);
-        } else if (this.isValidISO8601String(val)) {
+        if (Mixins.isObjectId(val)) {
+          obj[key] = Mixins.newObjectId(val);
+        } else if (Mixins.isValidISO8601String(val)) {
           obj[key] = new Date(val);
         }
       } else if (_.isObject(val)) {

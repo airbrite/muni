@@ -1,6 +1,5 @@
 'use strict';
 
-var util = require('util');
 var _ = require('lodash');
 var uuid = require('uuid');
 var moment = require('moment');
@@ -9,11 +8,34 @@ var URLSafeBase64 = require('urlsafe-base64');
 var crypto = require('crypto');
 var objectIdHelper = require('mongodb-objectid-helper');
 
-var mixins = module.exports = {};
+return module.exports = {
+  uuid: uuid,
 
-// This mixes in several helper functions to `_`
-_.mixin({
-  isError: util.isError,
+  isError: _.isError,
+
+  // MongoDB ObjectId
+  ObjectId: require('mongodb').ObjectID,
+
+  /**
+   * Check if a string is a valid ObjectId
+   *
+   * @param {String} id
+   * @return {Boolean}
+   */
+
+  isObjectId: function(id) {
+    // Check if a string is a valid ObjectId
+    return require('mongodb-objectid-helper').isObjectId(id);
+  },
+
+  // Create and return an ObjectId (not a string)
+  newObjectId: function(str) {
+    return new this.ObjectId(str);
+  },
+
+  newObjectIdHexString: function(str) {
+    return new this.ObjectId(str).toHexString();
+  },
 
   centsToDollars: function(value) {
     // 2 decimal points and no thousand separator
@@ -83,6 +105,38 @@ _.mixin({
     return /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(value);
   },
 
+  /**
+   * Check if a string is a unix timestamp in milliseconds
+   *
+   * @param {String} value
+   * @return {Boolean}
+   */
+
+  isTimestamp: function(value) {
+    if (value && value >= 0 && value.toString().length === 13) {
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * Check if a string is in ISO8601 date format
+   *
+   * Examples:
+   *
+   * - YYYY-MM-DDTHH:mm:ss.SSSZ
+   * - 2013-11-18T09:04:24.447Z
+   *
+   * @param {String} str
+   * @return {Boolean}
+   */
+
+  isValidISO8601String: function(str) {
+    // 2013-11-18T09:04:24.447Z
+    // YYYY-MM-DDTHH:mm:ss.SSSZ
+    return moment.utc(str, 'YYYY-MM-DDTHH:mm:ss.SSSZ', true).isValid();
+  },
+
   isUnixTime: function(value) {
     if (value && value >= 0 && value.toString().length > 11) {
       return false;
@@ -105,7 +159,12 @@ _.mixin({
     }
   },
 
-
+  /**
+   * Escape special characters for use in Mongo query
+   *
+   * @param {String} str
+   * @return {String}
+   */
 
   escapeRegExp: function(str) {
     return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
@@ -122,4 +181,4 @@ _.mixin({
   randomHash: function() {
     return crypto.createHash('sha256').update(uuid.v4()).digest('hex');
   }
-});
+};

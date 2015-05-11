@@ -33,44 +33,23 @@ describe('Mongo', function() {
 
 
   describe('Helpers', function() {
-    it('#newObjectId and #newObjectIdHexString', function() {
-      var objectId = mongo.newObjectId();
-      var objectIdString = mongo.newObjectIdHexString();
-      assert.isTrue(mongo.isObjectId(objectId), true);
-      assert.isTrue(mongo.isObjectId(objectIdString), true);
-    });
-
-    it('#isObjectId', function() {
-      assert.isTrue(mongo.isObjectId('538b7c95c883570700ee9644'), true);
-      assert.isFalse(mongo.isObjectId('12345'), true);
-      assert.isFalse(mongo.isObjectId(12345), true);
-    });
-
-    it('#isValidISO8601String', function() {
-      // YYYY-MM-DDTHH:mm:ss.SSSZ
-      assert.isTrue(mongo.isValidISO8601String('2013-11-18T09:04:24.447Z'), true);
-      assert.isFalse(mongo.isValidISO8601String((new Date()).toString()), true);
-      assert.isFalse(mongo.isValidISO8601String((new Date()).getTime()), true);
-      assert.isFalse(mongo.isValidISO8601String(new Date()), true);
-    });
-
     it('#cast from js', function() {
-      var uncasted = require('./fixtures/uncasted')(mongo);
-      var casted = require('./fixtures/casted')(mongo);
+      var uncasted = require('./fixtures/uncasted');
+      var casted = require('./fixtures/casted');
 
       assert.deepEqual(mongo.cast(uncasted), casted);
     });
 
     it('#cast from json', function() {
       var uncasted = helpers.getFixture('uncasted');
-      var casted = require('./fixtures/casted')(mongo);
+      var casted = require('./fixtures/casted');
 
       assert.deepEqual(mongo.cast(uncasted), casted);
     });
 
     it('#uncast', function() {
-      var casted = require('./fixtures/casted')(mongo);
-      var uncasted = require('./fixtures/uncasted')(mongo);
+      var casted = require('./fixtures/casted');
+      var uncasted = require('./fixtures/uncasted');
 
       assert.deepEqual(mongo.uncast(casted), uncasted);
     });
