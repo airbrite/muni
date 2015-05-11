@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(db) {
+module.exports = function() {
   return {
     _id: '538b7c95c883570700ee9644',
     date: new Date('2013-11-18T09:04:24.447Z'),

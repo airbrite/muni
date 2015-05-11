@@ -27,6 +27,7 @@ var Model = require('./model');
 var Collection = require('./collection');
 var xml2js = require('xml2js');
 var debug = require('./debug');
+var Mixins = require('./mixins');
 
 module.exports = Backbone.Model.extend({
   path: '/',
@@ -283,7 +284,7 @@ module.exports = Backbone.Model.extend({
       }
 
       // Convert seconds to milliseconds
-      timestamp = _.isUnixTime(timestamp) ? timestamp * 1000 : timestamp;
+      timestamp = Mixins.isUnixTime(timestamp) ? timestamp * 1000 : timestamp;
 
       result['$' + operator] = timestamp;
     });
@@ -399,7 +400,7 @@ module.exports = Backbone.Model.extend({
         // regex case insensitive and escaping special characters
         vals = _.map(vals, function(v) {
           return {
-            '$regex': _.escapeRegExp(v),
+            '$regex': Mixins.escapeRegExp(v),
             '$options': 'i'
           };
         });

@@ -204,23 +204,6 @@ describe('Model', function() {
       });
     });
 
-    it('#_isObjectId', function() {
-      var oid = new ObjectId();
-      assert.isTrue(testModel._isObjectId(oid.toHexString()));
-      assert.isTrue(testModel._isObjectId('53b4694cda836700006b61f2'));
-      assert.isFalse(testModel._isObjectId('trollolol'));
-    });
-
-    it('#_isTimestamp', function() {
-      assert.isTrue(testModel._isTimestamp(1407397793555));
-      assert.isFalse(testModel._isTimestamp(1407397793));
-    });
-
-    it('#_isValidISO8601String', function() {
-      assert.isTrue(testModel._isValidISO8601String('2013-11-18T09:04:24.447Z'));
-      assert.isFalse(testModel._isValidISO8601String('Thu, 07 Aug 2014 07:49:53 GMT'));
-    });
-
     it.skip('#_wrapResponse', function() {});
 
     it('#_removeAttributes', function() {
