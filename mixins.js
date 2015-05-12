@@ -19,6 +19,17 @@ return module.exports = {
   ObjectId: require('mongodb').ObjectID,
 
   /**
+   * Determine if a value is null or undefined
+   *
+   * @param {*} val
+   * @return {Boolean}
+   */
+
+  isNullOrUndefined: function(val) {
+    return _.isNull(val) || _.isUndefined(val);
+  },
+
+  /**
    * Check if a string is a valid ObjectId
    *
    * @param {String} id
