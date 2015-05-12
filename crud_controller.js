@@ -1,43 +1,74 @@
 'use strict';
 
-// What is CrudController?
-// ---
-
-// CrudController helps making CRUD routing easy
-// by providing a controller that automatically maps all CRUD routes
-//
-// See documentation for [Controller](controller.html)
-
-// Dependencies
-// ---
 var _ = require('lodash');
 var Controller = require('./controller');
 var Model = require('./model');
 var Collection = require('./collection');
 
 module.exports = Controller.extend({
-  // All subclasses of crud controller need `urlRoot` defined
-  // The mongodb collection name
+  /**
+   * The Mongo collection associated with all Models in this Controller
+   *
+   * @type {String}
+   */
+
   urlRoot: 'models',
 
-  // All subclasses of crud controller need `model` and `collection` defined
+  /**
+   * The Model associated to this Controller
+   *
+   * @type {Model}
+   */
+
   model: Model,
+
+  /**
+   * The Collection associated to this Controller
+   *
+   * @type {[type]}
+   */
+
   collection: Collection,
 
-  // Available controller actions (see `setupRoutes` for more info)
+  /**
+   * Definition of actions that should be automatically connected
+   *
+   * Possible Values:
+   *
+   * - `T` Count
+   * - `C` Create / Insert
+   * - `R` Find / List
+   * - `O` FindOne / Fetch
+   * - `U` Update
+   * - `P` Patch
+   * - `D` Destroy / Delete
+   *
+   * @type {Array}
+   */
+
   crud: ['T', 'C', 'R', 'O', 'U', 'P', 'D'],
 
-  // Base path appends `urlRoot`
+  /**
+   * Computes the base path for the controller
+   *
+   * Automatically appends the `urlRoot` string
+   *
+   * Example: `GET /models`
+   *
+   * @return {String}
+   */
+
   basePath: function() {
     return this.path + this.urlRoot;
   },
 
-  // Sets up default CRUD routes
+  /**
+   * Sets up default CRUD routes
+   */
+
   setupRoutes: function() {
-    // Get the base url path
     var basePath = _.result(this, 'basePath');
 
-    // Setup CRUD routes
     _.each(this.crud, function(action) {
       switch (action) {
         case 'T':
@@ -85,13 +116,36 @@ module.exports = Controller.extend({
         default:
           break;
       }
-    }.bind(this));
+    }, this);
   },
 
+  /**
+   * Convenience method to instantiate and return a Model
+   * If there is a `db` and/or `cache` property, assign it to the model
+   *
+   * @return {Model}
+   */
 
+  setupModel: function(req) {
+    var model = new this.model();
+    model.db = this.get('db');
+    model.cache = this.get('cache');
+    return model;
+  },
 
-  // CRUD functions
-  // ---
+  /**
+   * Convenience method to instantiate and return a Collection
+   * If there is a `db` and/or `cache` property, assign it to the model
+   *
+   * @return {Collection}
+   */
+
+  setupCollection: function(req) {
+    var collection = new this.collection();
+    collection.db = this.get('db');
+    collection.cache = this.get('cache');
+    return collection;
+  },
 
   count: function(req, res, next, options) {
     var collection = this.setupCollection(req);
@@ -173,28 +227,5 @@ module.exports = Controller.extend({
       res.code = 204;
       return next();
     }).catch(next);
-  },
-
-
-
-  // Helpers
-  // ---
-
-  // Creates and returns a model
-  // If there is a `db` and/or `cache` connection, assign it to the model
-  setupModel: function(req) {
-    var model = new this.model();
-    model.db = this.get('db');
-    model.cache = this.get('cache');
-    return model;
-  },
-
-  // Creates and returns a collection
-  // If there is a `db` and/or `cache` connection, assign it to the collection
-  setupCollection: function(req) {
-    var collection = new this.collection();
-    collection.db = this.get('db');
-    collection.cache = this.get('cache');
-    return collection;
   }
 });

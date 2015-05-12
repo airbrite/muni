@@ -1,26 +1,5 @@
 'use strict';
 
-// What is Controller?
-// ---
-
-// Controller helps facilitate routing via express
-// by providing configuring route handlers
-//
-// For example, a route to `/users/:id`
-// would be handled by a `UsersController` with function `findOne`
-//
-// It provides a way for each controller
-// to setup the routes and handlers it wants to respond to
-//
-// Also provides a mechanism to define pre, before, and after middleware
-// per controller or per route
-//
-// Finally, it also provides response and error handling middleware
-//
-// Also parses query strings for filter, limit, and sort
-
-// Dependencies
-// ---
 var _ = require('lodash');
 var Backbone = require('backbone');
 var Model = require('./model');
@@ -30,12 +9,112 @@ var debug = require('./debug');
 var Mixins = require('./mixins');
 
 module.exports = Backbone.Model.extend({
+  /**
+   * Converts a url query object containing time range data
+   * into a Mongo compatible query
+   *
+   * Note:
+   *
+   * - timestamps can be either milliseconds or seconds
+   * - timestamps can be strings, they will be parsed into Integers
+   *
+   * Example:
+   *
+   * {
+   *   gt: 1405494000,
+   *   lt: 1431327600
+   * }
+   *
+   * Possible Keys:
+   *
+   * - `gt` Greater than
+   * - `gte` Greather than or equal
+   * - `lt` Less than
+   * - `lte` Less than or equal
+   * - `ne` Not equal
+   *
+   * @param {Object} query
+   * @return {Object}
+   */
+
+  _buildTimestampQuery: function(query) {
+    var result = {};
+    if (!_.isObject(query) || _.isEmpty(query)) {
+      return result;
+    }
+
+    // timestamp might be in `ms` or `s`
+    _.each(query, function(timestamp, operator) {
+      if (!_.contains(['gt', 'gte', 'lt', 'lte', 'ne'], operator)) {
+        return;
+      }
+
+      // Timestamp must be an integer
+      timestamp = _.parseInt(timestamp);
+      if (_.isNaN(timestamp)) {
+        return;
+      }
+
+      // Convert seconds to milliseconds
+      timestamp = Mixins.isUnixTime(timestamp) ? timestamp * 1000 : timestamp;
+
+      result['$' + operator] = timestamp;
+    });
+
+    debug.log(
+      '#_buildTimestampQuery with query: %s and result: %s',
+      JSON.stringify(query),
+      JSON.stringify(result)
+    );
+    return result;
+  },
+
   path: '/',
 
+  /**
+   * Default field to sort by for `find` query
+   *
+   * @type {String}
+   */
+
   sortParam: 'created',
+
+  /**
+   * Default order/direction when sorting with `find` query
+   *
+   * Possible values:
+   *
+   * - desc
+   * - asc
+   *
+   * @type {String}
+   */
+
   sortOrder: 'desc',
+
+  /**
+   * Default Mongo `skip` value for `find` query
+   *
+   * @type {Number}
+   */
+
   skip: 0,
+
+  /**
+   * Default Mongo `limit` value for `find` query
+   *
+   * @type {Number}
+   */
+
   limit: 100,
+
+  /**
+   * Used to generate XML output for responses
+   *
+   * Can override to configure default XML builder options
+   *
+   * @type {xml2js}
+   */
 
   xmlBuilder: new xml2js.Builder({
     renderOpts: {
@@ -43,20 +122,38 @@ module.exports = Backbone.Model.extend({
     }
   }),
 
-  // Route specific middleware definitions
-  // Object or Function
-  middleware: function() {
-    return {};
-  },
+  /**
+   * Field and Type pairs that can be used in a URL query string
+   * to filter results when using a `find` query
+   *
+   * Possible Types:
+   *
+   * - string
+   * - regex
+   * - integer
+   * - float
+   *
+   * Example:
+   * - {name: 'string'}
+   * - {description: 'regex'}
+   * - {timestamp: 'integer'}
+   * - {dollars: 'float'}
+   *
+   * @return {Object}
+   */
 
-  // Database query parameters/filters
-  // Object or Function
   queryParams: function() {
     return {};
   },
 
-  // Computes the base path for the controller
-  // Object or Function
+  /**
+   * Computes the base path for the controller
+   *
+   * Can be overridden by children
+   *
+   * @return {String}
+   */
+
   basePath: function() {
     return this.path;
   },
@@ -90,46 +187,83 @@ module.exports = Backbone.Model.extend({
     this.after.push(this.finalResponse);
   },
 
-  // Setup routes that this controller should handle
-  //
-  // Example:
-  // this.routes.get['/test'] = {
-  //   action: this.testGet,
-  //   middleware: []
-  // };
+  /**
+   * Define routes that this Controller should connect to the Router
+   *
+   * See the `Router` for more details on how routes are connected
+   *
+   * Properties of a Route:
+   *
+   * - `action` - An Express-style route handler
+   * - `middleware` - An Express-style middleware handler
+   * - `requiredParams` - An array of required params (in body or url string)
+   * - `ignoredParams` - An array of ignored params (in body or url string)
+   *
+   * Example:
+   *
+   * this.routes.get['/test'] = {
+   *   action: function(req, res, next) {},
+   *   middleware: [function(req, res, next) {}],
+   *   requiredParams: ['foo'],
+   *   ignoredParams: ['bar']
+   * };
+   */
+
   setupRoutes: function() {},
 
-  // Setup middleware that should run before the route middleware
-  // Example: `this.pre.push(this.fakePreMiddleware)`
+  /**
+   * Define pre middleware that applies to all routes in this Controller
+   *
+   * Pre middleware is run **BEFORE** route-specific middleware
+   *
+   * Example:
+   *
+   * this.pre.push(this.fakePreMiddleware)
+   */
+
   setupPreMiddleware: function() {},
 
-  // Setup middleware that should run before the route handler
-  // Example: `this.before.push(this.fakeBeforeMiddleware)`
+  /**
+   * Define before middleware that applies to all routes in this Controller
+   *
+   * Before middleware is run **AFTER** route-specific middleware
+   *
+   * Example:
+   *
+   * this.before.push(this.fakeBeforeMiddleware)
+   */
+
   setupBeforeMiddleware: function() {},
 
-  // Setup middleware that should run after the route handler
-  // Example: `this.after.push(this.fakeAfterMiddleware)`
+
+  /**
+   * Define after middleware that applies to all routes in this Controller
+   *
+   * Example:
+   *
+   * this.after.push(this.fakeAfterMiddleware)
+   */
   setupAfterMiddleware: function() {},
 
+  /**
+   * Convenience middleware to render a Model or Collection
+   *
+   * @return {Function} A middleware handler
+   */
 
-  // Middleware
-  // ---
-
-  // Render a model or a collection in the response
-  // Used as a promise resolver in a `.then` promise handler
-  // Always bind inner function to `this` original context
   render: function(req, res, next) {
     return function(modelOrCollection) {
       this.prepareResponse(modelOrCollection, req, res, next);
     }.bind(this);
   },
 
-  // Deprecated (see `render`)
-  nextThen: function(req, res, next) {
-    return this.render(req, res, next);
-  },
+  /**
+   * Attempt to render a Model or Collection
+   * If input is not a Model or Collection, pass it thru unmodified
+   *
+   * @param {*} modelOrCollection
+   */
 
-  // This method can be overridden to customize the response
   prepareResponse: function(modelOrCollection, req, res, next) {
     if (!modelOrCollection) {
       return next();
@@ -137,10 +271,10 @@ module.exports = Backbone.Model.extend({
 
     if (modelOrCollection instanceof Model) {
       // Data is a Model
-      res.data = this.renderModel(modelOrCollection);
+      res.data = modelOrCollection.render();
     } else if (modelOrCollection instanceof Collection) {
       // Data is a Collection
-      res.data = this.renderCollection(modelOrCollection);
+      res.data = modelOrCollection.render();
     } else {
       // Data is raw
       res.data = modelOrCollection;
@@ -149,7 +283,10 @@ module.exports = Backbone.Model.extend({
     return next();
   },
 
-  // Default middleware for handling successful responses
+  /**
+   * Default middleware for handling successful responses
+   */
+
   successResponse: function(req, res, next) {
     var data = res.data || null;
     var code = 200;
@@ -177,7 +314,10 @@ module.exports = Backbone.Model.extend({
     return next();
   },
 
-  // Default middleware for handling error responses
+  /**
+   * Default middleware for handling error responses
+   */
+
   errorResponse: function(err, req, res, next) {
     err.message = err.message || 'Internal Server Error';
     err.code = err.code || res.code || 500;
@@ -207,8 +347,11 @@ module.exports = Backbone.Model.extend({
     return next();
   },
 
-  // Final middleware for handling all responses
-  // Server actually responds to the request here
+  /**
+   * Final middleware for handling all responses
+   * Server actually responds and terminates to the request here
+   */
+
   finalResponse: function(req, res, next) {
     // If we timed out before managing to respond, don't send the response
     if (res.headersSent) {
@@ -244,61 +387,26 @@ module.exports = Backbone.Model.extend({
     });
   },
 
+  /**
+   * Parses `req.query` into Mongo compatible syntax
+   *
+   * Possible Properties:
+   *
+   * - `created`
+   * - `updated`
+   * - `since|until`
+   * - `sort|order`
+   * - `skip|limit`
+   * - `page`
+   * - `sort`
+   * - `order`
+   * - `fields`
+   *
+   * @param {Express.Req} req
+   * @param {Object} options
+   * @return {Object} An Object that can be passed as options into the Mongo ORM
+   */
 
-
-  // Render
-  // ---
-
-  renderModel: function(model) {
-    return model.render();
-  },
-
-  renderCollection: function(collection) {
-    return collection.map(function(model) {
-      return model.render();
-    });
-  },
-
-
-
-  // Helpers
-  // ---
-
-  // For `created` and `updated` date range query string
-  buildTimestampQuery: function(query) {
-    var result = {};
-    if (!_.isObject(query) || _.isEmpty(query)) {
-      return result;
-    }
-
-    // timestamp might be in `ms` or `s`
-    _.each(query, function(timestamp, operator) {
-      if (!_.contains(['gt', 'gte', 'lt', 'lte', 'ne'], operator)) {
-        return;
-      }
-
-      // Timestamp must be an integer
-      timestamp = _.parseInt(timestamp);
-      if (_.isNaN(timestamp)) {
-        return;
-      }
-
-      // Convert seconds to milliseconds
-      timestamp = Mixins.isUnixTime(timestamp) ? timestamp * 1000 : timestamp;
-
-      result['$' + operator] = timestamp;
-    });
-
-    debug.log(
-      '#buildTimestampQuery with query: %s and result: %s',
-      JSON.stringify(query),
-      JSON.stringify(result)
-    );
-    return result;
-  },
-
-  // Parses req.query (querystring) for since/until, sort/order, skip/limit
-  // Also builds a query using allowed queryParams if applicable
   parseQueryString: function(req, options) {
     var query = {};
     var queries = [];
@@ -333,8 +441,8 @@ module.exports = Backbone.Model.extend({
     }
 
     // Date Range params
-    var createdQuery = this.buildTimestampQuery(created);
-    var updatedQuery = this.buildTimestampQuery(updated);
+    var createdQuery = this._buildTimestampQuery(created);
+    var updatedQuery = this._buildTimestampQuery(updated);
 
     if (!_.isEmpty(createdQuery)) {
       queries.push({
