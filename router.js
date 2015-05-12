@@ -4,6 +4,7 @@ var _ = require('lodash');
 var express = require('express');
 var BootieError = require('./error');
 var debug = require('./debug');
+var Mixins = require('./mixins');
 
 /**
  * Extends `Express.Router` with additional features
@@ -43,7 +44,11 @@ module.exports = function(options) {
       // Find all missing parameters
       var missingParams = [];
       _.each(requiredParams, function(requiredParam) {
-        if (!req.param(requiredParam)) {
+        if (
+          Mixins.isNullOrUndefined(req.params[requiredParam]) &&
+          Mixins.isNullOrUndefined(req.query[requiredParam]) &&
+          Mixins.isNullOrUndefined(req.body[requiredParam])
+        ) {
           missingParams.push(requiredParam);
         }
       });

@@ -19,6 +19,7 @@ describe('Router', function() {
           return req.body[name] || req.query[name];
         },
 
+        params: {},
         body: {
           foo: 'bar'
         },
