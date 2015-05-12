@@ -65,8 +65,8 @@ module.exports = Backbone.Model.extend({
    *
    * Does not work for objects embedded inside arrays
    *
-   * @param {Object} attrs   [description]
-   * @param {Object} attrsToRemove [description]
+   * @param {Object} attrs
+   * @param {Object} attrsToRemove
    */
 
   _removeAttributes: function(attrs, attrsToRemove) {
@@ -93,8 +93,8 @@ module.exports = Backbone.Model.extend({
    *
    * Does not work for objects embedded inside arrays
    *
-   * @param {Object} attrs   [description]
-   * @param {Object} attrsToRemove [description]
+   * @param {Object} attrs
+   * @param {Object} attrsToRemove
    */
 
   _removeExpandableAttributes: function(attrs, attrsToRemove) {

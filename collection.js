@@ -69,7 +69,7 @@ module.exports = Backbone.Collection.extend({
    * By calling `Model.render` on all models in collection
    *
    * @param {Object} options
-   * @return {Array} [description]
+   * @return {Array}
    */
 
   render: function(options) {
