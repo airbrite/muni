@@ -32,7 +32,6 @@
     "moment": "~2.10.3",
     "mongodb": "~1.4.35",
     "mongodb-objectid-helper": "0.2.0",
-    "redis": "0.12.1",
     "request": "~2.55.0",
     "urlsafe-base64": "1.0.0",
     "uuid": "~2.0.1",
