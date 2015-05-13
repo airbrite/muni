@@ -6,17 +6,33 @@ var moment = require('moment');
 var accounting = require('accounting');
 var URLSafeBase64 = require('urlsafe-base64');
 var crypto = require('crypto');
-var objectIdHelper = require('mongodb-objectid-helper');
+var mongodb = require('mongodb');
+var debug = require('./debug');
 
 return module.exports = {
-  // https://github.com/broofa/node-uuid
+  // Export Dependencies
+  Promise: require('bluebird'),
+  Backbone: require('backbone'),
+  express: require('express'),
+  request: require('request'),
+  mongodb: mongodb,
+  moment: moment,
+  accounting: accounting,
   uuid: uuid,
+  _: _,
+
+  // Export Logging Methods
+  debug: debug,
+  log: debug.log,
+  error: debug.error,
+  warn: debug.warn,
+  info: debug.info,
 
   // Proxy for Lodash
   isError: _.isError,
 
   // Proxy for MongoDB
-  ObjectId: require('mongodb').ObjectID,
+  ObjectId: mongodb.ObjectID,
 
   /**
    * Determine if a value is null or undefined
