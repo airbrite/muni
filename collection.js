@@ -146,7 +146,7 @@ module.exports = Backbone.Collection.extend({
       'readPreference'
     ]) || {};
 
-    debug.log('Collection [%s] read with query: %s and options: %s',
+    debug.info('Collection [%s] read with query: %s and options: %s',
       this.model.prototype.urlRoot,
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
@@ -215,7 +215,7 @@ module.exports = Backbone.Collection.extend({
       'readPreference'
     ]) || {};
 
-    debug.log('Collection [%s] count with query: %s and options: %s',
+    debug.info('Collection [%s] count with query: %s and options: %s',
       this.model.prototype.urlRoot,
       JSON.stringify(query),
       JSON.stringify(mongoOptions));

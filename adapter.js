@@ -155,7 +155,7 @@ module.exports = Backbone.Model.extend({
       }
 
       // Handle Success
-      debug.log(
+      debug.info(
         'Adapter Request Sent with code: %d and body: %s',
         response.statusCode,
         body

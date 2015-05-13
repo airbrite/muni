@@ -211,7 +211,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug.log(
+    debug.info(
       '#findCursor: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -235,7 +235,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug.log(
+    debug.info(
       '#pagination: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -278,7 +278,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug.log(
+    debug.info(
       '#count: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -317,7 +317,7 @@ _.extend(Mongo.prototype, {
       delete options.count;
     }
 
-    debug.log(
+    debug.info(
       '#find: %s with query: %s with options: %s and count: %s',
       collectionName,
       JSON.stringify(query),
@@ -373,7 +373,7 @@ _.extend(Mongo.prototype, {
       delete options.require;
     }
 
-    debug.log(
+    debug.info(
       '#findOne: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -425,7 +425,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
-    debug.log(
+    debug.info(
       '#insert: %s with query: %s',
       collectionName,
       JSON.stringify(obj)
@@ -464,7 +464,7 @@ _.extend(Mongo.prototype, {
     query = this.cast(_.cloneDeep(query));
     obj = this.cast(_.cloneDeep(obj));
 
-    debug.log(
+    debug.info(
       '#update: %s with query: %s with obj: %s',
       collectionName,
       JSON.stringify(query),
@@ -514,7 +514,7 @@ _.extend(Mongo.prototype, {
     query = this.cast(_.cloneDeep(query));
     obj = this.cast(_.cloneDeep(obj));
 
-    debug.log(
+    debug.info(
       '#findAndModify: %s with query: %s with obj: %s',
       collectionName,
       JSON.stringify(query),
@@ -552,7 +552,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug.log(
+    debug.info(
       '#remove: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -582,7 +582,7 @@ _.extend(Mongo.prototype, {
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
-    debug.log(
+    debug.info(
       '#aggregate: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -606,7 +606,7 @@ _.extend(Mongo.prototype, {
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
-    debug.log(
+    debug.info(
       '#getNextSequence: %s with query: %s',
       collectionName,
       JSON.stringify(query)
@@ -630,7 +630,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug.log('#eraseCollection: %s', collectionName, {});
+    debug.info('#eraseCollection: %s', collectionName, {});
     return this.remove(collectionName, {}).then(function(num) {
       callback && callback(null, num);
       return num;
@@ -649,7 +649,7 @@ _.extend(Mongo.prototype, {
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
     options = _.pick(options, ['unique', 'background', 'dropDups', 'w']);
 
-    debug.log('#ensureIndex: %s for index: %s', collectionName, indexName, {});
+    debug.info('#ensureIndex: %s for index: %s', collectionName, indexName, {});
     return this._collection(collectionName).then(function(collection) {
       return collection.ensureIndexAsync(indexName, options);
     }).then(function(result) {
@@ -668,7 +668,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug.log('#dropIndex: %s for index: %s', collectionName, indexName, {});
+    debug.info('#dropIndex: %s for index: %s', collectionName, indexName, {});
     return this._collection(collectionName).then(function(collection) {
       return collection.dropIndexAsync(indexName);
     }).then(function(result) {
@@ -687,7 +687,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug.log('#dropAllIndexes: %s', collectionName, {});
+    debug.info('#dropAllIndexes: %s', collectionName, {});
     return this._collection(collectionName).then(function(collection) {
       return collection.dropAllIndexesAsync();
     }).then(function(success) {

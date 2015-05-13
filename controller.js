@@ -61,7 +61,7 @@ module.exports = Backbone.Model.extend({
       result['$' + operator] = timestamp;
     });
 
-    debug.log(
+    debug.info(
       '#_buildTimestampQuery with query: %s and result: %s',
       JSON.stringify(query),
       JSON.stringify(result)
@@ -336,10 +336,6 @@ module.exports = Backbone.Model.extend({
       data: err.message
     };
 
-    if (err && err.code >= 500 && err.stack) {
-      debug.error('Controller Response Error:', err);
-    }
-
     // Set code and data
     res.code = err.code;
     res.data = envelope;
@@ -372,16 +368,14 @@ module.exports = Backbone.Model.extend({
         res.status(res.code).jsonp(res.data);
       },
       xml: function() {
-        res.set('Content-Type', 'application/xml; charset=utf-8');
-
         var xml;
         try {
           var xmlData = JSON.parse(JSON.stringify(res.data));
           xml = this.xmlBuilder.buildObject(xmlData);
+          res.set('Content-Type', 'application/xml; charset=utf-8');
           res.status(res.code).send(xml);
         } catch (e) {
-          debug.error('XML building error:', e);
-          res.status(res.code).end();
+          res.status(500).end();
         }
       }.bind(this)
     });
@@ -562,7 +556,7 @@ module.exports = Backbone.Model.extend({
       'fields': fields
     };
 
-    debug.log(
+    debug.info(
       '#parseQueryString with req.query: %s and result: %s',
       JSON.stringify(req.query),
       JSON.stringify(result)

@@ -633,7 +633,7 @@ module.exports = Backbone.Model.extend({
    */
 
   save: Bluebird.method(function() {
-    debug.log('Model [%s] save called', this.urlRoot);
+    debug.info('Model [%s] save called', this.urlRoot);
     var originalArguments = arguments;
 
     // Remove expandable attributes
@@ -671,7 +671,7 @@ module.exports = Backbone.Model.extend({
    */
 
   create: Bluebird.method(function(model, options) {
-    debug.log('Model [%s] create called', this.urlRoot);
+    debug.info('Model [%s] create called', this.urlRoot);
 
     return this.db.insert(
       this.urlRoot,
@@ -713,7 +713,7 @@ module.exports = Backbone.Model.extend({
     // Don't support `multi`, this is a single model
     var mongoOptions = _.pick(options, ['require']) || {};
 
-    debug.log(
+    debug.info(
       'Model [%s] update with query: %s and options: %s',
       this.urlRoot,
       JSON.stringify(query),
@@ -771,7 +771,7 @@ module.exports = Backbone.Model.extend({
     // Don't support `multi`, this is a single model
     var mongoOptions = _.pick(options, ['require']) || {};
 
-    debug.log(
+    debug.info(
       'Model [%s] patch with query: %s and options: %s',
       this.urlRoot,
       JSON.stringify(query),
@@ -809,7 +809,7 @@ module.exports = Backbone.Model.extend({
     var query = {};
     query[this.idAttribute] = model.id;
 
-    debug.log(
+    debug.info(
       'Model [%s] delete with query: %s',
       this.urlRoot,
       JSON.stringify(query)
@@ -862,7 +862,7 @@ module.exports = Backbone.Model.extend({
       'readPreference'
     ]) || {};
 
-    debug.log(
+    debug.info(
       'Model [%s] read with query: %s and options: %s',
       this.urlRoot,
       JSON.stringify(mongoOptions),

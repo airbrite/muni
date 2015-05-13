@@ -43,6 +43,8 @@ Muni.Error = require('./error');
 Muni.debug = require('./debug');
 Muni.log = Muni.debug.log;
 Muni.error = Muni.debug.error;
+Muni.warn = Muni.debug.warn;
+Muni.info = Muni.debug.info;
 
 // Export to the world
 module.exports = Muni;

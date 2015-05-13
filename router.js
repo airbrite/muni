@@ -123,13 +123,13 @@ module.exports = function(options) {
           _.each(route, function(routeOptions, path) {
             // If path/method has already been defined, skip
             if (paths[path] === method) {
-              debug.log('Skipping duplicate route: [%s] %s', method, path);
+              debug.warn('Skipping duplicate route: [%s] %s', method, path);
               return;
             }
 
             // If no route action is defined, skip
             if (!routeOptions.action) {
-              debug.log('No action defined for route: [%s] %s', method, path);
+              debug.warn('No action defined for route: [%s] %s', method, path);
               return;
             }
 
@@ -164,7 +164,7 @@ module.exports = function(options) {
 
       // Debug logging
       _.each(router.routes, function(route) {
-        debug.log('Route [%s] %s', route.method, route.url + route.path);
+        debug.info('Route [%s] %s', route.method, route.url + route.path);
       });
     }
   });
