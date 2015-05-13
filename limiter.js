@@ -39,7 +39,7 @@ module.exports = function(opts) {
     'reject'
   ]));
 
-  debug.log('Limiter with options: %s', JSON.stringify(options));
+  debug.log('Limiter enabled with options: %s', JSON.stringify(options));
 
   return middleware;
 };
@@ -50,7 +50,7 @@ function middleware(req, res, next) {
   var client = clients[key] ? clients[key] : (clients[key] = new Client(key, type));
   var bypass = req.get('X-Rate-Limit-Bypass') ? true : false;
 
-  debug.log('Limiter request: %s', JSON.stringify(client));
+  debug.info('Limiter request: %s', JSON.stringify(client));
 
   // X-Rate-Limit-Limit: the rate limit ceiling for that given request
   // X-Rate-Limit-Remaining: the number of requests left for the window
