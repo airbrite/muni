@@ -30,7 +30,6 @@ module.exports = Backbone.Collection.extend({
 
   initialize: function() {
     this.db; // reference to a mongodb client/connection
-    this.cache; // reference to a redis client/connection
   },
 
   /**
