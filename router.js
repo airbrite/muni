@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var express = require('express');
-var BootieError = require('./error');
+var MuniError = require('./error');
 var debug = require('./debug');
 var Mixins = require('./mixins');
 
@@ -59,7 +59,7 @@ module.exports = function(options) {
      * Return an Error containing missing parameters that were required
      *
      * @param {Array} missingParams
-     * @return {BootieError}
+     * @return {MuniError}
      */
 
     _buildMissingParamsError: function(missingParams) {
@@ -70,7 +70,7 @@ module.exports = function(options) {
       errParts.push("Missing");
       errParts.push(missingParams.join(', '));
       errParts.push("parameter(s).");
-      return new BootieError(errParts.join(' '), 400);
+      return new MuniError(errParts.join(' '), 400);
     },
 
     /**

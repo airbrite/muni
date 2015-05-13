@@ -1,14 +1,14 @@
 'use strict';
 
-var BootieError = require('../../error');
+var MuniError = require('../../error');
 
 describe('Error', function() {
-  it('should create a custom BootieError with message and code', function() {
-    var error = new BootieError('I am a BootieError.', 400);
-    assert.instanceOf(error, BootieError);
+  it('should create a custom MuniError with message and code', function() {
+    var error = new MuniError('I am a MuniError.', 400);
+    assert.instanceOf(error, MuniError);
     assert.isString(error.stack);
-    assert.strictEqual(error.name, 'BootieError');
-    assert.strictEqual(error.message, 'I am a BootieError.');
+    assert.strictEqual(error.name, 'MuniError');
+    assert.strictEqual(error.message, 'I am a MuniError.');
     assert.strictEqual(error.code, 400);
   });
 });

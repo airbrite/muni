@@ -1,7 +1,7 @@
 'use strict';
 
 var Router = require('../../router');
-var BootieError = require('../../error');
+var MuniError = require('../../error');
 
 describe('Router', function() {
   var req;
@@ -48,9 +48,9 @@ describe('Router', function() {
   describe('#_buildMissingParamsError', function() {
     it('should return an error', function() {
       var err = router._buildMissingParamsError(['foo', 'bar', 'world']);
-      assert.instanceOf(err, BootieError);
+      assert.instanceOf(err, MuniError);
       assert.isString(err.stack);
-      assert.strictEqual(err.name, 'BootieError');
+      assert.strictEqual(err.name, 'MuniError');
       assert.strictEqual(err.message, 'Missing `foo`, `bar`, `world` parameter(s).');
       assert.strictEqual(err.code, 400);
     });

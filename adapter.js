@@ -7,7 +7,7 @@ var Bluebird = require('bluebird');
 var Backbone = require('backbone');
 var request = require('request');
 var debug = require('./debug');
-var BootieError = require('./error');
+var MuniError = require('./error');
 
 module.exports = Backbone.Model.extend({
   urlRoot: '',
@@ -139,10 +139,10 @@ module.exports = Backbone.Model.extend({
       // Handle Errors
       if (err) {
         // Usually a connection error (server unresponsive)
-        err = new BootieError(err.message || 'Internal Server Error', err.code || 500);
+        err = new MuniError(err.message || 'Internal Server Error', err.code || 500);
       } else if (response.statusCode >= 400) {
         // Usually an intentional error from the server
-        err = new BootieError(this._extractError(body), response.statusCode);
+        err = new MuniError(this._extractError(body), response.statusCode);
       }
       if (err) {
         debug.error(

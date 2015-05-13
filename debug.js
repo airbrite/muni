@@ -3,6 +3,6 @@
 var debug = require('debug');
 
 module.exports = {
-  log: debug('bootie:log'),
-  error: debug('bootie:error')
+  log: debug('muni:log'),
+  error: debug('muni:error')
 };

@@ -9,7 +9,7 @@ var Bluebird = require('bluebird');
 var Backbone = require('backbone');
 var moment = require('moment');
 var debug = require('./debug');
-var BootieError = require('./error');
+var MuniError = require('./error');
 var Mixins = require('./mixins');
 
 module.exports = Backbone.Model.extend({
@@ -698,7 +698,7 @@ module.exports = Backbone.Model.extend({
   update: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new BootieError('Cannot update a new model.', 400);
+      var err = new MuniError('Cannot update a new model.', 400);
       options.error(err);
       throw err;
     }
@@ -747,7 +747,7 @@ module.exports = Backbone.Model.extend({
   patch: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new BootieError('Cannot patch a new model.', 400);
+      var err = new MuniError('Cannot patch a new model.', 400);
       options.error(err);
       throw err;
     }
@@ -801,7 +801,7 @@ module.exports = Backbone.Model.extend({
   delete: Bluebird.method(function(model, options) {
     // If no ID in query, error out
     if (model.isNew()) {
-      var err = new BootieError('Cannot delete a new model.', 400);
+      var err = new MuniError('Cannot delete a new model.', 400);
       options.error(err);
       throw err;
     }
@@ -845,7 +845,7 @@ module.exports = Backbone.Model.extend({
     } else {
       if (model.isNew()) {
         // If no ID in query, error out
-        var err = new BootieError('Cannot read a new model.', 400);
+        var err = new MuniError('Cannot read a new model.', 400);
         options.error(err);
         throw err;
       }

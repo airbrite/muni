@@ -1,52 +1,48 @@
 'use strict';
 
-var Bootie = {};
+var Muni = {};
 
-Bootie.Promise = require('bluebird');
-Bootie.Backbone = require('backbone');
-Bootie._ = require('lodash');
+Muni.Promise = require('bluebird');
+Muni.Backbone = require('backbone');
+Muni._ = require('lodash');
 
 // Version, Mixins, and Backbone.Events
-// Bootie can be used as a pubsub bus
-Bootie._.extend(Bootie, Bootie.Backbone.Events, {
+// Muni can be used as a pubsub bus
+Muni._.extend(Muni, Muni.Backbone.Events, {
   version: require('./package.json').version
-}, Bootie, require('./mixins'));
-
-// DEPRECATED
-// Remove in `0.4.x`
-Bootie._.mixin(require('./mixins'));
+}, Muni, require('./mixins'));
 
 // Limiter
-Bootie.limiter = require('./limiter');
+Muni.limiter = require('./limiter');
 
 // Database driver
-Bootie.Mongo = require('./mongo');
+Muni.Mongo = require('./mongo');
 
 // Router
-Bootie.Router = require('./router');
+Muni.Router = require('./router');
 
 // Controller
-Bootie.Controller = require('./controller');
+Muni.Controller = require('./controller');
 
 // Crud Controller, extends Controller, adds CRUD routing
-Bootie.CrudController = require('./crud_controller');
+Muni.CrudController = require('./crud_controller');
 
 // Model for the ORM
-Bootie.Model = require('./model');
+Muni.Model = require('./model');
 
 // Collection for the ORM
-Bootie.Collection = require('./collection');
+Muni.Collection = require('./collection');
 
 // Adapters connect to third-party APIs and services
-Bootie.Adapter = require('./adapter');
+Muni.Adapter = require('./adapter');
 
 // Errors dawg
-Bootie.Error = require('./error');
+Muni.Error = require('./error');
 
 // Debug and error logging
-Bootie.debug = require('./debug');
-Bootie.log = Bootie.debug.log;
-Bootie.error = Bootie.debug.error;
+Muni.debug = require('./debug');
+Muni.log = Muni.debug.log;
+Muni.error = Muni.debug.error;
 
 // Export to the world
-module.exports = Bootie;
+module.exports = Muni;
