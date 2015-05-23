@@ -656,6 +656,10 @@ module.exports = Backbone.Model.extend({
     }).tap(function() {
       return Backbone.Model.prototype.save.apply(this, originalArguments);
     }).tap(function() {
+      if (this.validationError instanceof Error) {
+        throw this.validationError;
+      }
+    }).tap(function() {
       return afterFn.apply(this, originalArguments);
     }).tap(function() {
       return this.afterSave.apply(this, originalArguments);
