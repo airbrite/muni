@@ -245,29 +245,37 @@ return module.exports = {
   /**
    * Determine if a number is a unix timestamp in seconds
    *
+   * Min: 1000000000 (Sun, 09 Sep 2001 01:46:40 GMT)
+   * Max: 2147483647 (Tue, 19 Jan 2038 03:14:07 GMT)
+   *
    * @param {Number} value
    * @return {Boolean}
    */
 
   isUnixTime: function(value) {
-    if (value && value >= 0 && value.toString().length > 11) {
-      return false;
+    value = _.parseInt(value);
+    if (!_.isNaN(value) && value.toString().length === 10) {
+      return true;
     }
-    return true;
+    return false;
   },
 
   /**
    * Determine if a number is a unix timestamp in milliseconds
+   *
+   * Min: 1000000000000 (Sun, 09 Sep 2001 01:46:40 GMT)
+   * Max: 2147483647000 (Tue, 19 Jan 2038 03:14:07 GMT)
    *
    * @param {Number} value
    * @return {Boolean}
    */
 
   isUnixTimeMilliseconds: function(value) {
-    if (value && value >= 0 && value.toString().length > 11) {
-      return false;
+    value = _.parseInt(value);
+    if (!_.isNaN(value) && value.toString().length === 13) {
+      return true;
     }
-    return true;
+    return false;
   },
 
   /**
