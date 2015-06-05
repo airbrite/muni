@@ -257,6 +257,20 @@ return module.exports = {
   },
 
   /**
+   * Determine if a number is a unix timestamp in milliseconds
+   *
+   * @param {Number} value
+   * @return {Boolean}
+   */
+
+  isUnixTimeMilliseconds: function(value) {
+    if (value && value >= 0 && value.toString().length > 11) {
+      return false;
+    }
+    return true;
+  },
+
+  /**
    * Trim, Remove Whitespace, and Lowercase an email
    *
    * @param {String} email
