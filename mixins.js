@@ -243,7 +243,7 @@ return module.exports = {
   },
 
   /**
-   * Determine if a number is a unix timestamp in milliseconds
+   * Determine if a number is a unix timestamp in seconds
    *
    * @param {Number} value
    * @return {Boolean}
