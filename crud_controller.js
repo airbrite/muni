@@ -4,6 +4,7 @@ var _ = require('lodash');
 var Controller = require('./controller');
 var Model = require('./model');
 var Collection = require('./collection');
+var MuniError = require('./error');
 
 module.exports = Controller.extend({
   /**
@@ -251,9 +252,7 @@ module.exports = Controller.extend({
 
     return model.destroy().then(function(resp) {
       if (resp === 0) {
-        var err = new Error('Document not found.');
-        err.code = 404;
-        return next(err);
+        return next(new MuniError('Document not found.', 404));
       }
 
       res.code = 204;

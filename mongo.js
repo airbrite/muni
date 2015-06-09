@@ -8,6 +8,7 @@ var EventEmitter = require('events').EventEmitter;
 var MongoClient = require('mongodb').MongoClient;
 var debug = require('./debug');
 var Mixins = require('./mixins');
+var MuniError = require('./error');
 
 // The promisified method name will be
 // the original method name suffixed with "Async".
@@ -78,7 +79,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, this.db);
       return this.db;
     }).catch(function(err) {
-      debug.error(err);
       this.emit('error', err);
       callback && callback(err);
       throw err;
@@ -157,7 +157,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, collection);
       return collection;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -220,7 +219,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, cursor);
       return cursor;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -263,7 +261,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, paging);
       return paging;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -294,7 +291,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, total);
       return total;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -350,7 +346,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, [docs, total, cursor]);
       return [docs, total, cursor];
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -391,10 +386,10 @@ _.extend(Mongo.prototype, {
       cursor.closeAsync();
     }).then(function(cursor) {
       if (!doc && require) {
-        var requireErr = new Error('Document not found for query: ' +
-          JSON.stringify(query) + '.');
-        requireErr.code = 404;
-        throw requireErr;
+        throw new MuniError(
+          'Document not found for query: ' + JSON.stringify(query) + '.',
+          404
+        );
       }
 
       if (!options.explain) {
@@ -404,7 +399,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, doc);
       return doc;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -436,7 +430,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, docs);
       return docs;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -477,10 +470,10 @@ _.extend(Mongo.prototype, {
       // result[1] is getLastError object
       var num = result[0];
       if (!num && require) {
-        var requireErr = new Error('Document not found for query: ' +
-          JSON.stringify(query) + '.');
-        requireErr.code = 404;
-        throw requireErr;
+        throw new MuniError(
+          'Document not found for query: ' + JSON.stringify(query) + '.',
+          404
+        );
       }
 
       callback && callback(null, num);
@@ -527,16 +520,15 @@ _.extend(Mongo.prototype, {
       // result[1] is getLastError object
       var doc = this.uncast(result[0]);
       if (!doc && require) {
-        var requireErr = new Error('Document not found for query: ' +
-          JSON.stringify(query) + '.');
-        requireErr.code = 404;
-        throw requireErr;
+        throw new MuniError(
+          'Document not found for query: ' + JSON.stringify(query) + '.',
+          404
+        );
       }
 
       callback && callback(null, doc);
       return doc;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -566,7 +558,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, num);
       return num;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -593,7 +584,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, results);
       return results;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -619,7 +609,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, doc.seq);
       return doc.seq;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -635,7 +624,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, num);
       return num;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -656,7 +644,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, result);
       return result;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -675,7 +662,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, result);
       return result;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -694,7 +680,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, success);
       return success;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
@@ -717,7 +702,6 @@ _.extend(Mongo.prototype, {
       callback && callback(null, indexInformation);
       return indexInformation;
     }).catch(function(err) {
-      debug.error(err);
       callback && callback(err);
       throw err;
     });
