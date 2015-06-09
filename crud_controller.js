@@ -167,7 +167,7 @@ module.exports = Controller.extend({
     options = options || {};
     _.merge(options, this.parseQueryString(req));
 
-    var fields = this._parseFields(req);
+    var fields = this.parseQueryStringFields(req);
     if (!_.isEmpty(fields)) {
       options.fields = fields;
     }
@@ -186,7 +186,7 @@ module.exports = Controller.extend({
       res.data = collection.render();
 
       // Optional field limiting
-      res.data = this._limitFields(req.query.fields, res.data);
+      res.data = this._renderFields(req.query.fields, res.data);
 
       return next();
     }).catch(next);
@@ -200,7 +200,7 @@ module.exports = Controller.extend({
       require: true
     });
 
-    var fields = this._parseFields(req);
+    var fields = this.parseQueryStringFields(req);
     if (!_.isEmpty(fields)) {
       options.fields = fields;
     }
@@ -209,7 +209,7 @@ module.exports = Controller.extend({
       res.data = model.render();
 
       // Optional field limiting
-      res.data = this._limitFields(req.query.fields, res.data);
+      res.data = this._renderFields(req.query.fields, res.data);
 
       return next();
     }).catch(next);

@@ -69,11 +69,21 @@ module.exports = Backbone.Model.extend({
     return result;
   },
 
-  _limitFields: function(fields, data) {
+  /**
+   * Modify `data` to only contain keys that are specified in `fields`
+   *
+   * @param {Object} fields
+   * @param {Object|Array} data
+   * @return {Object|Array}
+   */
+
+  _renderFields: function(fields, data) {
     if (!_.isString(fields)) {
       return data;
     }
 
+    // If a field is specified as `foo.bar` or `foo.bar.baz`,
+    // Convert it to just `foo`
     var map = {};
     _.each(fields.split(','), function(field) {
       map[field.split('.')[0]] = 1;
@@ -412,13 +422,13 @@ module.exports = Backbone.Model.extend({
    *
    * Converse it into a Mongo friendly `fields` Object
    *
-   * Example: `?fields=_id,name`
+   * Example: `?fields=hello,world,foo.bar`
    *
    * @param {Object} req
    * @return {Object}
    */
 
-  _parseFields: function(req) {
+  parseQueryStringFields: function(req) {
     var fields = {};
 
     // Fields
@@ -444,7 +454,6 @@ module.exports = Backbone.Model.extend({
    * - `page`
    * - `sort`
    * - `order`
-   * - `fields`
    *
    * @param {Express.Req} req
    * @param {Object} options
