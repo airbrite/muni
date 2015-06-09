@@ -14,7 +14,12 @@ module.exports = function MuniError(message, code) {
   // Prepend code to stack
   if (this.stack) {
     this.stack = this.code + ' ' + this.stack;
-    debug.error(this.stack);
+    if (this.code >= 400 && this.code < 500) {
+      debug.error(this.message);
+      debug.info(this.stack);
+    } else {
+      debug.error(this.stack);
+    }
   }
 };
 
