@@ -165,7 +165,7 @@ module.exports = Controller.extend({
     var collection = this.setupCollection(req);
 
     options = options || {};
-    _.merge(options, this.parseQueryString(req));
+    _.merge(options, this.parseQueryString(req, options));
 
     var fields = this.parseQueryStringFields(req);
     if (!_.isEmpty(fields)) {
