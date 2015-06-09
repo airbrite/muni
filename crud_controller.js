@@ -165,9 +165,14 @@ module.exports = Controller.extend({
     var collection = this.setupCollection(req);
 
     options = options || {};
-    _.merge(options, this.parseQueryString(req));
+    _.merge(options, this.parseQueryString(req, options));
 
-    return collection.fetch(options).tap(function() {
+    var fields = this.parseQueryStringFields(req);
+    if (!_.isEmpty(fields)) {
+      options.fields = fields;
+    }
+
+    return collection.fetch(options).bind(this).tap(function() {
       res.paging = {
         total: collection.total,
         count: collection.count,
@@ -177,7 +182,14 @@ module.exports = Controller.extend({
         pages: collection.pages,
         has_more: collection.hasMore
       };
-    }).bind(this).then(this.render(req, res, next)).catch(next);
+    }).then(function(collection) {
+      res.data = collection.render();
+
+      // Optionally restrict fields for response
+      res.data = this._restrictFields(req.query.fields, res.data);
+
+      return next();
+    }).catch(next);
   },
 
   findOne: function(req, res, next, options) {
@@ -188,7 +200,19 @@ module.exports = Controller.extend({
       require: true
     });
 
-    return model.fetch(options).bind(this).then(this.render(req, res, next)).catch(next);
+    var fields = this.parseQueryStringFields(req);
+    if (!_.isEmpty(fields)) {
+      options.fields = fields;
+    }
+
+    return model.fetch(options).bind(this).then(function(model) {
+      res.data = model.render();
+
+      // Optionally restrict fields for response
+      res.data = this._restrictFields(req.query.fields, res.data);
+
+      return next();
+    }).catch(next);
   },
 
   create: function(req, res, next) {
@@ -196,7 +220,11 @@ module.exports = Controller.extend({
 
     return model.setFromRequest(req.body).then(function() {
       return model.save();
-    }).bind(this).then(this.render(req, res, next)).catch(next);
+    }).then(function(model) {
+      res.data = model.render();
+
+      return next();
+    }).catch(next);
   },
 
   update: function(req, res, next, options) {
@@ -211,7 +239,11 @@ module.exports = Controller.extend({
       return model.setFromRequest(req.body);
     }).then(function() {
       return model.save(null, options);
-    }).bind(this).then(this.render(req, res, next)).catch(next);
+    }).then(function(model) {
+      res.data = model.render();
+
+      return next();
+    }).catch(next);
   },
 
   destroy: function(req, res, next) {

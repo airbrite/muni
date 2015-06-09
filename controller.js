@@ -69,6 +69,38 @@ module.exports = Backbone.Model.extend({
     return result;
   },
 
+  /**
+   * Modify `data` to only contain keys that are specified in `fields`
+   *
+   * @param {Object} fields
+   * @param {Object|Array} data
+   * @return {Object|Array}
+   */
+
+  _restrictFields: function(fields, data) {
+    if (!_.isString(fields)) {
+      return data;
+    }
+
+    // If a field is specified as `foo.bar` or `foo.bar.baz`,
+    // Convert it to just `foo`
+    var map = {};
+    _.each(fields.split(','), function(field) {
+      map[field.split('.')[0]] = 1;
+    });
+
+    var keys = _.keys(map);
+    if (_.isArray(data)) {
+      data = _.map(data, function(object) {
+        return _.pick(object, keys);
+      });
+    } else if (_.isObject(data)) {
+      data = _.pick(data, keys);
+    }
+
+    return data;
+  },
+
   path: '/',
 
   /**
@@ -248,6 +280,8 @@ module.exports = Backbone.Model.extend({
   /**
    * Convenience middleware to render a Model or Collection
    *
+   * DEPRECATED 2015-06-08
+   *
    * @return {Function} A middleware handler
    */
 
@@ -260,6 +294,8 @@ module.exports = Backbone.Model.extend({
   /**
    * Attempt to render a Model or Collection
    * If input is not a Model or Collection, pass it thru unmodified
+   *
+   * DEPRECATED 2015-06-08
    *
    * @param {*} modelOrCollection
    */
@@ -382,6 +418,30 @@ module.exports = Backbone.Model.extend({
   },
 
   /**
+   * Parses the request query string for `fields`
+   *
+   * Converse it into a Mongo friendly `fields` Object
+   *
+   * Example: `?fields=hello,world,foo.bar`
+   *
+   * @param {Object} req
+   * @return {Object}
+   */
+
+  parseQueryStringFields: function(req) {
+    var fields = {};
+
+    // Fields
+    if (_.isString(req.query.fields)) {
+      _.each(req.query.fields.split(','), function(field) {
+        fields[field] = 1;
+      });
+    }
+
+    return fields;
+  },
+
+  /**
    * Parses `req.query` into Mongo compatible syntax
    *
    * Possible Properties:
@@ -394,7 +454,6 @@ module.exports = Backbone.Model.extend({
    * - `page`
    * - `sort`
    * - `order`
-   * - `fields`
    *
    * @param {Express.Req} req
    * @param {Object} options
@@ -411,7 +470,6 @@ module.exports = Backbone.Model.extend({
     options.limit = options.limit ? options.limit.toString() : options.limit;
 
     // Reserved Params
-    var fields = {};
     var created = req.query.created || {}; // accepts both s and ms
     var updated = req.query.updated || {}; // accepts both s and ms
     var sortBy = options.sortParam || req.query.sort || this.sortParam;
@@ -420,7 +478,6 @@ module.exports = Backbone.Model.extend({
     var limit = options.limit || req.query.limit || req.query.count || this.limit;
     skip = _.parseInt(skip) || 0;
     limit = _.parseInt(limit) || 0;
-    limit = Math.min(limit, this.limit); // Hard limit at 100
 
     var page = _.parseInt(req.query.page);
     if (page > 0) {
@@ -447,16 +504,6 @@ module.exports = Backbone.Model.extend({
       queries.push({
         updated: updatedQuery
       });
-    }
-
-    // Fields
-    if (_.isString(req.query.fields)) {
-      _.each(req.query.fields.split(','), function(field) {
-        fields[field] = 1;
-      });
-    }
-    if (_.isObject(options.fields)) {
-      _.extend(fields, options.fields);
     }
 
     // Filter params
@@ -552,8 +599,7 @@ module.exports = Backbone.Model.extend({
       'query': query,
       'sort': sortOptions,
       'limit': limit,
-      'skip': skip,
-      'fields': fields
+      'skip': skip
     };
 
     debug.info(
