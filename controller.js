@@ -382,6 +382,30 @@ module.exports = Backbone.Model.extend({
   },
 
   /**
+   * Parses the request query string for `fields`
+   *
+   * Converse it into a Mongo friendly `fields` Object
+   *
+   * Example: `?fields=_id,name`
+   *
+   * @param {Object} req
+   * @return {Object}
+   */
+
+  _parseFields: function(req) {
+    var fields = {};
+
+    // Fields
+    if (_.isString(req.query.fields)) {
+      _.each(req.query.fields.split(','), function(field) {
+        fields[field] = 1;
+      });
+    }
+
+    return fields;
+  },
+
+  /**
    * Parses `req.query` into Mongo compatible syntax
    *
    * Possible Properties:
@@ -411,7 +435,6 @@ module.exports = Backbone.Model.extend({
     options.limit = options.limit ? options.limit.toString() : options.limit;
 
     // Reserved Params
-    var fields = {};
     var created = req.query.created || {}; // accepts both s and ms
     var updated = req.query.updated || {}; // accepts both s and ms
     var sortBy = options.sortParam || req.query.sort || this.sortParam;
@@ -447,16 +470,6 @@ module.exports = Backbone.Model.extend({
       queries.push({
         updated: updatedQuery
       });
-    }
-
-    // Fields
-    if (_.isString(req.query.fields)) {
-      _.each(req.query.fields.split(','), function(field) {
-        fields[field] = 1;
-      });
-    }
-    if (_.isObject(options.fields)) {
-      _.extend(fields, options.fields);
     }
 
     // Filter params
@@ -552,8 +565,7 @@ module.exports = Backbone.Model.extend({
       'query': query,
       'sort': sortOptions,
       'limit': limit,
-      'skip': skip,
-      'fields': fields
+      'skip': skip
     };
 
     debug.info(

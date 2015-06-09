@@ -168,6 +168,11 @@ module.exports = Controller.extend({
     _.merge(options, this.parseQueryString(req));
 
     return collection.fetch(options).tap(function() {
+    var fields = this._parseFields(req);
+    if (!_.isEmpty(fields)) {
+      options.fields = fields;
+    }
+
       res.paging = {
         total: collection.total,
         count: collection.count,
@@ -189,6 +194,11 @@ module.exports = Controller.extend({
     });
 
     return model.fetch(options).bind(this).then(this.render(req, res, next)).catch(next);
+    var fields = this._parseFields(req);
+    if (!_.isEmpty(fields)) {
+      options.fields = fields;
+    }
+
   },
 
   create: function(req, res, next) {
