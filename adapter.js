@@ -145,21 +145,13 @@ module.exports = Backbone.Model.extend({
         err = new MuniError(this._extractError(body), response.statusCode);
       }
       if (err) {
-        debug.error(
-          'Adapter Request Error with Code: %d and Message: %s',
-          err.code,
-          err.message
-        );
+        debug.warn('Adapter Request Error with Code: %d', err.code);
         callback && callback(err);
         return deferred.reject(err);
       }
 
       // Handle Success
-      debug.info(
-        'Adapter Request Sent with code: %d and body: %s',
-        response.statusCode,
-        body
-      );
+      debug.info('Adapter Request Sent with code: %d', response.statusCode);
       callback && callback(null, body);
       return deferred.resolve(body);
     }.bind(this));
