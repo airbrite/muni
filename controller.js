@@ -77,7 +77,7 @@ module.exports = Backbone.Model.extend({
    * @return {Object|Array}
    */
 
-  _renderFields: function(fields, data) {
+  _restrictFields: function(fields, data) {
     if (!_.isString(fields)) {
       return data;
     }

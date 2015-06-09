@@ -185,8 +185,8 @@ module.exports = Controller.extend({
     }).then(function(collection) {
       res.data = collection.render();
 
-      // Optional field limiting
-      res.data = this._renderFields(req.query.fields, res.data);
+      // Optionally restrict fields for response
+      res.data = this._restrictFields(req.query.fields, res.data);
 
       return next();
     }).catch(next);
@@ -208,8 +208,8 @@ module.exports = Controller.extend({
     return model.fetch(options).bind(this).then(function(model) {
       res.data = model.render();
 
-      // Optional field limiting
-      res.data = this._renderFields(req.query.fields, res.data);
+      // Optionally restrict fields for response
+      res.data = this._restrictFields(req.query.fields, res.data);
 
       return next();
     }).catch(next);
