@@ -478,7 +478,6 @@ module.exports = Backbone.Model.extend({
     var limit = options.limit || req.query.limit || req.query.count || this.limit;
     skip = _.parseInt(skip) || 0;
     limit = _.parseInt(limit) || 0;
-    limit = Math.min(limit, this.limit); // Hard limit at 100
 
     var page = _.parseInt(req.query.page);
     if (page > 0) {
