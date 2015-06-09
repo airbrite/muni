@@ -69,6 +69,28 @@ module.exports = Backbone.Model.extend({
     return result;
   },
 
+  _limitFields: function(fields, data) {
+    if (!_.isString(fields)) {
+      return data;
+    }
+
+    var map = {};
+    _.each(fields.split(','), function(field) {
+      map[field.split('.')[0]] = 1;
+    });
+
+    var keys = _.keys(map);
+    if (_.isArray(data)) {
+      data = _.map(data, function(object) {
+        return _.pick(object, keys);
+      });
+    } else if (_.isObject(data)) {
+      data = _.pick(data, keys);
+    }
+
+    return data;
+  },
+
   path: '/',
 
   /**
@@ -248,6 +270,8 @@ module.exports = Backbone.Model.extend({
   /**
    * Convenience middleware to render a Model or Collection
    *
+   * DEPRECATED 2015-06-08
+   *
    * @return {Function} A middleware handler
    */
 
@@ -260,6 +284,8 @@ module.exports = Backbone.Model.extend({
   /**
    * Attempt to render a Model or Collection
    * If input is not a Model or Collection, pass it thru unmodified
+   *
+   * DEPRECATED 2015-06-08
    *
    * @param {*} modelOrCollection
    */

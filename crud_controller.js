@@ -167,12 +167,12 @@ module.exports = Controller.extend({
     options = options || {};
     _.merge(options, this.parseQueryString(req));
 
-    return collection.fetch(options).tap(function() {
     var fields = this._parseFields(req);
     if (!_.isEmpty(fields)) {
       options.fields = fields;
     }
 
+    return collection.fetch(options).bind(this).tap(function() {
       res.paging = {
         total: collection.total,
         count: collection.count,
@@ -182,7 +182,14 @@ module.exports = Controller.extend({
         pages: collection.pages,
         has_more: collection.hasMore
       };
-    }).bind(this).then(this.render(req, res, next)).catch(next);
+    }).then(function(collection) {
+      res.data = collection.render();
+
+      // Optional field limiting
+      res.data = this._limitFields(req.query.fields, res.data);
+
+      return next();
+    }).catch(next);
   },
 
   findOne: function(req, res, next, options) {
@@ -193,12 +200,19 @@ module.exports = Controller.extend({
       require: true
     });
 
-    return model.fetch(options).bind(this).then(this.render(req, res, next)).catch(next);
     var fields = this._parseFields(req);
     if (!_.isEmpty(fields)) {
       options.fields = fields;
     }
 
+    return model.fetch(options).bind(this).then(function(model) {
+      res.data = model.render();
+
+      // Optional field limiting
+      res.data = this._limitFields(req.query.fields, res.data);
+
+      return next();
+    }).catch(next);
   },
 
   create: function(req, res, next) {
@@ -206,7 +220,11 @@ module.exports = Controller.extend({
 
     return model.setFromRequest(req.body).then(function() {
       return model.save();
-    }).bind(this).then(this.render(req, res, next)).catch(next);
+    }).then(function(model) {
+      res.data = model.render();
+
+      return next();
+    }).catch(next);
   },
 
   update: function(req, res, next, options) {
@@ -221,7 +239,11 @@ module.exports = Controller.extend({
       return model.setFromRequest(req.body);
     }).then(function() {
       return model.save(null, options);
-    }).bind(this).then(this.render(req, res, next)).catch(next);
+    }).then(function(model) {
+      res.data = model.render();
+
+      return next();
+    }).catch(next);
   },
 
   destroy: function(req, res, next) {
