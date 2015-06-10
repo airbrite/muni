@@ -1,6 +1,6 @@
 'use strict';
 
-var Mixins = require('../../mixins');
+var Mixins = require('../../../mixins');
 
 module.exports = function() {
   return {

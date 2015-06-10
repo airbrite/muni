@@ -44,9 +44,6 @@ var Mongo = module.exports = function(url, options) {
 Mongo.prototype = Object.create(EventEmitter.prototype);
 
 _.extend(Mongo.prototype, {
-  // Connection
-  // ---
-
   // Connect
   // Called by collection
   // Might be called multiple times at app boot until `this.db` is first set
@@ -85,10 +82,29 @@ _.extend(Mongo.prototype, {
     });
   }),
 
+  _findOptions: function(options) {
+    // MongoDB cursors can return the same document more than once in some situations.
+    // You can use the `snapshot` option to isolate the operation for a very specific case.
+    // http://docs.mongodb.org/manual/faq/developers/#duplicate-document-in-result-set
+    // You cannot use snapshot() with sharded collections.
+    // You cannot use snapshot() with sort() or hint() cursor methods.
+    return _.pick(options, [
+      'limit',
+      'sort',
+      'fields',
+      'skip',
+      'hint',
+      'snapshot',
+      'timeout',
+      'batchSize',
+      'maxTimeMS',
+      'readPreference'
+    ]);
+  },
 
-
-  // Helpers
-  // ---
+  _countOptions: function(options) {
+    return _.pick(options, ['limit', 'skip', 'hint', 'readPreference']);
+  },
 
   // Automatically cast to HexString to ObjectId
   // Automatically cast ISO8601 date strings to Javascript Date
@@ -102,46 +118,40 @@ _.extend(Mongo.prototype, {
         } else if (Mixins.isValidISO8601String(val)) {
           obj[key] = new Date(val);
         }
+      } else if (_.isDate(val)) {
+        obj[key] = val;
       } else if (_.isObject(val)) {
         if (val['$oid']) {
           obj[key] = val['$oid'];
         } else {
-          return this.cast(val);
+          obj[key] = this.cast(val);
         }
-      } else {
-        return;
       }
-    }.bind(this));
+    }, this);
 
     return obj;
   },
 
   // Automatically uncast ObjectId to HexString
-  // Automatically uncast Mongo ISODate to Javascript Date
   // Will mutate the original object
   // obj can be an object or an array
   uncast: function(obj) {
     _.each(obj, function(val, key) {
       if (val && _.isFunction(val.toHexString)) {
         obj[key] = val.toHexString();
+      } else if (_.isDate(val)) {
+        obj[key] = val;
       } else if (_.isObject(val)) {
         if (val['$oid']) {
           obj[key] = val['$oid'];
         } else {
-          return this.uncast(val);
+          obj[key] = this.uncast(val);
         }
-      } else {
-        return;
       }
-    }.bind(this));
+    }, this);
 
     return obj;
   },
-
-
-
-  // Access
-  // ---
 
   // Open a collection
   // Called by every method (e.g. find, insert, update, etc...)
@@ -173,29 +183,26 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
-    // MongoDB cursors can return the same document more than once in some situations.
-    // You can use the `snapshot` option to isolate the operation for a very specific case.
-    // http://docs.mongodb.org/manual/faq/developers/#duplicate-document-in-result-set
-    // You cannot use snapshot() with sharded collections.
-    // You cannot use snapshot() with sort() or hint() cursor methods.
-    options = _.pick(options, [
-      'fields',
-      'sort',
-      'limit',
-      'skip',
-      'hint',
-      'explain',
-      'timeout',
-      'snapshot',
-      'batchSize',
-      'maxTimeMS',
-      'readPreference'
-    ]);
-
-    return this._collection(collectionName).then(function(collection) {
-      return collection.find(query, options);
+    return this._collection(collectionName).bind(this).then(function(collection) {
+      return collection.find(query, this._findOptions(options));
     }).then(function(cursor) {
       Bluebird.promisifyAll(cursor);
+
+      cursor.nextObjectAsync = function() {
+        var deferred = Bluebird.defer();
+
+        cursor.nextObject(function(err, doc) {
+          if (err) {
+            return deferred.reject(err);
+          }
+
+          // Uncast and return the document
+          return deferred.resolve(this.uncast(doc));
+        }.bind(this));
+
+        return deferred.promise;
+      }.bind(this);
+
       return cursor;
     });
   }),
@@ -238,14 +245,10 @@ _.extend(Mongo.prototype, {
       collectionName,
       JSON.stringify(query)
     );
-    var total = 0;
-    return this._cursor(collectionName, query, options).tap(function(cursor) {
-      return cursor.countAsync().then(function(result) {
-        total = result || total;
-      });
-    }).tap(function(cursor) {
-      cursor.closeAsync();
-    }).then(function(cursor) {
+    return this._collection(collectionName).bind(this).then(function(collection) {
+      return collection.countAsync(query, this._countOptions(options));
+    }).then(function(count) {
+      var total = count;
       var page = options.limit && options.limit <= total ? options.limit : total;
       var limit = options.limit || 0;
       var skip = options.skip || 0;
@@ -280,16 +283,11 @@ _.extend(Mongo.prototype, {
       collectionName,
       JSON.stringify(query)
     );
-    var total = 0;
-    return this._cursor(collectionName, query, options).tap(function(cursor) {
-      return cursor.countAsync().then(function(result) {
-        total = result || total;
-      });
-    }).tap(function(cursor) {
-      cursor.closeAsync();
-    }).then(function(cursor) {
-      callback && callback(null, total);
-      return total;
+    return this._collection(collectionName).bind(this).then(function(collection) {
+      return collection.countAsync(query, this._countOptions(options));
+    }).then(function(count) {
+      callback && callback(null, count);
+      return count;
     }).catch(function(err) {
       callback && callback(err);
       throw err;
@@ -321,7 +319,6 @@ _.extend(Mongo.prototype, {
       count
     );
     var total = 0;
-    var docs = [];
     return this._cursor(
       collectionName,
       query,
@@ -330,21 +327,18 @@ _.extend(Mongo.prototype, {
       if (!count) {
         return;
       }
-      return cursor.countAsync().then(function(result) {
-        total = result || total;
+      return cursor.countAsync().tap(function(count) {
+        total = count;
       });
-    }).tap(function(cursor) {
-      return cursor.toArrayAsync().then(function(results) {
-        docs = results || docs;
-      });
-    }).tap(function(cursor) {
-      cursor.closeAsync();
     }).then(function(cursor) {
-      if (!options.explain) {
-        this.uncast(docs);
-      }
-      callback && callback(null, [docs, total, cursor]);
-      return [docs, total, cursor];
+      return cursor.toArrayAsync().tap(function() {
+        cursor.closeAsync();
+      });
+    }).then(function(docs) {
+      return this.uncast(docs);
+    }).then(function(docs) {
+      callback && callback(null, [docs, total]);
+      return [docs, total];
     }).catch(function(err) {
       callback && callback(err);
       throw err;
@@ -373,27 +367,16 @@ _.extend(Mongo.prototype, {
       collectionName,
       JSON.stringify(query)
     );
-    var doc;
-    return this._cursor(
-      collectionName,
-      query,
-      options
-    ).bind(this).tap(function(cursor) {
-      return cursor.nextObjectAsync().then(function(result) {
-        doc = result || doc;
-      });
-    }).tap(function(cursor) {
-      cursor.closeAsync();
-    }).then(function(cursor) {
+    return this._collection(collectionName).bind(this).then(function(collection) {
+      return collection.findOneAsync(query, this._findOptions(options));
+    }).then(function(doc) {
+      return this.uncast(doc);
+    }).then(function(doc) {
       if (!doc && require) {
         throw new MuniError(
           'Document not found for query: ' + JSON.stringify(query) + '.',
           404
         );
-      }
-
-      if (!options.explain) {
-        this.uncast(doc);
       }
 
       callback && callback(null, doc);
@@ -404,7 +387,7 @@ _.extend(Mongo.prototype, {
     });
   }),
 
-  // Insert a document (safe: true)
+  // Insert a document
   // obj can be either an array or an object
   // docs is an array of uncasted documents
   insert: Bluebird.method(function(collectionName, obj) {
@@ -412,21 +395,21 @@ _.extend(Mongo.prototype, {
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
-    // force safe mode
-    options.safe = true;
-    options = _.pick(options, ['safe', 'w']);
+    options = _.pick(options, ['w', 'wtimeout', 'j']);
 
     // Deep clone the obj
     obj = this.cast(_.cloneDeep(obj));
 
     debug.info(
-      '#insert: %s with query: %s',
+      '#insert: %s with options: %s',
       collectionName,
-      JSON.stringify(obj)
+      JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.insertAsync(obj, options);
-    }).then(this.uncast).then(function(docs) {
+    }).then(function(result) {
+      return this.uncast(result.ops);
+    }).then(function(docs) {
       callback && callback(null, docs);
       return docs;
     }).catch(function(err) {
@@ -449,26 +432,22 @@ _.extend(Mongo.prototype, {
       delete options.require;
     }
 
-    // force safe mode
-    options.safe = true;
-    options = _.pick(options, ['safe', 'multi', 'upsert', 'w']);
+    options = _.pick(options, ['w', 'wtimeout', 'j', 'upsert', 'multi']);
 
     // Deep clone the query and obj
     query = this.cast(_.cloneDeep(query));
     obj = this.cast(_.cloneDeep(obj));
 
     debug.info(
-      '#update: %s with query: %s with obj: %s',
+      '#update: %s with query: %s with options: %s',
       collectionName,
       JSON.stringify(query),
-      JSON.stringify(obj)
+      JSON.stringify(options)
     );
     return this._collection(collectionName).then(function(collection) {
       return collection.updateAsync(query, obj, options);
     }).then(function(result) {
-      // result[0] is the number of updated documents
-      // result[1] is getLastError object
-      var num = result[0];
+      var num = result.result.n;
       if (!num && require) {
         throw new MuniError(
           'Document not found for query: ' + JSON.stringify(query) + '.',
@@ -498,27 +477,32 @@ _.extend(Mongo.prototype, {
       delete options.require;
     }
 
-    // force safe and new mode
-    options.safe = true;
     options.new = true;
-    options = _.pick(options, ['safe', 'new', 'upsert', 'remove', 'w']);
+    options = _.pick(options, [
+      'w',
+      'wtimeout',
+      'j',
+      'remove',
+      'upsert',
+      'new',
+      'fields'
+    ]);
 
     // Deep clone the query and obj
     query = this.cast(_.cloneDeep(query));
     obj = this.cast(_.cloneDeep(obj));
 
     debug.info(
-      '#findAndModify: %s with query: %s with obj: %s',
+      '#findAndModify: %s with query: %s with options: %s',
       collectionName,
       JSON.stringify(query),
-      JSON.stringify(obj)
+      JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.findAndModifyAsync(query, [], obj, options);
     }).then(function(result) {
-      // result[0] is the updated document
-      // result[1] is getLastError object
-      var doc = this.uncast(result[0]);
+      return this.uncast(result.value);
+    }).then(function(doc) {
       if (!doc && require) {
         throw new MuniError(
           'Document not found for query: ' + JSON.stringify(query) + '.',
@@ -541,6 +525,9 @@ _.extend(Mongo.prototype, {
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
+    // Allowed options
+    options = _.pick(options, ['w', 'wtimeout', 'j', 'single']);
+
     // Deep clone the query
     query = this.cast(_.cloneDeep(query));
 
@@ -552,9 +539,7 @@ _.extend(Mongo.prototype, {
     return this._collection(collectionName).then(function(collection) {
       return collection.removeAsync(query, options);
     }).then(function(result) {
-      // result[0] is the number of updated documents
-      // result[1] is getLastError object
-      var num = result[0];
+      var num = result.result.n;
       callback && callback(null, num);
       return num;
     }).catch(function(err) {
@@ -580,9 +565,11 @@ _.extend(Mongo.prototype, {
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.aggregateAsync(query, options);
-    }).then(this.uncast).then(function(results) {
-      callback && callback(null, results);
-      return results;
+    }).then(function(result) {
+      return this.uncast(result);
+    }).then(function(result) {
+      callback && callback(null, result);
+      return result;
     }).catch(function(err) {
       callback && callback(err);
       throw err;
@@ -619,7 +606,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug.info('#eraseCollection: %s', collectionName, {});
+    debug.info('#eraseCollection: %s', collectionName);
     return this.remove(collectionName, {}).then(function(num) {
       callback && callback(null, num);
       return num;
@@ -637,7 +624,11 @@ _.extend(Mongo.prototype, {
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
     options = _.pick(options, ['unique', 'background', 'dropDups', 'w']);
 
-    debug.info('#ensureIndex: %s for index: %s', collectionName, indexName, {});
+    debug.info(
+      '#ensureIndex: %s for index: %s',
+      collectionName,
+      JSON.stringify(indexName)
+    );
     return this._collection(collectionName).then(function(collection) {
       return collection.ensureIndexAsync(indexName, options);
     }).then(function(result) {
@@ -655,7 +646,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug.info('#dropIndex: %s for index: %s', collectionName, indexName, {});
+    debug.info('#dropIndex: %s for index: %s', collectionName, indexName);
     return this._collection(collectionName).then(function(collection) {
       return collection.dropIndexAsync(indexName);
     }).then(function(result) {
@@ -673,7 +664,7 @@ _.extend(Mongo.prototype, {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
 
-    debug.info('#dropAllIndexes: %s', collectionName, {});
+    debug.info('#dropAllIndexes: %s', collectionName);
     return this._collection(collectionName).then(function(collection) {
       return collection.dropAllIndexesAsync();
     }).then(function(success) {
