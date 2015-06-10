@@ -18,21 +18,18 @@ console.inspect = require('eyes').inspector({
 var helpers = require('../helpers');
 
 describe('Controller', function() {
-  // Set max timeout allowed
-  this.timeout(10000);
+  var controller;
+  var req;
+  beforeEach(function() {
+    controller = new Controller();
+    req = {
+      query: {},
+      body: {},
+      params: {}
+    };
+  });
 
   describe('#parseQueryString', function() {
-    var controller;
-    var req;
-    beforeEach(function() {
-      controller = new Controller();
-      req = {
-        query: {},
-        body: {},
-        params: {}
-      };
-    });
-
     it('should parse with empty req', function() {
       var qo = controller.parseQueryString(req);
 
@@ -42,8 +39,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -61,8 +57,7 @@ describe('Controller', function() {
         skip: 3,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -80,8 +75,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['updated', 'asc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -106,8 +100,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -132,8 +125,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -158,8 +150,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -184,8 +175,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -210,8 +200,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -238,8 +227,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -271,8 +259,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -304,8 +291,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -335,8 +321,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -363,8 +348,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -391,8 +375,7 @@ describe('Controller', function() {
         skip: 0,
         sort: [
           ['created', 'desc']
-        ],
-        fields: {}
+        ]
       });
     });
 
@@ -411,18 +394,10 @@ describe('Controller', function() {
         skip: 3,
         sort: [
           ['updated', 'asc']
-        ],
-        fields: {
-          foo: 1,
-          bar: 1
-        }
+        ]
       });
 
       assert.deepEqual(qo, {
-        fields: {
-          foo: 1,
-          bar: 1
-        },
         limit: 2,
         query: {},
         skip: 3,
@@ -434,37 +409,29 @@ describe('Controller', function() {
         ]
       });
     });
+  });
 
+
+
+  describe('#parseQueryStringFields', function() {
     it('should parse fields', function() {
       req.query = {
         fields: 'foo,bar'
       };
 
-      var qo = controller.parseQueryString(req, {
+      var fields = controller.parseQueryStringFields(req, {
         fields: {
           foo: 1,
           bar: 1
         }
       });
 
-      assert.deepEqual(qo, {
-        fields: {
-          bar: 1,
-          foo: 1
-        },
-        limit: 100,
-        query: {},
-        skip: 0,
-        sort: [
-          [
-            'created',
-            'desc'
-          ]
-        ]
+      assert.deepEqual(fields, {
+        bar: 1,
+        foo: 1
       });
 
     });
-
   });
 
 });
