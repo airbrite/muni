@@ -327,7 +327,7 @@ _.extend(Mongo.prototype, {
       if (!count) {
         return;
       }
-      return cursor.countAsync().tap(function(count) {
+      return cursor.countAsync(false).tap(function(count) {
         total = count;
       });
     }).then(function(cursor) {
