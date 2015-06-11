@@ -201,6 +201,16 @@ describe('Mongo', function() {
         assert.deepEqual(docs[0], helpers.getFixture('mongo/docs')[1]);
       });
     });
+
+    it('count (total) should not apply limit and skip', function() {
+      return mongo.find('tests', {}, {
+        limit: 1,
+        skip: 1
+      }).then(function(results) {
+        assert.lengthOf(results[0], 1);
+        assert.strictEqual(results[1], 2);
+      });
+    });
   });
 
   describe('FindOne', function() {
