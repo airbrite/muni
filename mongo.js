@@ -550,21 +550,25 @@ _.extend(Mongo.prototype, {
 
   // Aggregate
   // results is an array of uncasted items
-  aggregate: Bluebird.method(function(collectionName, query) {
+  aggregate: Bluebird.method(function(collectionName, pipeline) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
     var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
 
-    // Deep clone the query
-    query = this.cast(_.cloneDeep(query));
+    // Allowed options
+    options = _.pick(options, ['readPreference']);
+
+    // Deep clone the pipeline
+    pipeline = this.cast(_.cloneDeep(pipeline));
 
     debug.info(
-      '#aggregate: %s with query: %s',
+      '#aggregate: %s with pipeline: %s and options: %s',
       collectionName,
-      JSON.stringify(query)
+      JSON.stringify(pipeline),
+      JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.aggregateAsync(query, options);
+      return collection.aggregateAsync(pipeline, options);
     }).then(function(result) {
       return this.uncast(result);
     }).then(function(result) {
@@ -600,6 +604,12 @@ _.extend(Mongo.prototype, {
     // Driver expects `query` object in `options`
     options.query = this.cast(_.cloneDeep(query));
 
+    debug.info(
+      '#mapReduce: %s with query: %s and options: %s',
+      collectionName,
+      JSON.stringify(query),
+      JSON.stringify(options)
+    );
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.mapReduceAsync(map, reduce, options);
     }).then(function(result) {
