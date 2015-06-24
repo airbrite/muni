@@ -576,6 +576,43 @@ _.extend(Mongo.prototype, {
     });
   }),
 
+  // https://github.com/mongodb/node-mongodb-native/blob/master/lib/mongodb/collection.js#L489
+  mapReduce: Bluebird.method(function(collectionName, query, map, reduce, finalize) {
+    var args = [].slice.call(arguments);
+    var callback = _.isFunction(_.last(args)) ? args.pop() : null;
+    var options = args.length > 5 && _.isObject(_.last(args)) ? args.pop() : {};
+
+    // Allowed options
+    options = _.pick(options, ['scope', 'sort', 'limit', 'readPreference']);
+
+    // Always output inline
+    options.out = {
+      inline: 1
+    };
+
+    // Execution in JS (faster)
+    options.jsMode = true;
+
+    // Driver expects `finalize` function in `options`
+    options.finalize = finalize;
+
+    // Deep clone the query
+    // Driver expects `query` object in `options`
+    options.query = this.cast(_.cloneDeep(query));
+
+    return this._collection(collectionName).bind(this).then(function(collection) {
+      return collection.mapReduceAsync(map, reduce, options);
+    }).then(function(result) {
+      return this.uncast(result);
+    }).then(function(result) {
+      callback && callback(null, result);
+      return result;
+    }).catch(function(err) {
+      callback && callback(err);
+      throw err;
+    });
+  }),
+
   // Get next sequence for counter
   // seq is a number
   getNextSequence: Bluebird.method(function(collectionName, query) {
