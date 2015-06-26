@@ -118,7 +118,6 @@ module.exports = Backbone.Model.extend({
     }, this);
   },
 
-
   /**
    * Verifies that all attributes are defined in the schema
    * If an attribute is not defined in the schema, it is removed
@@ -279,8 +278,10 @@ module.exports = Backbone.Model.extend({
   hiddenAttributes: {},
 
   // Attributes that can be expanded (relations) and should NOT be saved to the database
-  // Does not support nested objects
   expandableAttributes: {},
+
+  // Attributes that are computed and should NOT be saved to the database
+  computedAttributes: {},
 
   /**
    * The defaults hash (or function) can be used
@@ -523,6 +524,10 @@ module.exports = Backbone.Model.extend({
     var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
     this._removeAttributes(body, readOnlyAttributes);
 
+    // Remove computed attributes
+    var computedAttributes = _.result(this, 'computedAttributes');
+    this._removeAttributes(this.attributes, computedAttributes);
+
     // Set new attributes
     this.set(body);
 
@@ -635,6 +640,10 @@ module.exports = Backbone.Model.extend({
   save: Bluebird.method(function() {
     debug.info('Model [%s] save called', this.urlRoot);
     var originalArguments = arguments;
+
+    // Remove computed attributes
+    var computedAttributes = _.result(this, 'computedAttributes');
+    this._removeAttributes(this.attributes, computedAttributes);
 
     // Remove expandable attributes
     var expandableAttributes = _.result(this, 'expandableAttributes');

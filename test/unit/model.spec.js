@@ -678,6 +678,24 @@ describe('Model', function() {
     var testModel;
     beforeEach(function() {
       testModel = new TestModel();
+      testModel.db = {
+        findOne: function() {},
+        findAndModify: function() {},
+        insert: function() {},
+        delete: function() {}
+      };
+      sinon.stub(testModel.db, 'findOne', function(a, b, c, cb) {
+        cb && cb(null, {});
+        return Bluebird.resolve({});
+      });
+      sinon.stub(testModel.db, 'findAndModify', function(a, b, c, d, cb) {
+        cb && cb(null, {});
+        return Bluebird.resolve({});
+      });
+      sinon.stub(testModel.db, 'insert', function(a, b, cb) {
+        cb && cb(null, {});
+        return Bluebird.resolve({});
+      });
     });
 
     it('should set changedFromRequest after setFromRequest', function() {
@@ -715,7 +733,7 @@ describe('Model', function() {
       });
     });
 
-    it('#setFromRequest with readOnlyAttributes', function() {
+    it('readOnlyAttributes', function() {
       testModel.readOnlyAttributes = function() {
         return {
           string: true,
@@ -760,7 +778,46 @@ describe('Model', function() {
       assert.strictEqual(testModel.attributes.string, 'i am a string');
     });
 
-    it('#setFromRequest with unset', function() {
+    it('expandableAttributes', function() {
+      testModel.expandableAttributes = function() {
+        return {
+          expandable: true,
+        };
+      };
+
+      var body = {
+        expandable: {
+          _id: '1234',
+          foo: 'bar'
+        }
+      };
+
+      return testModel.setFromRequest(body).then(function() {
+        return testModel.save();
+      }).then(function() {
+        assert.deepEqual(testModel.attributes.expandable, {});
+      });
+    });
+
+    it('computedAttributes', function() {
+      testModel.computedAttributes = function() {
+        return {
+          computed: true,
+        };
+      };
+
+      var body = {
+        computed: 'i am a computed value, don\'t save me!@#!$'
+      };
+
+      return testModel.setFromRequest(body).then(function() {
+        return testModel.save();
+      }).then(function() {
+        assert.isUndefined(testModel.attributes.computed);
+      });
+    });
+
+    it('unset', function() {
       var body = {
         string: null,
         integer: null,
@@ -780,7 +837,7 @@ describe('Model', function() {
 
     // this is no longer the case
     // we don't do `deep` extends anymore
-    it.skip('#setFromRequest with omitted nested key should not unset the omitted key', function() {
+    it.skip('omitted nested key should not unset the omitted key', function() {
       var body = {
         object: {
           omg: {
@@ -800,7 +857,7 @@ describe('Model', function() {
     });
 
     // see test above
-    it.skip('#setFromRequest with omitted nested key should not trigger change', function() {
+    it.skip('omitted nested key should not trigger change', function() {
       var body = {
         object: {
           // foo: 'bar'
@@ -815,7 +872,7 @@ describe('Model', function() {
       assert.deepEqual(testModel.changedFromRequest, {});
     });
 
-    it('#setFromRequest with empty object should work', function() {
+    it('empty object should work', function() {
       var body = {
         object: {}
       };
@@ -825,7 +882,7 @@ describe('Model', function() {
       assert.deepEqual(testModel.get('object'), {});
     });
 
-    it('#setFromRequest with empty array should work', function() {
+    it('empty array should work', function() {
       var body = {
         array_strings: []
       };
