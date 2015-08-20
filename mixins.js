@@ -9,7 +9,7 @@ var crypto = require('crypto');
 var mongodb = require('mongodb');
 var debug = require('./debug');
 
-return module.exports = {
+module.exports = {
   // Export Dependencies
   Promise: require('bluebird'),
   Backbone: require('backbone'),

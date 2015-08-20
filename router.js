@@ -45,9 +45,9 @@ module.exports = function(options) {
       var missingParams = [];
       _.each(requiredParams, function(requiredParam) {
         if (
-          Mixins.isNullOrUndefined(req.params[requiredParam]) &&
-          Mixins.isNullOrUndefined(req.query[requiredParam]) &&
-          Mixins.isNullOrUndefined(req.body[requiredParam])
+          Mixins.isNullOrUndefined(req.params && req.params[requiredParam]) &&
+          Mixins.isNullOrUndefined(req.query && req.query[requiredParam]) &&
+          Mixins.isNullOrUndefined(req.body && req.body[requiredParam])
         ) {
           missingParams.push(requiredParam);
         }
