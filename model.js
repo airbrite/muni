@@ -14,16 +14,6 @@ var Mixins = require('./mixins');
 
 module.exports = Backbone.Model.extend({
   /**
-   * Deep version of lodash `defaults`
-   *
-   * @return {Object}
-   */
-
-  _defaultsDeep: _.partialRight(_.merge, function deep(value, other) {
-    return _.merge(value, other, deep);
-  }),
-
-  /**
    * Do not merge arrays and empty objects
    * Arrays always want to be overwritten explicitly (empty or not)
    * Objects want to be overwritten explicitly when empty
@@ -313,20 +303,6 @@ module.exports = Backbone.Model.extend({
     return {};
   },
 
-  // http://backbonejs.org/docs/backbone.html#section-35
-  constructor: function(attributes, options) {
-    var attrs = attributes || {};
-    options || (options = {});
-    this.cid = _.uniqueId('c');
-    this.attributes = {};
-    if (options.collection) this.collection = options.collection;
-    if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = this._defaultsDeep({}, attrs, _.result(this, 'defaults'));
-    this.set(attrs, options);
-    this.changed = {};
-    this.initialize.apply(this, arguments);
-  },
-
   initialize: function() {
     this.db; // reference to a mongodb client/connection
     this.changedFromRequest = {};
@@ -346,7 +322,7 @@ module.exports = Backbone.Model.extend({
     if (_.isArray(resp)) {
       resp = resp[0];
     }
-    resp = this._defaultsDeep({}, resp, _.result(this, 'schema'));
+    resp = _.defaultsDeep({}, resp, _.result(this, 'defaults'));
     return resp;
   },
 
