@@ -303,6 +303,20 @@ module.exports = Backbone.Model.extend({
     return {};
   },
 
+  // http://backbonejs.org/docs/backbone.html#section-35
+  constructor: function(attributes, options) {
+    var attrs = attributes || {};
+    options || (options = {});
+    this.cid = _.uniqueId('c');
+    this.attributes = {};
+    if (options.collection) this.collection = options.collection;
+    if (options.parse) attrs = this.parse(attrs, options) || {};
+    attrs = _.defaultsDeep({}, attrs, _.result(this, 'defaults'));
+    this.set(attrs, options);
+    this.changed = {};
+    this.initialize.apply(this, arguments);
+  },
+
   initialize: function() {
     this.db; // reference to a mongodb client/connection
     this.changedFromRequest = {};
