@@ -593,56 +593,6 @@ describe('Model', function() {
   });
 
 
-
-  describe('Schema and Defaults', function() {
-    var testModel;
-    beforeEach(function() {
-      testModel = new Model();
-    });
-
-    it('#combinedDefaults', function() {
-      _.extend(testModel, {
-        defaults: function() {
-          return {
-            uno: 'one'
-          };
-        },
-        baseDefaults: function() {
-          return {
-            dos: 'two'
-          };
-        }
-      });
-
-      assert.deepEqual(testModel.combinedDefaults(), {
-        uno: 'one',
-        dos: 'two'
-      });
-    });
-
-    it('#combinedSchema', function() {
-      _.extend(testModel, {
-        schema: function() {
-          return {
-            uno: 'string'
-          };
-        },
-        baseSchema: function() {
-          return {
-            dos: 'number'
-          };
-        }
-      });
-
-      assert.deepEqual(testModel.combinedSchema(), {
-        uno: 'string',
-        dos: 'number'
-      });
-    });
-  });
-
-
-
   describe('Rendering', function() {
     var testModel;
     beforeEach(function() {
