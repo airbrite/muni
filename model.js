@@ -301,20 +301,6 @@ module.exports = Backbone.Model.extend({
     return {};
   },
 
-  // DEPRECATED 2015-05-08
-  // Use `defaults` instead
-  // Defaults that should be applied to all models
-  baseDefaults: function() {
-    return {};
-  },
-
-  // DEPRECATED 2015-05-08
-  combinedDefaults: function() {
-    var defaults = _.result(this, 'defaults');
-    _.merge(defaults, _.result(this, 'baseDefaults'));
-    return defaults;
-  },
-
   /**
    * Define the types of each attribute
    *
@@ -327,21 +313,6 @@ module.exports = Backbone.Model.extend({
     return {};
   },
 
-  // DEPRECATED 2015-05-08
-  // Use `schema` instead
-  // Attributes that should be included in all responses
-  baseSchema: function() {
-    return {};
-  },
-
-  // DEPRECATED 2015-05-08
-  combinedSchema: function() {
-    var schema = _.result(this, 'schema');
-    _.merge(schema, _.result(this, 'baseSchema'));
-    return schema;
-  },
-
-  // Override to support `defaultsDeep` and `combinedDefaults`
   // http://backbonejs.org/docs/backbone.html#section-35
   constructor: function(attributes, options) {
     var attrs = attributes || {};
@@ -350,7 +321,7 @@ module.exports = Backbone.Model.extend({
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = this._defaultsDeep({}, attrs, _.result(this, 'combinedDefaults'));
+    attrs = this._defaultsDeep({}, attrs, _.result(this, 'defaults'));
     this.set(attrs, options);
     this.changed = {};
     this.initialize.apply(this, arguments);
@@ -375,7 +346,7 @@ module.exports = Backbone.Model.extend({
     if (_.isArray(resp)) {
       resp = resp[0];
     }
-    resp = this._defaultsDeep({}, resp, _.result(this, 'combinedDefaults'));
+    resp = this._defaultsDeep({}, resp, _.result(this, 'schema'));
     return resp;
   },
 
@@ -406,7 +377,7 @@ module.exports = Backbone.Model.extend({
     }
 
     // Apply schema
-    var schema = _.result(this, 'combinedSchema');
+    var schema = _.result(this, 'schema');
     this._validateAttributes(attrs, schema);
 
     return Backbone.Model.prototype.set.call(this, attrs, options);
