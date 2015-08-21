@@ -833,7 +833,11 @@ module.exports = Backbone.Model.extend({
     // Mongo options
     var mongoOptions = _.pick(options, [
       'require',
-      'readPreference'
+      'readPreference',
+      'sort',
+      'fields',
+      'limit',
+      'skip'
     ]) || {};
 
     debug.info(
