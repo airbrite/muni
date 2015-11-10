@@ -4,8 +4,6 @@
   "description": "Muni - MongoDB, Express, Backbone based API framework.",
   "main": "index.js",
   "scripts": {
-    "lint": "jshint .",
-    "pretest": "npm run lint",
     "test": "npm run test-unit",
     "test-unit": "mocha --reporter spec --require test/support/common --bail --check-leaks --recursive test/unit/",
     "test-integration": "mocha --reporter spec --require test/support/common --bail --check-leaks --recursive test/integration/"
@@ -27,6 +25,7 @@
     "bluebird": "^2.9.30",
     "debug": "^2.2.0",
     "express": "^4.13.0",
+    "kerberos": "0.0.17",
     "lodash": "^3.10.0",
     "moment": "^2.10.3",
     "mongodb": "^2.0.35",
@@ -41,7 +40,6 @@
     "chai-as-promised": "*",
     "chai-datetime": "*",
     "eyes": "git://github.com/airbrite/eyes.js.git",
-    "jshint": "*",
     "mocha": "*",
     "sinon": "*",
     "sinon-as-promised": "*"
