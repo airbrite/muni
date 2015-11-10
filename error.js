@@ -6,7 +6,7 @@
 var debug = require('./debug');
 
 module.exports = function MuniError(message, code) {
-  Error.captureStackTrace(this, this.constructor);
+  Error.captureStackTrace && Error.captureStackTrace(this, this.constructor);
   this.name = this.constructor.name;
   this.message = message;
   this.code = code;

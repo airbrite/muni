@@ -361,12 +361,19 @@ module.exports = Backbone.Model.extend({
       err.code = 500;
     }
 
+    try {
+      err.line = err.stack.split('\n')[1].match(/\(.+\)/)[0];
+    } catch (e) {
+      err.line = null;
+    }
+
     var envelope = {
       meta: {
         code: err.code,
         error: {
           code: err.code,
-          message: err.message
+          message: err.message,
+          line: err.line
         }
       },
       data: err.message
