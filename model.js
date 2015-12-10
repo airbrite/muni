@@ -305,6 +305,18 @@ module.exports = Backbone.Model.extend({
     return {};
   },
 
+  /**
+   * New and improved way to define model attributes.
+   * This will effect a combination of `schema`, `defaults`, and other
+   * properties that can be defined independently.
+   *
+   * @return {Object}
+   */
+
+  definition: function() {
+    return {};
+  },
+
   // http://backbonejs.org/docs/backbone.html#section-35
   constructor: function(attributes, options) {
     var attrs = attributes || {};
