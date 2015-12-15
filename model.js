@@ -263,21 +263,11 @@ module.exports = Backbone.Model.extend({
   // Flag to force all updates to be patches on `sync`
   updateUsingPatch: true,
 
-  // Attributes that are not settable from the request
-  readOnlyAttributes: {},
-
-  // Attributes that should be saved to the database but NOT rendered to JSON
-  hiddenAttributes: {},
-
   // Attributes that can be expanded (relations) and should NOT be saved to the database
   expandableAttributes: {},
 
-  // Attributes that are computed and should NOT be saved to the database
-  computedAttributes: {},
-
   /**
-   * The defaults hash (or function) can be used
-   * to specify the default attributes for your model.
+   * Get the default attribute values for your model.
    * When creating an instance of the model,
    * any unspecified attributes will be set to their default value.
    *
@@ -289,25 +279,120 @@ module.exports = Backbone.Model.extend({
    * @return {Object}
    */
 
-  defaults: function() {
-    return {};
+  defaults: function(def) {
+    if (!def) def = _.result(this, 'definition');
+    var nowTime =  new Date().getTime();
+
+    return _.reduce(def, function(defaults, attr, key) {
+      if (attr.default !== undefined) {
+        defaults[key] = attr.default;
+      } else if (attr.type === 'object') {
+        defaults[key] = this.defaults(attr.fields || {});
+      } else if (attr.type === 'array') {
+        defaults[key] = [];
+      } else {
+        switch (attr.type) {
+          case 'id':
+          case 'string':
+            defaults[key] = null;
+            break;
+          case 'integer':
+          case 'uinteger':
+          case 'float':
+          case 'ufloat':
+            defaults[key] = 0;
+            break;
+          case 'boolean':
+            defaults[key] = false;
+            break;
+          case 'timestamp':
+            defaults[key] = nowTime; // ms
+            break;
+          case 'date':
+            defaults[key] = new Date(nowTime); // iso
+            break;
+        }
+      }
+      return defaults;
+    }, {}, this);
   },
 
   /**
-   * Define the types of each attribute
+   * Get the types of each attribute.
    *
    * See `model.spec.js` for how to use
    *
    * @return {Object}
    */
 
-  schema: function() {
-    return {};
+  schema: function(def) {
+    if (!def) def = _.result(this, 'definition');
+
+    return _.reduce(def, function(schema, attr, key) {
+      if (attr.type === 'object') {
+        schema[key] = this.schema(attr.fields || {});
+      } else if (attr.type === 'array') {
+        schema[key] = [this.schema(attr.fields || {})];
+      } else {
+        schema[key] = attr.type;
+      }
+      return schema;
+    }, {}, this);
+  },
+
+  /**
+   * Define attributes that are not settable from the request
+   *
+   * @return {Object}
+   */
+  readOnlyAttributes: function(def) {
+    if (!def) def = _.result(this, 'definition');
+
+    return _.reduce(def, function(readonly, attr, key) {
+      if (attr.readonly) {
+        readonly[key] = true;
+      }
+      return readonly;
+    }, {}, this);
+  },
+
+  /**
+   * Define attributes that should be saved to the database
+   * but NOT rendered to JSON
+   *
+   * @return {Object}
+   */
+  hiddenAttributes: function(def) {
+    if (!def) def = _.result(this, 'definition');
+
+    return _.reduce(def, function(hidden, attr, key) {
+      if (attr.hidden) {
+        hidden[key] = true;
+      }
+      return hidden;
+    }, {}, this);
+  },
+
+  /**
+   * Define attributes that are computed
+   * and should NOT be saved to the database
+   *
+   * @return {Object}
+   */
+  computedAttributes: function(def) {
+    if (!def) def = _.result(this, 'definition');
+
+    return _.reduce(def, function(computed, attr, key) {
+      if (attr.computed) {
+        computed[key] = true;
+      }
+      return computed;
+    }, {}, this);
   },
 
   /**
    * New and improved way to define model attributes.
-   * This will effect a combination of `schema`, `defaults`, and other
+   * Used to derive `schema`, `defaults`, and other
    * properties that can be defined independently.
    *
    * @return {Object}
