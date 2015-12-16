@@ -158,6 +158,9 @@ module.exports = Backbone.Model.extend({
 
         // The schema type is defined by the first element in the array
         schemaType = schemaType[0];
+        if (_.isArray(schemaDefault)) {
+          schemaDefault = schemaDefault[0];
+        }
 
         // Array with an empty object, no-op
         // Ex. [{}]
@@ -169,9 +172,8 @@ module.exports = Backbone.Model.extend({
         // Ex. [{...}]
         if (_.isObject(schemaType)) {
           _.each(val, function(arrVal) {
-            if (_.isArray(schemaDefault)) {
-              // Apply defaults to each object element
-              schemaDefault = schemaDefault[0];
+            // Apply defaults to each object value
+            if (schemaDefault) {
               _.defaultsDeep(arrVal, schemaDefault);
             }
             this._validateAttributes(arrVal, schemaType, schemaDefault);
@@ -268,9 +270,6 @@ module.exports = Backbone.Model.extend({
   // Flag to force all updates to be patches on `sync`
   updateUsingPatch: true,
 
-  // Attributes that can be expanded (relations) and should NOT be saved to the database
-  expandableAttributes: {},
-
   /**
    * Return the default value for a schema type
    *
@@ -319,6 +318,9 @@ module.exports = Backbone.Model.extend({
     def = def ? def : _.result(this, 'definition');
 
     return _.reduce(def, function(defaults, attr, key) {
+      if (attr.computed) {
+        return defaults;
+      }
       if (attr.default !== undefined) {
         defaults[key] = attr.default;
       } else if (attr.type === 'object') {
@@ -365,7 +367,13 @@ module.exports = Backbone.Model.extend({
       if (attr.type === 'object') {
         schema[key] = this.schema(attr.fields || {});
       } else if (attr.type === 'array') {
-        schema[key] = [this.schema(attr.fields || {})];
+        if (attr.value_type === 'object') {
+          schema[key] = [this.schema(attr.fields || {})];
+        } else if (attr.value_type) {
+          schema[key] = [attr.value_type];
+        } else {
+          schema[key] = [];
+        }
       } else {
         schema[key] = attr.type;
       }
@@ -423,6 +431,24 @@ module.exports = Backbone.Model.extend({
         computed[key] = true;
       }
       return computed;
+    }, {}, this);
+  },
+
+  /**
+   * Define attributes that can be expanded (relations)
+   * and should NOT be saved to the database
+   *
+   * @param  {Object} def
+   * @return {Object}
+   */
+  expandableAttributes: function(def) {
+    def = def ? def : _.result(this, 'definition');
+
+    return _.reduce(def, function(expandable, attr, key) {
+      if (attr.expandable) {
+        expandable[key] = true;
+      }
+      return expandable;
     }, {}, this);
   },
 

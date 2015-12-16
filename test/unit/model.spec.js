@@ -16,6 +16,9 @@ describe('Model', function() {
     defaults: helpers.requireFixture('defaults'),
     schema: helpers.requireFixture('schema')
   });
+  var TestModelDef = Model.extend({
+    definition: helpers.requireFixture('definition')
+  });
 
   describe('Fetch and Save and Destroy', function() {
     var data = {
@@ -492,6 +495,35 @@ describe('Model', function() {
         }]
       });
     });
+
+    it('should validate array of objects with defaults', function() {
+      var schema = _.result(testModel, 'schema');
+
+      var attrs = {
+        array_objects: [{
+          foo: 'bar'
+        }, {
+          omg: 'wtf'
+        }]
+      };
+      var defaults = {
+        array_objects: [{
+          foo: 'bar',
+          bar: 'baz'
+        }]
+      };
+
+      testModel._validateAttributes(attrs, schema, defaults);
+      assert.deepEqual(attrs, {
+        array_objects: [{
+          foo: 'bar',
+          bar: 'baz'
+        }, {
+          foo: 'bar',
+          bar: 'baz'
+        }]
+      });
+    });
   });
 
 
@@ -530,6 +562,7 @@ describe('Model', function() {
     });
 
     it('#getDeep nested array', function() {
+      testModel.set('array_objects', [{foo: 'bar'}, {foo: 'baz'}]);
       var val = testModel.get('array_objects.1.foo');
       assert.strictEqual(val, 'baz');
     });
@@ -790,4 +823,66 @@ describe('Model', function() {
       assert.deepEqual(testModel.get('array_strings'), []);
     });
   });
+
+  describe('Definition', function() {
+    var testModelDef;
+    beforeEach(function() {
+      testModelDef = new TestModelDef();
+    });
+
+    it('should match schema', function() {
+      var schemaFixture = helpers.requireFixture('schema')();
+      var schemaDef = _.result(testModelDef, 'schema');
+
+      assert.deepEqual(schemaFixture, schemaDef);
+    });
+
+    it('should match defaults', function() {
+      var defaultsFixture = helpers.requireFixture('defaults')();
+      var defaultsDef = _.result(testModelDef, 'defaults');
+
+      assert.deepEqual(defaultsFixture, defaultsDef);
+    });
+
+    it('should match defaults with nested array object', function() {
+      var defaults = testModelDef.defaultsWithArray();
+
+      assert.deepEqual(defaults.array_objects, [{
+        foo: null,
+        bar: null
+      }]);
+    });
+
+    it('should match readOnlyAttributes', function() {
+      var readOnlyAttributes = _.result(testModelDef, 'readOnlyAttributes');
+
+      assert.deepEqual(readOnlyAttributes, {
+        readonly: true
+      });
+    });
+
+    it('should match hiddenAttributes', function() {
+      var hiddenAttributes = _.result(testModelDef, 'hiddenAttributes');
+
+      assert.deepEqual(hiddenAttributes, {
+        hidden: true
+      });
+    });
+
+    it('should match computedAttributes', function() {
+      var computedAttributes = _.result(testModelDef, 'computedAttributes');
+
+      assert.deepEqual(computedAttributes, {
+        computed: true
+      });
+    });
+
+    it('should match expandableAttributes', function() {
+      var expandableAttributes = _.result(testModelDef, 'expandableAttributes');
+
+      assert.deepEqual(expandableAttributes, {
+        expandable: true
+      });
+    });
+  })
 });

@@ -37,8 +37,12 @@ module.exports = function() {
     array_booleans: ['boolean'],
     array_objects_empty: [{}],
     array_objects: [{
-      foo: 'string'
+      foo: 'string',
+      bar: 'string'
     }],
+    readonly: 'string',
+    hidden: 'string',
+    computed: 'string',
     expandable: {}
   };
 };
