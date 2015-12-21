@@ -853,6 +853,20 @@ describe('Model', function() {
       }]);
     });
 
+    it('should support function defaults', function() {
+      testModelDef.definition = {
+        test_default: {
+          type: 'string',
+          default: function() { return 'foo'; }
+        }
+      };
+      var defaultsDef = _.result(testModelDef, 'defaults');
+
+      assert.deepEqual(defaultsDef, {
+        test_default: 'foo'
+      });
+    });
+
     it('should match readOnlyAttributes', function() {
       var readOnlyAttributes = _.result(testModelDef, 'readOnlyAttributes');
 

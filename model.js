@@ -322,7 +322,7 @@ module.exports = Backbone.Model.extend({
         return defaults;
       }
       if (attr.default !== undefined) {
-        defaults[key] = attr.default;
+        defaults[key] = _.result(attr, 'default');
       } else if (attr.type === 'object') {
         defaults[key] = this.defaults(attr.fields || {});
       } else if (attr.type === 'array') {
@@ -391,7 +391,12 @@ module.exports = Backbone.Model.extend({
     def = def ? def : _.result(this, 'definition');
 
     return _.reduce(def, function(readonly, attr, key) {
-      if (attr.readonly) {
+      if (attr.type === 'object') {
+        var nested = this.readOnlyAttributes(attr.fields || {});
+        if (!_.isEmpty(nested)) {
+          readonly[key] = nested;
+        }
+      } if (attr.readonly) {
         readonly[key] = true;
       }
       return readonly;
@@ -409,7 +414,12 @@ module.exports = Backbone.Model.extend({
     def = def ? def : _.result(this, 'definition');
 
     return _.reduce(def, function(hidden, attr, key) {
-      if (attr.hidden) {
+      if (attr.type === 'object') {
+        var nested = this.hiddenAttributes(attr.fields || {});
+        if (!_.isEmpty(nested)) {
+          hidden[key] = nested;
+        }
+      } if (attr.hidden) {
         hidden[key] = true;
       }
       return hidden;
@@ -427,7 +437,12 @@ module.exports = Backbone.Model.extend({
     def = def ? def : _.result(this, 'definition');
 
     return _.reduce(def, function(computed, attr, key) {
-      if (attr.computed) {
+      if (attr.type === 'object') {
+        var nested = this.computedAttributes(attr.fields || {});
+        if (!_.isEmpty(nested)) {
+          computed[key] = nested;
+        }
+      } if (attr.computed) {
         computed[key] = true;
       }
       return computed;
@@ -445,7 +460,12 @@ module.exports = Backbone.Model.extend({
     def = def ? def : _.result(this, 'definition');
 
     return _.reduce(def, function(expandable, attr, key) {
-      if (attr.expandable) {
+      if (attr.type === 'object') {
+        var nested = this.expandableAttributes(attr.fields || {});
+        if (!_.isEmpty(nested)) {
+          expandable[key] = nested;
+        }
+      } if (attr.expandable) {
         expandable[key] = true;
       }
       return expandable;
