@@ -267,7 +267,9 @@ describe('Model', function() {
               third: {
                 such: 'win'
               },
-              tres: {}
+              tres: {
+                yo: '12345'
+              }
             }
           }
         }
@@ -299,7 +301,7 @@ describe('Model', function() {
     });
 
 
-    it('should ignore invalid value type', function() {
+    it('should coerce invalid value type', function() {
       var schema = _.result(testModel, 'schema');
 
       var attrs = {
@@ -307,7 +309,9 @@ describe('Model', function() {
       };
 
       testModel._validateAttributes(attrs, schema);
-      assert.deepEqual(attrs, {});
+      assert.deepEqual(attrs, {
+        string: '1234'
+      });
     });
 
     it('should ignore invalid key', function() {
@@ -413,7 +417,7 @@ describe('Model', function() {
 
       testModel._validateAttributes(attrs, schema);
       assert.deepEqual(attrs, {
-        array_strings: ['z', 'x', null, 'v']
+        array_strings: ['z', 'x', '1', 'v']
       });
     });
 

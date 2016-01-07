@@ -194,6 +194,8 @@ module.exports = Backbone.Model.extend({
           isValid = Mixins.isObjectId(val);
           break;
         case 'string':
+          // coerce value into string
+          attrs[key] = val = val.toString();
           isValid = _.isString(val);
           break;
         case 'integer':
