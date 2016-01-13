@@ -665,19 +665,26 @@ _.extend(Mongo.prototype, {
 
   // Add index if it doesn't already exist
   // indexName is the string name of the index
-  ensureIndex: Bluebird.method(function(collectionName, indexName) {
+  createIndex: Bluebird.method(function(collectionName, keys, options) {
     var args = [].slice.call(arguments);
     var callback = _.isFunction(_.last(args)) ? args.pop() : null;
-    var options = args.length > 2 && _.isObject(_.last(args)) ? args.pop() : {};
-    options = _.pick(options, ['unique', 'background', 'dropDups', 'w']);
+    var options = options || {};
+    options = _.pick(options, [
+      'name',
+      'unique',
+      'background',
+      'dropDups',
+      'w',
+      'expireAfterSeconds'
+    ]);
 
     debug.info(
       '#ensureIndex: %s for index: %s',
       collectionName,
-      JSON.stringify(indexName)
+      JSON.stringify(keys)
     );
     return this._collection(collectionName).then(function(collection) {
-      return collection.ensureIndexAsync(indexName, options);
+      return collection.createIndexAsync(keys, options);
     }).then(function(result) {
       callback && callback(null, result);
       return result;
@@ -686,6 +693,12 @@ _.extend(Mongo.prototype, {
       throw err;
     });
   }),
+
+  // Alias for createIndex
+  // ensureIndex is deprecated
+  ensureIndex: function() {
+    return this.createIndex.apply(this, arguments);
+  },
 
   // Remove index
   // result - { nIndexesWas: 2, ok: 1 }

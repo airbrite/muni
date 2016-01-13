@@ -151,12 +151,17 @@ module.exports = Backbone.Collection.extend({
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
 
-    return this.db.find(
-      this.model.prototype.urlRoot,
-      query,
-      mongoOptions,
-      this._wrapResponse(options)
-    ).bind(this).tap(function(resp) {
+    return Bluebird.bind(this).then(function() {
+      this.model.db = this.db;
+      return this.model.ensureIndexes();
+    }).tap(function() {
+      return this.db.find(
+        this.model.prototype.urlRoot,
+        query,
+        mongoOptions,
+        this._wrapResponse(options)
+      );
+    }).tap(function(resp) {
       // Assign pagination properties to the collection
       this.limit = _.parseInt(mongoOptions.limit) || 0;
       this.skip = _.parseInt(mongoOptions.skip) || 0;
