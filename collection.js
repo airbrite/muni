@@ -6,6 +6,9 @@ var Backbone = require('backbone');
 var Model = require('./model');
 var debug = require('./debug');
 
+// Cache ensured indexes
+var INDEXED = {};
+
 module.exports = Backbone.Collection.extend({
   /**
    * Takes the mongodb response and calls the Backbone success method
@@ -152,9 +155,8 @@ module.exports = Backbone.Collection.extend({
       JSON.stringify(mongoOptions));
 
     return Bluebird.bind(this).then(function() {
-      this.model.db = this.db;
-      return this.model.ensureIndexes();
-    }).tap(function() {
+      return this.ensureIndexes();
+    }).then(function() {
       return this.db.find(
         this.model.prototype.urlRoot,
         query,
@@ -231,5 +233,26 @@ module.exports = Backbone.Collection.extend({
       mongoOptions,
       this._wrapResponse(options)
     );
+  }),
+
+  /**
+   * Ensure model indexes are created if defined
+   * Only once per process/collection
+   *
+   * @return {Promise}
+   */
+
+  ensureIndexes: Bluebird.method(function() {
+    var collection = this.model.prototype.urlRoot;
+    if (INDEXED[collection]) {
+      // No-op
+      return;
+    }
+
+    INDEXED[collection] = true;
+
+    var model = new this.model();
+    model.db = this.db;
+    model.ensureIndexes();
   })
 });
