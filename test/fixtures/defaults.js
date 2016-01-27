@@ -19,23 +19,26 @@ module.exports = function() {
         wtf: 'bbq'
       }
     },
-    object_defaults_empty: {},
+    object_defaults_empty: {
+      first: {
+        second: {
+          third: {
+            such: null
+          },
+          tres: {
+            yo: null
+          }
+        }
+      }
+    },
     array_empty: [],
-    array_strings: ['a', 'b', 'c', 'd'],
-    array_numbers: [1, 2, 3, 4],
-    array_booleans: [true, false, false, true],
-    array_objects_empty: [{
-      n: 1
-    }, {
-      s: 's'
-    }, {
-      b: true
-    }],
-    array_objects: [{
-      foo: 'bar'
-    }, {
-      foo: 'baz'
-    }],
+    array_strings: [],
+    array_numbers: [],
+    array_booleans: [],
+    array_objects_empty: [],
+    array_objects: [],
+    readonly: null,
+    hidden: null,
     expandable: {}
   };
 };

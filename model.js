@@ -116,10 +116,11 @@ module.exports = Backbone.Model.extend({
    *
    * @param {Object} attrs
    * @param {Object} schema
+   * @param {Object} defaults
    * @return {Object}
    */
 
-  _validateAttributes: function(attrs, schema) {
+  _validateAttributes: function(attrs, schema, defaults) {
     if (!_.isObject(attrs) ||
       _.isUndefined(schema) ||
       _.isNull(schema) ||
@@ -131,6 +132,7 @@ module.exports = Backbone.Model.extend({
       var isValid = false;
       // schema might be either an object or a string
       var schemaType = _.isObject(schema) ? schema[key] : schema;
+      var schemaDefault = _.isObject(defaults) ? defaults[key] : defaults;
 
       // if the schema for this key does not exist
       // remove it as a property completely
@@ -156,6 +158,9 @@ module.exports = Backbone.Model.extend({
 
         // The schema type is defined by the first element in the array
         schemaType = schemaType[0];
+        if (_.isArray(schemaDefault)) {
+          schemaDefault = schemaDefault[0];
+        }
 
         // Array with an empty object, no-op
         // Ex. [{}]
@@ -167,14 +172,18 @@ module.exports = Backbone.Model.extend({
         // Ex. [{...}]
         if (_.isObject(schemaType)) {
           _.each(val, function(arrVal) {
-            this._validateAttributes(arrVal, schemaType);
+            // Apply defaults to each object value
+            if (schemaDefault) {
+              _.defaultsDeep(arrVal, schemaDefault);
+            }
+            this._validateAttributes(arrVal, schemaType, schemaDefault);
           }, this);
           return;
         }
 
         // Recursively validate the array
         // Ex: ['string'] or ['integer']
-        return this._validateAttributes(val, schemaType);
+        return this._validateAttributes(val, schemaType, schemaDefault);
       } else if (_.isObject(schemaType)) {
         // Empty object is a loosely defined schema, no-op
         // That means allow anything inside
@@ -185,7 +194,7 @@ module.exports = Backbone.Model.extend({
 
         // Recursively validate the object
         // Ex: {...}
-        return this._validateAttributes(val, schemaType);
+        return this._validateAttributes(val, schemaType, schemaDefault);
       }
 
       // All other types are defined as a string
@@ -251,8 +260,6 @@ module.exports = Backbone.Model.extend({
     }, this);
   },
 
-
-
   // Reserved attribute definitions
   idAttribute: '_id',
   userIdAttribute: 'user_id',
@@ -263,45 +270,132 @@ module.exports = Backbone.Model.extend({
   // Flag to force all updates to be patches on `sync`
   updateUsingPatch: true,
 
-  // Attributes that are not settable from the request
-  readOnlyAttributes: {},
-
-  // Attributes that should be saved to the database but NOT rendered to JSON
-  hiddenAttributes: {},
-
-  // Attributes that can be expanded (relations) and should NOT be saved to the database
-  expandableAttributes: {},
-
-  // Attributes that are computed and should NOT be saved to the database
-  computedAttributes: {},
-
   /**
-   * The defaults hash (or function) can be used
-   * to specify the default attributes for your model.
-   * When creating an instance of the model,
-   * any unspecified attributes will be set to their default value.
+   * Return the default value for a schema type
    *
-   * Remember that in JavaScript, objects are passed by reference,
-   * so if you include an object as a default value,
-   * it will be shared among all instances.
-   * Instead, define defaults as a function.
-   *
-   * @return {Object}
+   * @param {string} schemaType
+   * @param {*} schemaDefault
+   * @return {*}
    */
 
-  defaults: function() {
-    return {};
+  _defaultVal: function(schemaType, schemaDefault) {
+    if (!_.isUndefined(schemaDefault)) {
+      return schemaDefault;
+    }
+    switch (schemaType) {
+      case 'integer':
+      case 'uinteger':
+      case 'float':
+      case 'ufloat':
+        return 0;
+      case 'boolean':
+        return false;
+      case 'timestamp':
+        return new Date().getTime(); // ms
+      case 'date':
+        return new Date(); // iso
+      default:
+        return null;
+    }
   },
 
   /**
-   * Define the types of each attribute
+   * Get the default attribute values for your model.
+   * When creating an instance of the model,
+   * any unspecified attributes will be set to their default value.
+   *
+   * Define defaults as a function.
+   *
+   * @param  {Object} def
+   * @param  {boolean} withArray
+   * @return {Object}
+   */
+
+  defaults: function(def, withArray) {
+    def = def ? def : _.result(this, 'definition');
+
+    return _.reduce(def, function(defaults, attr, key) {
+      if (attr.computed) {
+        return defaults;
+      }
+      if (attr.default !== undefined) {
+        defaults[key] = _.result(attr, 'default');
+      } else if (attr.type === 'object') {
+        defaults[key] = this.defaults(attr.fields || {});
+      } else if (attr.type === 'array') {
+        // withArray to populate nested array values for _validateAttributes
+        defaults[key] = withArray ? [this.defaults(attr.fields || {})] : [];
+      } else {
+        defaults[key] = this._defaultVal(attr.type);
+      }
+      return defaults;
+    }, {}, this);
+  },
+
+  /**
+   * Get the types of each attribute.
+   *
+   * Define schema as a function.
    *
    * See `model.spec.js` for how to use
+   *
+   * @param  {Object} def
+   * @return {Object}
+   */
+
+  schema: function(def) {
+    def = def ? def : _.result(this, 'definition');
+
+    return _.reduce(def, function(schema, attr, key) {
+      if (attr.type === 'object') {
+        schema[key] = this.schema(attr.fields || {});
+      } else if (attr.type === 'array') {
+        if (attr.value_type === 'object') {
+          schema[key] = [this.schema(attr.fields || {})];
+        } else if (attr.value_type) {
+          schema[key] = [attr.value_type];
+        } else {
+          schema[key] = [];
+        }
+      } else {
+        schema[key] = attr.type;
+      }
+      return schema;
+    }, {}, this);
+  },
+
+  /**
+   * Define attributes that are not settable from the request
+   *
+   * @param  {String} prop
+   * @param  {Object} def
+   * @return {Object}
+   */
+  findAttributes: function(prop, def) {
+    def = def ? def : _.result(this, 'definition');
+
+    return _.reduce(def, function(attrs, attr, key) {
+      if (attr.type === 'object') {
+        var nested = this.findAttributes(prop, attr.fields || {});
+        if (!_.isEmpty(nested)) {
+          attrs[key] = nested;
+        }
+      } if (attr[prop]) {
+        attrs[key] = true;
+      }
+      return attrs;
+    }, {}, this);
+  },
+
+  /**
+   * New and improved way to define model attributes.
+   * Used to derive `schema`, `defaults`, and other
+   * properties that can be defined independently.
    *
    * @return {Object}
    */
 
-  schema: function() {
+  definition: function() {
     return {};
   },
 
@@ -313,7 +407,9 @@ module.exports = Backbone.Model.extend({
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = _.defaultsDeep({}, attrs, _.result(this, 'defaults'));
+    this._schema = this.schema();
+    this._defaults = this.defaults(undefined, true);
+    attrs = _.defaultsDeep({}, attrs, this.defaults(undefined, false));
     this.set(attrs, options);
     this.changed = {};
     this.initialize.apply(this, arguments);
@@ -338,7 +434,7 @@ module.exports = Backbone.Model.extend({
     if (_.isArray(resp)) {
       resp = resp[0];
     }
-    resp = _.defaultsDeep({}, resp, _.result(this, 'defaults'));
+    resp = _.defaultsDeep({}, resp, this.defaults());
     return resp;
   },
 
@@ -369,8 +465,7 @@ module.exports = Backbone.Model.extend({
     }
 
     // Apply schema
-    var schema = _.result(this, 'schema');
-    this._validateAttributes(attrs, schema);
+    this._validateAttributes(attrs, this._schema, this._defaults);
 
     return Backbone.Model.prototype.set.call(this, attrs, options);
   },
@@ -459,7 +554,7 @@ module.exports = Backbone.Model.extend({
 
   render: function() {
     var json = this.toJSON();
-    var hiddenAttributes = _.result(this, 'hiddenAttributes');
+    var hiddenAttributes = this.findAttributes('hidden');
     this._removeAttributes(json, hiddenAttributes);
     return json;
   },
@@ -484,11 +579,11 @@ module.exports = Backbone.Model.extend({
     body = this._mergeSafe(body, this.attributes);
 
     // Remove read only attributes
-    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+    var readOnlyAttributes = this.findAttributes('readonly');
     this._removeAttributes(body, readOnlyAttributes);
 
     // Remove computed attributes
-    var computedAttributes = _.result(this, 'computedAttributes');
+    var computedAttributes = this.findAttributes('computed');
     this._removeAttributes(this.attributes, computedAttributes);
 
     // Set new attributes
@@ -605,11 +700,11 @@ module.exports = Backbone.Model.extend({
     var originalArguments = arguments;
 
     // Remove computed attributes
-    var computedAttributes = _.result(this, 'computedAttributes');
+    var computedAttributes = this.findAttributes('computed');
     this._removeAttributes(this.attributes, computedAttributes);
 
     // Remove expandable attributes
-    var expandableAttributes = _.result(this, 'expandableAttributes');
+    var expandableAttributes = this.findAttributes('expandable');
     this._removeExpandableAttributes(this.attributes, expandableAttributes);
 
     var beforeFn, afterFn;
