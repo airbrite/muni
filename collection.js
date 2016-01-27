@@ -154,7 +154,7 @@ module.exports = Backbone.Collection.extend({
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
 
-    return Bluebird.bind(this).then(function() {
+    return Bluebird.bind(this).tap(function() {
       return this.ensureIndexes();
     }).then(function() {
       return this.db.find(
@@ -227,12 +227,16 @@ module.exports = Backbone.Collection.extend({
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
 
-    return this.db.count(
-      this.model.prototype.urlRoot,
-      query,
-      mongoOptions,
-      this._wrapResponse(options)
-    );
+    return Bluebird.bind(this).tap(function() {
+      return this.ensureIndexes();
+    }).then(function() {
+      return this.db.count(
+        this.model.prototype.urlRoot,
+        query,
+        mongoOptions,
+        this._wrapResponse(options)
+      );
+    });
   }),
 
   /**

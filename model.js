@@ -860,7 +860,7 @@ module.exports = Backbone.Model.extend({
       JSON.stringify(query)
     );
 
-    return Bluebird.bind(this).then(function() {
+    return Bluebird.bind(this).tap(function() {
       return this.ensureIndexes();
     }).tap(function() {
       return this.db.findOne(
@@ -887,6 +887,7 @@ module.exports = Backbone.Model.extend({
 
     INDEXED[this.urlRoot] = true;
 
+    var promises = [];
     var indexes = _.result(this, 'indexes');
     _.each(indexes, function(index) {
       var options = index.options || {};
@@ -895,11 +896,15 @@ module.exports = Backbone.Model.extend({
         background: true
       });
 
-      this.db.createIndex(
-        this.urlRoot,
-        index.keys,
-        options
+      promises.push(
+        this.db.createIndex(
+          this.urlRoot,
+          index.keys,
+          options
+        )
       );
     }, this);
+
+    return Bluebird.all(promises);
   })
 });
