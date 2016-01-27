@@ -16,7 +16,8 @@ describe('Collection', function() {
     collection = new Collection();
     collection.db = {
       count: function() {},
-      find: function() {}
+      find: function() {},
+      createIndex: function() {}
     };
   });
 

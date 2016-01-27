@@ -6,6 +6,9 @@ var Backbone = require('backbone');
 var Model = require('./model');
 var debug = require('./debug');
 
+// Cache ensured indexes
+var INDEXED = {};
+
 module.exports = Backbone.Collection.extend({
   /**
    * Takes the mongodb response and calls the Backbone success method
@@ -151,12 +154,16 @@ module.exports = Backbone.Collection.extend({
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
 
-    return this.db.find(
-      this.model.prototype.urlRoot,
-      query,
-      mongoOptions,
-      this._wrapResponse(options)
-    ).bind(this).tap(function(resp) {
+    return Bluebird.bind(this).tap(function() {
+      return this.ensureIndexes();
+    }).then(function() {
+      return this.db.find(
+        this.model.prototype.urlRoot,
+        query,
+        mongoOptions,
+        this._wrapResponse(options)
+      );
+    }).tap(function(resp) {
       // Assign pagination properties to the collection
       this.limit = _.parseInt(mongoOptions.limit) || 0;
       this.skip = _.parseInt(mongoOptions.skip) || 0;
@@ -220,11 +227,36 @@ module.exports = Backbone.Collection.extend({
       JSON.stringify(query),
       JSON.stringify(mongoOptions));
 
-    return this.db.count(
-      this.model.prototype.urlRoot,
-      query,
-      mongoOptions,
-      this._wrapResponse(options)
-    );
+    return Bluebird.bind(this).tap(function() {
+      return this.ensureIndexes();
+    }).then(function() {
+      return this.db.count(
+        this.model.prototype.urlRoot,
+        query,
+        mongoOptions,
+        this._wrapResponse(options)
+      );
+    });
+  }),
+
+  /**
+   * Ensure model indexes are created if defined
+   * Only once per process/collection
+   *
+   * @return {Promise}
+   */
+
+  ensureIndexes: Bluebird.method(function() {
+    var collection = this.model.prototype.urlRoot;
+    if (INDEXED[collection]) {
+      // No-op
+      return;
+    }
+
+    INDEXED[collection] = true;
+
+    var model = new this.model();
+    model.db = this.db;
+    model.ensureIndexes();
   })
 });

@@ -12,6 +12,9 @@ var debug = require('./debug');
 var MuniError = require('./error');
 var Mixins = require('./mixins');
 
+// Cache ensured indexes
+var INDEXED = {};
+
 module.exports = Backbone.Model.extend({
   /**
    * Do not merge arrays and empty objects
@@ -397,6 +400,16 @@ module.exports = Backbone.Model.extend({
 
   definition: function() {
     return {};
+  },
+
+  /**
+   * Define db indexes
+   *
+   * @return {Array}
+   */
+
+  indexes: function() {
+    return [];
   },
 
   // http://backbonejs.org/docs/backbone.html#section-35
@@ -944,11 +957,51 @@ module.exports = Backbone.Model.extend({
       JSON.stringify(query)
     );
 
-    return this.db.findOne(
-      this.urlRoot,
-      query,
-      mongoOptions,
-      this._wrapResponse(options)
-    ).return(this);
+    return Bluebird.bind(this).tap(function() {
+      return this.ensureIndexes();
+    }).tap(function() {
+      return this.db.findOne(
+        this.urlRoot,
+        query,
+        mongoOptions,
+        this._wrapResponse(options)
+      );
+    }).return(this);
+  }),
+
+  /**
+   * Ensure indexes are created if defined
+   * Only once per process/collection
+   *
+   * @return {Promise}
+   */
+
+  ensureIndexes: Bluebird.method(function() {
+    if (INDEXED[this.urlRoot]) {
+      // No-op
+      return;
+    }
+
+    INDEXED[this.urlRoot] = true;
+
+    var promises = [];
+    var indexes = _.result(this, 'indexes');
+    _.each(indexes, function(index) {
+      var options = index.options || {};
+
+      _.defaults(options, {
+        background: true
+      });
+
+      promises.push(
+        this.db.createIndex(
+          this.urlRoot,
+          index.keys,
+          options
+        )
+      );
+    }, this);
+
+    return Bluebird.all(promises);
   })
 });
