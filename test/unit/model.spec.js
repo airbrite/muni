@@ -154,21 +154,35 @@ describe('Model', function() {
     it.skip('#_wrapResponse', function() {});
 
     it('#_removeAttributes', function() {
-      testModel.hiddenAttributes = function() {
-        return {
-          string: true,
-          integer: false,
-          array_objects: true,
-          object: {
+      testModel.definition = {
+        string: {
+          hidden: true
+        },
+        integer: {
+          hidden: false
+        },
+        array_objects: {
+          hidden: true
+        },
+        object: {
+          type: 'object',
+          fields: {
             omg: {
-              wtf: true
+              type: 'object',
+              fields: {
+                wtf: {
+                  hidden: true
+                }
+              }
             }
-          },
-          array_objects_empty: true
-        };
+          }
+        },
+        array_objects_empty: {
+          hidden: true
+        }
       };
 
-      var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
+      var hiddenAttributes = testModel.findAttributes('hidden');
       testModel._removeAttributes(testModel.attributes, hiddenAttributes);
       assert.isUndefined(testModel.attributes.string);
       assert.isUndefined(testModel.attributes.array_objects);
@@ -177,26 +191,34 @@ describe('Model', function() {
     });
 
     it('#_removeAttributes with nested object', function() {
-      testModel.hiddenAttributes = function() {
-        return {
-          string: true,
-          integer: false,
-          array_objects: true,
-          object: true,
-          array_objects_empty: true
-        };
+      testModel.definition = {
+        string: {
+          hidden: true
+        },
+        integer: {
+          hidden: false
+        },
+        array_objects: {
+          hidden: true
+        },
+        object: {
+          hidden: true
+        },
+        array_objects_empty: {
+          hidden: true
+        }
       };
 
-      var hiddenAttributes = _.result(testModel, 'hiddenAttributes');
+      var hiddenAttributes = testModel.findAttributes('hidden');
       testModel._removeAttributes(testModel.attributes, hiddenAttributes);
       assert.isUndefined(testModel.attributes.object);
     });
 
     it('#_removeExpandableAttributes', function() {
-      testModel.expandableAttributes = function() {
-        return {
+      testModel.definition = {
+        expandable: {
           expandable: true
-        };
+        }
       };
 
       testModel.set('expandable', {
@@ -204,7 +226,7 @@ describe('Model', function() {
         foo: 'bar',
         troll: 'lol'
       });
-      var expandableAttributes = _.result(testModel, 'expandableAttributes');
+      var expandableAttributes = testModel.findAttributes('expandable');
       testModel._removeExpandableAttributes(testModel.attributes, expandableAttributes);
       assert.deepEqual(testModel.attributes.expandable, {
         _id: 'foo'
@@ -223,7 +245,7 @@ describe('Model', function() {
     it('should delete undefined schema attributes', function() {
       // when setting a non-existent key to null
       // should have no effect, and the key should be removed
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         non_existent_key: null,
@@ -244,7 +266,7 @@ describe('Model', function() {
     });
 
     it('should set nested attribute of empty object', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         object_defaults_empty: {
@@ -280,7 +302,7 @@ describe('Model', function() {
     });
 
     it('should unset with null', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         string: null,
@@ -305,7 +327,7 @@ describe('Model', function() {
 
 
     it('should coerce invalid value type', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         string: 1234
@@ -318,7 +340,7 @@ describe('Model', function() {
     });
 
     it('should ignore invalid key', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         invalid_key: 'asdf'
@@ -329,7 +351,7 @@ describe('Model', function() {
     });
 
     it('should not allow negative timestamp', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         timestamp: -123
@@ -340,7 +362,7 @@ describe('Model', function() {
     });
 
     it('should cast ISO8601 date string', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         date: '2014-08-07T07:49:53.555Z'
@@ -353,7 +375,7 @@ describe('Model', function() {
     });
 
     it('should allow setting anything into empty object', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var date = new Date();
       var attrs = {
@@ -377,7 +399,7 @@ describe('Model', function() {
     });
 
     it('should deep validate object', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         object: {
@@ -395,7 +417,7 @@ describe('Model', function() {
     });
 
     it('should allow setting anything into empty array', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_empty: ['any', 'thing', 1, {
@@ -412,7 +434,7 @@ describe('Model', function() {
     });
 
     it('should validate array of strings', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_strings: ['z', 'x', 1, 'v']
@@ -425,7 +447,7 @@ describe('Model', function() {
     });
 
     it('should validate array of uintegers', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_numbers: [5, 6, 'a', 8]
@@ -438,7 +460,7 @@ describe('Model', function() {
     });
 
     it('should validate array of booleans', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_booleans: [true, false, 1, 0, 'true']
@@ -451,7 +473,7 @@ describe('Model', function() {
     });
 
     it('should validate array of objects that are empty', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_objects_empty: [{
@@ -472,7 +494,7 @@ describe('Model', function() {
     });
 
     it('should validate array of objects', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_objects: [{
@@ -497,7 +519,7 @@ describe('Model', function() {
     });
 
     it('should validate array of objects with defaults', function() {
-      var schema = _.result(testModel, 'schema');
+      var schema = testModel.schema();
 
       var attrs = {
         array_objects: [{
@@ -578,15 +600,23 @@ describe('Model', function() {
     var testModel;
     beforeEach(function() {
       testModel = new TestModel();
-      testModel.hiddenAttributes = function() {
-        return {
-          string: true,
-          object: {
+      testModel.definition = {
+        string: {
+          hidden: true
+        },
+        object: {
+          type: 'object',
+          fields: {
             omg: {
-              wtf: true
+              type: 'object',
+              fields: {
+                wtf: {
+                  hidden: true
+                }
+              }
             }
           }
-        };
+        }
       };
     });
 
@@ -665,15 +695,23 @@ describe('Model', function() {
     });
 
     it('readOnlyAttributes', function() {
-      testModel.readOnlyAttributes = function() {
-        return {
-          string: true,
-          object: {
+      testModel.definition = {
+        string: {
+          readonly: true
+        },
+        object: {
+          type: 'object',
+          fields: {
             omg: {
-              wtf: true
+              type: 'object',
+              fields: {
+                wtf: {
+                  readonly: true
+                }
+              }
             }
           }
-        };
+        }
       };
 
       var body = {
@@ -710,10 +748,10 @@ describe('Model', function() {
     });
 
     it('expandableAttributes', function() {
-      testModel.expandableAttributes = function() {
-        return {
-          expandable: true,
-        };
+      testModel.definition = {
+        expandable: {
+          expandable: true
+        }
       };
 
       var body = {
@@ -731,10 +769,10 @@ describe('Model', function() {
     });
 
     it('computedAttributes', function() {
-      testModel.computedAttributes = function() {
-        return {
-          computed: true,
-        };
+      testModel.definition = {
+        computed: {
+          computed: true
+        }
       };
 
       var body = {
@@ -832,20 +870,24 @@ describe('Model', function() {
 
     it('should match schema', function() {
       var schemaFixture = helpers.requireFixture('schema')();
-      var schemaDef = _.result(testModelDef, 'schema');
+      var schemaDef = testModelDef.schema();
 
       assert.deepEqual(schemaFixture, schemaDef);
     });
 
     it('should match defaults', function() {
       var defaultsFixture = helpers.requireFixture('defaults')();
-      var defaultsDef = _.result(testModelDef, 'defaults');
+      var defaultsDef = testModelDef.defaults();
+
+      // Off by one ms
+      delete defaultsFixture.date;
+      delete defaultsDef.date;
 
       assert.deepEqual(defaultsFixture, defaultsDef);
     });
 
     it('should match defaults with nested array object', function() {
-      var defaults = testModelDef.defaultsWithArray();
+      var defaults = testModelDef.defaults(undefined, true);
 
       assert.deepEqual(defaults.array_objects, [{
         foo: null,
@@ -860,7 +902,7 @@ describe('Model', function() {
           default: function() { return 'foo'; }
         }
       };
-      var defaultsDef = _.result(testModelDef, 'defaults');
+      var defaultsDef = testModelDef.defaults();
 
       assert.deepEqual(defaultsDef, {
         test_default: 'foo'
@@ -868,7 +910,7 @@ describe('Model', function() {
     });
 
     it('should match readOnlyAttributes', function() {
-      var readOnlyAttributes = _.result(testModelDef, 'readOnlyAttributes');
+      var readOnlyAttributes = testModelDef.findAttributes('readonly');
 
       assert.deepEqual(readOnlyAttributes, {
         readonly: true
@@ -876,7 +918,7 @@ describe('Model', function() {
     });
 
     it('should match hiddenAttributes', function() {
-      var hiddenAttributes = _.result(testModelDef, 'hiddenAttributes');
+      var hiddenAttributes = testModelDef.findAttributes('hidden');
 
       assert.deepEqual(hiddenAttributes, {
         hidden: true
@@ -884,7 +926,7 @@ describe('Model', function() {
     });
 
     it('should match computedAttributes', function() {
-      var computedAttributes = _.result(testModelDef, 'computedAttributes');
+      var computedAttributes = testModelDef.findAttributes('computed');
 
       assert.deepEqual(computedAttributes, {
         computed: true
@@ -892,7 +934,7 @@ describe('Model', function() {
     });
 
     it('should match expandableAttributes', function() {
-      var expandableAttributes = _.result(testModelDef, 'expandableAttributes');
+      var expandableAttributes = testModelDef.findAttributes('expandable');
 
       assert.deepEqual(expandableAttributes, {
         expandable: true

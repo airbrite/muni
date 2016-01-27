@@ -304,10 +304,7 @@ module.exports = Backbone.Model.extend({
    * When creating an instance of the model,
    * any unspecified attributes will be set to their default value.
    *
-   * Remember that in JavaScript, objects are passed by reference,
-   * so if you include an object as a default value,
-   * it will be shared among all instances.
-   * Instead, define defaults as a function.
+   * Define defaults as a function.
    *
    * @param  {Object} def
    * @param  {boolean} withArray
@@ -326,6 +323,7 @@ module.exports = Backbone.Model.extend({
       } else if (attr.type === 'object') {
         defaults[key] = this.defaults(attr.fields || {});
       } else if (attr.type === 'array') {
+        // withArray to populate nested array values for _validateAttributes
         defaults[key] = withArray ? [this.defaults(attr.fields || {})] : [];
       } else {
         defaults[key] = this._defaultVal(attr.type);
@@ -335,24 +333,9 @@ module.exports = Backbone.Model.extend({
   },
 
   /**
-   * Get attribute defaults with nested array values.
-   * Only applicable when `definition` is defined.
-   *
-   * @return {Object}
-   */
-
-  defaultsWithArray: function() {
-    var def = _.result(this, 'definition');
-    if (_.isEmpty(def)) {
-      // No-op
-      return {};
-    }
-
-    return this.defaults(def, true);
-  },
-
-  /**
    * Get the types of each attribute.
+   *
+   * Define schema as a function.
    *
    * See `model.spec.js` for how to use
    *
@@ -384,91 +367,23 @@ module.exports = Backbone.Model.extend({
   /**
    * Define attributes that are not settable from the request
    *
+   * @param  {String} prop
    * @param  {Object} def
    * @return {Object}
    */
-  readOnlyAttributes: function(def) {
+  findAttributes: function(prop, def) {
     def = def ? def : _.result(this, 'definition');
 
-    return _.reduce(def, function(readonly, attr, key) {
+    return _.reduce(def, function(attrs, attr, key) {
       if (attr.type === 'object') {
-        var nested = this.readOnlyAttributes(attr.fields || {});
+        var nested = this.findAttributes(prop, attr.fields || {});
         if (!_.isEmpty(nested)) {
-          readonly[key] = nested;
+          attrs[key] = nested;
         }
-      } if (attr.readonly) {
-        readonly[key] = true;
+      } if (attr[prop]) {
+        attrs[key] = true;
       }
-      return readonly;
-    }, {}, this);
-  },
-
-  /**
-   * Define attributes that should be saved to the database
-   * but NOT rendered to JSON
-   *
-   * @param  {Object} def
-   * @return {Object}
-   */
-  hiddenAttributes: function(def) {
-    def = def ? def : _.result(this, 'definition');
-
-    return _.reduce(def, function(hidden, attr, key) {
-      if (attr.type === 'object') {
-        var nested = this.hiddenAttributes(attr.fields || {});
-        if (!_.isEmpty(nested)) {
-          hidden[key] = nested;
-        }
-      } if (attr.hidden) {
-        hidden[key] = true;
-      }
-      return hidden;
-    }, {}, this);
-  },
-
-  /**
-   * Define attributes that are computed
-   * and should NOT be saved to the database
-   *
-   * @param  {Object} def
-   * @return {Object}
-   */
-  computedAttributes: function(def) {
-    def = def ? def : _.result(this, 'definition');
-
-    return _.reduce(def, function(computed, attr, key) {
-      if (attr.type === 'object') {
-        var nested = this.computedAttributes(attr.fields || {});
-        if (!_.isEmpty(nested)) {
-          computed[key] = nested;
-        }
-      } if (attr.computed) {
-        computed[key] = true;
-      }
-      return computed;
-    }, {}, this);
-  },
-
-  /**
-   * Define attributes that can be expanded (relations)
-   * and should NOT be saved to the database
-   *
-   * @param  {Object} def
-   * @return {Object}
-   */
-  expandableAttributes: function(def) {
-    def = def ? def : _.result(this, 'definition');
-
-    return _.reduce(def, function(expandable, attr, key) {
-      if (attr.type === 'object') {
-        var nested = this.expandableAttributes(attr.fields || {});
-        if (!_.isEmpty(nested)) {
-          expandable[key] = nested;
-        }
-      } if (attr.expandable) {
-        expandable[key] = true;
-      }
-      return expandable;
+      return attrs;
     }, {}, this);
   },
 
@@ -492,7 +407,9 @@ module.exports = Backbone.Model.extend({
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = _.defaultsDeep({}, attrs, _.result(this, 'defaults'));
+    this._schema = this.schema();
+    this._defaults = this.defaults(undefined, true);
+    attrs = _.defaultsDeep({}, attrs, this.defaults(undefined, false));
     this.set(attrs, options);
     this.changed = {};
     this.initialize.apply(this, arguments);
@@ -517,7 +434,7 @@ module.exports = Backbone.Model.extend({
     if (_.isArray(resp)) {
       resp = resp[0];
     }
-    resp = _.defaultsDeep({}, resp, _.result(this, 'defaults'));
+    resp = _.defaultsDeep({}, resp, this.defaults());
     return resp;
   },
 
@@ -548,13 +465,7 @@ module.exports = Backbone.Model.extend({
     }
 
     // Apply schema
-    var schema = this._setSchema || _.result(this, 'schema');
-    var defaults = this._setDefaults || this.defaultsWithArray();
-    this._validateAttributes(attrs, schema, defaults);
-
-    // Cache for repitition
-    this._setSchema = schema;
-    this._setDefaults = defaults;
+    this._validateAttributes(attrs, this._schema, this._defaults);
 
     return Backbone.Model.prototype.set.call(this, attrs, options);
   },
@@ -643,7 +554,7 @@ module.exports = Backbone.Model.extend({
 
   render: function() {
     var json = this.toJSON();
-    var hiddenAttributes = _.result(this, 'hiddenAttributes');
+    var hiddenAttributes = this.findAttributes('hidden');
     this._removeAttributes(json, hiddenAttributes);
     return json;
   },
@@ -668,11 +579,11 @@ module.exports = Backbone.Model.extend({
     body = this._mergeSafe(body, this.attributes);
 
     // Remove read only attributes
-    var readOnlyAttributes = _.result(this, 'readOnlyAttributes');
+    var readOnlyAttributes = this.findAttributes('readonly');
     this._removeAttributes(body, readOnlyAttributes);
 
     // Remove computed attributes
-    var computedAttributes = _.result(this, 'computedAttributes');
+    var computedAttributes = this.findAttributes('computed');
     this._removeAttributes(this.attributes, computedAttributes);
 
     // Set new attributes
@@ -789,11 +700,11 @@ module.exports = Backbone.Model.extend({
     var originalArguments = arguments;
 
     // Remove computed attributes
-    var computedAttributes = _.result(this, 'computedAttributes');
+    var computedAttributes = this.findAttributes('computed');
     this._removeAttributes(this.attributes, computedAttributes);
 
     // Remove expandable attributes
-    var expandableAttributes = _.result(this, 'expandableAttributes');
+    var expandableAttributes = this.findAttributes('expandable');
     this._removeExpandableAttributes(this.attributes, expandableAttributes);
 
     var beforeFn, afterFn;
