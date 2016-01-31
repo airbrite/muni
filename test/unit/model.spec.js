@@ -13,10 +13,6 @@ describe('Model', function() {
   this.timeout(10000);
 
   var TestModel = Model.extend({
-    defaults: helpers.requireFixture('defaults'),
-    schema: helpers.requireFixture('schema')
-  });
-  var TestModelDef = Model.extend({
     definition: helpers.requireFixture('definition')
   });
 
@@ -151,17 +147,44 @@ describe('Model', function() {
       });
     });
 
-    it.skip('#_wrapResponse', function() {});
-
-    it('#_removeAttributes', function() {
+    it('#_removeAttributes for hidden root', function() {
       testModel.definition = {
         string: {
           hidden: true
         },
         integer: {
+          type: 'integer',
           hidden: false
         },
         array_objects: {
+          type: 'array',
+          hidden: true
+        },
+        object: {
+          hidden: true
+        },
+        array_objects_empty: {
+          type: 'array',
+          hidden: true
+        }
+      };
+
+      var hiddenAttributes = testModel.findAttributes('hidden');
+      testModel._removeAttributes(testModel.attributes, hiddenAttributes);
+      assert.isUndefined(testModel.attributes.object);
+    });
+
+    it('#_removeAttributes for hidden nested', function() {
+      testModel.definition = {
+        string: {
+          hidden: true
+        },
+        integer: {
+          type: 'integer',
+          hidden: false
+        },
+        array_objects: {
+          type: 'array',
           hidden: true
         },
         object: {
@@ -178,6 +201,7 @@ describe('Model', function() {
           }
         },
         array_objects_empty: {
+          type: 'array',
           hidden: true
         }
       };
@@ -190,33 +214,10 @@ describe('Model', function() {
       assert.isUndefined(testModel.attributes.array_objects_empty);
     });
 
-    it('#_removeAttributes with nested object', function() {
-      testModel.definition = {
-        string: {
-          hidden: true
-        },
-        integer: {
-          hidden: false
-        },
-        array_objects: {
-          hidden: true
-        },
-        object: {
-          hidden: true
-        },
-        array_objects_empty: {
-          hidden: true
-        }
-      };
-
-      var hiddenAttributes = testModel.findAttributes('hidden');
-      testModel._removeAttributes(testModel.attributes, hiddenAttributes);
-      assert.isUndefined(testModel.attributes.object);
-    });
-
     it('#_removeExpandableAttributes', function() {
       testModel.definition = {
         expandable: {
+          type: 'object',
           expandable: true
         }
       };
@@ -687,9 +688,11 @@ describe('Model', function() {
           }
         },
         array_objects: [{
-          foo: 'bar'
+          foo: 'bar',
+          bar: null
         }, {
-          foo: 'changed'
+          foo: 'changed',
+          bar: null
         }]
       });
     });
@@ -750,6 +753,7 @@ describe('Model', function() {
     it('expandableAttributes', function() {
       testModel.definition = {
         expandable: {
+          type: 'object',
           expandable: true
         }
       };
@@ -863,31 +867,13 @@ describe('Model', function() {
   });
 
   describe('Definition', function() {
-    var testModelDef;
+    var testModel;
     beforeEach(function() {
-      testModelDef = new TestModelDef();
-    });
-
-    it('should match schema', function() {
-      var schemaFixture = helpers.requireFixture('schema')();
-      var schemaDef = testModelDef.schema();
-
-      assert.deepEqual(schemaFixture, schemaDef);
-    });
-
-    it('should match defaults', function() {
-      var defaultsFixture = helpers.requireFixture('defaults')();
-      var defaultsDef = testModelDef.defaults();
-
-      // Off by one ms
-      delete defaultsFixture.date;
-      delete defaultsDef.date;
-
-      assert.deepEqual(defaultsFixture, defaultsDef);
+      testModel = new TestModel();
     });
 
     it('should match defaults with nested array object', function() {
-      var defaults = testModelDef.defaults(undefined, true);
+      var defaults = testModel.defaults(undefined, true);
 
       assert.deepEqual(defaults.array_objects, [{
         foo: null,
@@ -896,21 +882,21 @@ describe('Model', function() {
     });
 
     it('should support function defaults', function() {
-      testModelDef.definition = {
+      testModel.definition = {
         test_default: {
           type: 'string',
           default: function() { return 'foo'; }
         }
       };
-      var defaultsDef = testModelDef.defaults();
+      var defaults = testModel.defaults();
 
-      assert.deepEqual(defaultsDef, {
+      assert.deepEqual(defaults, {
         test_default: 'foo'
       });
     });
 
     it('should match readOnlyAttributes', function() {
-      var readOnlyAttributes = testModelDef.findAttributes('readonly');
+      var readOnlyAttributes = testModel.findAttributes('readonly');
 
       assert.deepEqual(readOnlyAttributes, {
         readonly: true
@@ -918,7 +904,7 @@ describe('Model', function() {
     });
 
     it('should match hiddenAttributes', function() {
-      var hiddenAttributes = testModelDef.findAttributes('hidden');
+      var hiddenAttributes = testModel.findAttributes('hidden');
 
       assert.deepEqual(hiddenAttributes, {
         hidden: true
@@ -926,7 +912,7 @@ describe('Model', function() {
     });
 
     it('should match computedAttributes', function() {
-      var computedAttributes = testModelDef.findAttributes('computed');
+      var computedAttributes = testModel.findAttributes('computed');
 
       assert.deepEqual(computedAttributes, {
         computed: true
@@ -934,7 +920,7 @@ describe('Model', function() {
     });
 
     it('should match expandableAttributes', function() {
-      var expandableAttributes = testModelDef.findAttributes('expandable');
+      var expandableAttributes = testModel.findAttributes('expandable');
 
       assert.deepEqual(expandableAttributes, {
         expandable: true
