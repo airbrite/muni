@@ -1,6 +1,6 @@
 {
   "name": "muni",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Muni - MongoDB, Express, Backbone based API framework.",
   "main": "index.js",
   "scripts": {
