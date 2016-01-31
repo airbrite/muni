@@ -97,10 +97,10 @@ function rejected(req, res, next) {
 }
 
 function typeForKey(key) {
-  if (_.contains(options.whitelist.keys, key)) {
+  if (_.includes(options.whitelist.keys, key)) {
     return 'whitelist';
   }
-  if (_.contains(options.blacklist.keys, key)) {
+  if (_.includes(options.blacklist.keys, key)) {
     return 'blacklist';
   }
   return 'normal';

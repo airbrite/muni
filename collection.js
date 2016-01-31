@@ -61,7 +61,7 @@ module.exports = Backbone.Collection.extend({
       if (this.user) {
         model.user = this.user;
       }
-    }, this);
+    }.bind(this));
 
     return ret;
   },

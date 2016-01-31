@@ -43,7 +43,7 @@ var Mongo = module.exports = function(url, options) {
 
 Mongo.prototype = Object.create(EventEmitter.prototype);
 
-_.extend(Mongo.prototype, {
+_.assign(Mongo.prototype, {
   // Connect
   // Called by collection
   // Might be called multiple times at app boot until `this.db` is first set
@@ -111,7 +111,7 @@ _.extend(Mongo.prototype, {
   // Will mutate the original object
   // obj can be an object or an array
   cast: function(obj) {
-    _.each(obj, function(val, key) {
+    _.forEach(obj, function(val, key) {
       if (_.isString(val)) {
         if (Mixins.isObjectId(val)) {
           obj[key] = Mixins.newObjectId(val);
@@ -127,7 +127,7 @@ _.extend(Mongo.prototype, {
           obj[key] = this.cast(val);
         }
       }
-    }, this);
+    }.bind(this));
 
     return obj;
   },
@@ -136,7 +136,7 @@ _.extend(Mongo.prototype, {
   // Will mutate the original object
   // obj can be an object or an array
   uncast: function(obj) {
-    _.each(obj, function(val, key) {
+    _.forEach(obj, function(val, key) {
       if (val && _.isFunction(val.toHexString)) {
         obj[key] = val.toHexString();
       } else if (_.isDate(val)) {
@@ -148,7 +148,7 @@ _.extend(Mongo.prototype, {
           obj[key] = this.uncast(val);
         }
       }
-    }, this);
+    }.bind(this));
 
     return obj;
   },

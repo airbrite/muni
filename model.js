@@ -17,23 +17,29 @@ var INDEXED = {};
 
 module.exports = Backbone.Model.extend({
   /**
+   * _.mergeWith with a customizer function
    * Do not merge arrays and empty objects
    * Arrays always want to be overwritten explicitly (empty or not)
-   * Objects want to be overwritten explicitly when empty
+   * Objects want to be overwritten explicitly (when empty)
    *
    * @return {Object}
    */
 
-  _mergeSafe: _.partialRight(_.merge, function deep(value, other) {
-    if (_.isArray(value)) {
-      // If array, do not deep merge
-      return value;
-    } else if (_.isObject(value) && _.isEmpty(value)) {
-      // If empty object, do not merge
-      return value;
-    }
-    return _.merge(value, other, deep);
-  }),
+   _mergeSafe: function(object, other) {
+     return _.mergeWith(object, other, function mergeDeep(objValue, srcValue) {
+       if (_.isArray(objValue)) {
+         // If array, do not deep merge
+         return objValue;
+       } else if (_.isPlainObject(objValue) && _.isEmpty(objValue)) {
+         // If empty object, do not merge
+         return objValue;
+       } else if (_.isPlainObject(objValue)) {
+         return _.mergeWith(objValue, srcValue, mergeDeep);
+       }
+
+       return objValue;
+     });
+   },
 
   /**
    * Responsible for setting attributes after a database call
@@ -63,7 +69,7 @@ module.exports = Backbone.Model.extend({
    */
 
   _removeAttributes: function(attrs, attrsToRemove) {
-    _.each(attrs, function(val, key) {
+    _.forEach(attrs, function(val, key) {
       // shouldRemove is either an object or a boolean
       var shouldRemove = attrsToRemove[key];
       if (_.isUndefined(shouldRemove)) {
@@ -78,7 +84,7 @@ module.exports = Backbone.Model.extend({
       if (shouldRemove) {
         delete attrs[key];
       }
-    }, this);
+    }.bind(this));
   },
 
   /**
@@ -91,7 +97,7 @@ module.exports = Backbone.Model.extend({
    */
 
   _removeExpandableAttributes: function(attrs, attrsToRemove) {
-    _.each(attrs, function(val, key) {
+    _.forEach(attrs, function(val, key) {
       // shouldRemove is either an object or a boolean
       var shouldRemove = attrsToRemove[key];
       if (_.isUndefined(shouldRemove)) {
@@ -108,7 +114,7 @@ module.exports = Backbone.Model.extend({
       if (_.isObject(attrs[key]) && shouldRemove) {
         attrs[key] = _.pick(attrs[key], ['_id']);
       }
-    }, this);
+    }.bind(this));
   },
 
   /**
@@ -131,7 +137,7 @@ module.exports = Backbone.Model.extend({
       return;
     }
 
-    _.each(attrs, function(val, key) {
+    _.forEach(attrs, function(val, key) {
       var isValid = false;
       // schema might be either an object or a string
       var schemaType = _.isObject(schema) ? schema[key] : schema;
@@ -174,13 +180,13 @@ module.exports = Backbone.Model.extend({
         // Iteratively recursively validate inside each object in the array
         // Ex. [{...}]
         if (_.isObject(schemaType)) {
-          _.each(val, function(arrVal) {
+          _.forEach(val, function(arrVal) {
             // Apply defaults to each object value
             if (schemaDefault) {
               _.defaultsDeep(arrVal, schemaDefault);
             }
             this._validateAttributes(arrVal, schemaType, schemaDefault);
-          }, this);
+          }.bind(this));
           return;
         }
 
@@ -260,7 +266,7 @@ module.exports = Backbone.Model.extend({
           delete attrs[key];
         }
       }
-    }, this);
+    }.bind(this));
   },
 
   // Reserved attribute definitions
@@ -332,7 +338,7 @@ module.exports = Backbone.Model.extend({
         defaults[key] = this._defaultVal(attr.type);
       }
       return defaults;
-    }, {}, this);
+    }.bind(this), {});
   },
 
   /**
@@ -364,7 +370,7 @@ module.exports = Backbone.Model.extend({
         schema[key] = attr.type;
       }
       return schema;
-    }, {}, this);
+    }.bind(this), {});
   },
 
   /**
@@ -387,7 +393,7 @@ module.exports = Backbone.Model.extend({
         attrs[key] = true;
       }
       return attrs;
-    }, {}, this);
+    }.bind(this), {});
   },
 
   /**
@@ -986,7 +992,7 @@ module.exports = Backbone.Model.extend({
 
     var promises = [];
     var indexes = _.result(this, 'indexes');
-    _.each(indexes, function(index) {
+    _.forEach(indexes, function(index) {
       var options = index.options || {};
 
       _.defaults(options, {
@@ -1000,7 +1006,7 @@ module.exports = Backbone.Model.extend({
           options
         )
       );
-    }, this);
+    }.bind(this));
 
     return Bluebird.all(promises);
   })

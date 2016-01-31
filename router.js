@@ -27,7 +27,7 @@ module.exports = function(options) {
   var router = express.Router(options);
 
   // Additional properties
-  _.extend(router, {
+  _.assign(router, {
     url: options.version ? '/' + options.version : '',
     controllers: options.controllers || {},
     routes: [],
@@ -43,7 +43,7 @@ module.exports = function(options) {
     _buildMissingParams: function(req, requiredParams) {
       // Find all missing parameters
       var missingParams = [];
-      _.each(requiredParams, function(requiredParam) {
+      _.forEach(requiredParams, function(requiredParam) {
         if (
           Mixins.isNullOrUndefined(req.params && req.params[requiredParam]) &&
           Mixins.isNullOrUndefined(req.query && req.query[requiredParam]) &&
@@ -118,9 +118,9 @@ module.exports = function(options) {
 
       // Each controller has a `routes` object
       // Connect all routes defined in controllers
-      _.each(router.controllers, function(controller) {
-        _.each(controller.routes, function(route, method) {
-          _.each(route, function(routeOptions, path) {
+      _.forEach(router.controllers, function(controller) {
+        _.forEach(controller.routes, function(route, method) {
+          _.forEach(route, function(routeOptions, path) {
             // If path/method has already been defined, skip
             if (paths[path] === method) {
               debug.warn('Skipping duplicate route: [%s] %s', method, path);
@@ -163,7 +163,7 @@ module.exports = function(options) {
       });
 
       // Debug logging
-      _.each(router.routes, function(route) {
+      _.forEach(router.routes, function(route) {
         debug.info('Route [%s] %s', route.method, route.url + route.path);
       });
     }

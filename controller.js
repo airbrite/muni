@@ -44,8 +44,8 @@ module.exports = Backbone.Model.extend({
     }
 
     // timestamp might be in `ms` or `s`
-    _.each(query, function(timestamp, operator) {
-      if (!_.contains(['gt', 'gte', 'lt', 'lte', 'ne'], operator)) {
+    _.forEach(query, function(timestamp, operator) {
+      if (!_.includes(['gt', 'gte', 'lt', 'lte', 'ne'], operator)) {
         return;
       }
 
@@ -85,7 +85,7 @@ module.exports = Backbone.Model.extend({
     // If a field is specified as `foo.bar` or `foo.bar.baz`,
     // Convert it to just `foo`
     var map = {};
-    _.each(fields.split(','), function(field) {
+    _.forEach(fields.split(','), function(field) {
       map[field.split('.')[0]] = 1;
     });
 
@@ -440,7 +440,7 @@ module.exports = Backbone.Model.extend({
 
     // Fields
     if (_.isString(req.query.fields)) {
-      _.each(req.query.fields.split(','), function(field) {
+      _.forEach(req.query.fields.split(','), function(field) {
         fields[field] = 1;
       });
     }
@@ -514,16 +514,16 @@ module.exports = Backbone.Model.extend({
     }
 
     // Filter params
-    var queryParams = _.extend(_.result(this, 'queryParams'), {
+    var queryParams = _.assign(_.result(this, 'queryParams'), {
       'user_id': 'string'
     });
     if (_.isObject(options.queryParams)) {
-      _.extend(queryParams, options.queryParams);
+      _.assign(queryParams, options.queryParams);
     }
     var filterParams = _.pick(req.query, _.keys(queryParams));
     var logicalOperator = '$' + (req.query.logical || 'and').toLowerCase().replace(/[@\s]/g, '');
 
-    _.each(filterParams, function(val, key) {
+    _.forEach(filterParams, function(val, key) {
       // If value is all, ignore this param
       if (val === 'all') {
         return;
@@ -580,7 +580,7 @@ module.exports = Backbone.Model.extend({
         filter[key] = vals[0];
       } else {
         var orExpr = [];
-        _.each(vals, function(orVal) {
+        _.forEach(vals, function(orVal) {
           var orClause = {};
           orClause[key] = orVal;
           orExpr.push(orClause);
