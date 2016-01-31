@@ -135,9 +135,9 @@ module.exports = function(options) {
 
             // Setup controller scoped middleware
             // These apply to all routes in the controller
-            var pre = _.invoke(controller.pre, 'bind', controller) || [];
-            var before = _.invoke(controller.before, 'bind', controller) || [];
-            var after = _.invoke(controller.after, 'bind', controller) || [];
+            var pre = _.invokeMap(controller.pre, 'bind', controller) || [];
+            var before = _.invokeMap(controller.before, 'bind', controller) || [];
+            var after = _.invokeMap(controller.after, 'bind', controller) || [];
 
             // Setup route scoped middleware
             // These apply only to this route
