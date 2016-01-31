@@ -27,7 +27,7 @@ module.exports = {
 
   cloneModel: function(model) {
     var clone = model.clone();
-    _.extend(clone, model);
+    _.assign(clone, model);
     return clone;
   },
 };

@@ -70,7 +70,7 @@ module.exports = Controller.extend({
   setupRoutes: function() {
     var basePath = _.result(this, 'basePath');
 
-    _.each(this.crud, function(action) {
+    _.forEach(this.crud, function(action) {
       switch (action) {
         case 'T':
           // Count
@@ -117,7 +117,7 @@ module.exports = Controller.extend({
         default:
           break;
       }
-    }, this);
+    }.bind(this));
   },
 
   /**

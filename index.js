@@ -15,7 +15,7 @@ var Muni = {
   Mongo: require('./mongo'),
   Router: require('./router')
 };
-_.extend(Muni, require('backbone').Events, require('./mixins'));
+_.assign(Muni, require('backbone').Events, require('./mixins'));
 
 // Export to the world
 module.exports = Muni;
