@@ -26,11 +26,11 @@ var Mongo = module.exports = function(url, options) {
     },
   };
 
-  // Default options for `mongos`, `replSet`, and `server`
+  // Default options for `mongos`, `replset`, and `server`
   if (this.options.mongos) {
     _.defaultsDeep(this.options.mongos, defaultConnectionOptions);
-  } else if (this.options.replSet) {
-    _.defaultsDeep(this.options.replSet, defaultConnectionOptions);
+  } else if (this.options.replset) {
+    _.defaultsDeep(this.options.replset, defaultConnectionOptions);
   } else if (this.options.server) {
     _.defaultsDeep(this.options.server, defaultConnectionOptions);
   }
