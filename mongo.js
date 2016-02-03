@@ -16,26 +16,29 @@ Bluebird.promisifyAll(MongoClient);
 
 // Object `options` are used for mongodb connection options
 var Mongo = module.exports = function(url, options) {
-  options = options || {};
+  this.options = options || {};
 
-  // MongoLab recommended settings
-  // http://blog.mongolab.com/2014/04/mongodb-driver-mongoose/
-  _.defaults(options, {
-    auto_reconnect: true,
-    poolSize: 5, // default is 5
-    connectTimeoutMS: 30000,
-    socketTimeoutMS: 300000
-  });
+  var defaultConnectionOptions = {
+    poolSize: 1,
+    socketOptions: {
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 300000,
+    },
+  };
 
-  // Turn query options into a URL query string
-  // To append to the mongodb connection URL
-  this.queryOptions = querystring.stringify(options);
+  // Default options for `mongos`, `replSet`, and `server`
+  if (this.options.mongos) {
+    _.defaultsDeep(this.options.mongos, defaultConnectionOptions);
+  } else if (this.options.replSet) {
+    _.defaultsDeep(this.options.replSet, defaultConnectionOptions);
+  } else if (this.options.server) {
+    _.defaultsDeep(this.options.server, defaultConnectionOptions);
+  }
 
   // Public properties for direct access allowed
   // Reuseable connection pool, only connect once
   this.db;
   this.url = url || 'mongodb://localhost:27017/test';
-  this.url = this.url + '?' + this.queryOptions;
 };
 
 // Prototype
@@ -61,7 +64,8 @@ _.assign(Mongo.prototype, {
     // Open a reuseable connection
     debug.log('#connect: %s', this.url);
     return MongoClient.connectAsync(
-      this.url
+      this.url,
+      this.options
     ).bind(this).then(function(db) {
       if (this.db) {
         debug.log('#connect reuse and close: %s', this.url);
@@ -76,6 +80,7 @@ _.assign(Mongo.prototype, {
       callback && callback(null, this.db);
       return this.db;
     }).catch(function(err) {
+      debug.error('#connect error: %s', err.message);
       this.emit('error', err);
       callback && callback(err);
       throw err;

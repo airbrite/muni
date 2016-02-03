@@ -28,7 +28,7 @@
     "kerberos": "0.0.18",
     "lodash": "^4.1.0",
     "moment": "^2.11.1",
-    "mongodb": "^2.0.35",
+    "mongodb": "^2.1.4",
     "mongodb-objectid-helper": "^1.0.1",
     "request": "^2.69.0",
     "urlsafe-base64": "^1.0.0",
