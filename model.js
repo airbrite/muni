@@ -1004,7 +1004,13 @@ module.exports = Backbone.Model.extend({
           this.urlRoot,
           index.keys,
           options
-        )
+        ).bind(this).catch(function(err) {
+          debug.warn(
+            '#ensureIndex [%s]: %s',
+            this.urlRoot,
+            err
+          );
+        })
       );
     }.bind(this));
 
