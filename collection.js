@@ -257,6 +257,6 @@ module.exports = Backbone.Collection.extend({
 
     var model = new this.model();
     model.db = this.db;
-    model.ensureIndexes();
+    return model.ensureIndexes();
   })
 });
