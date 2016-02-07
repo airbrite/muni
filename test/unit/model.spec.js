@@ -247,6 +247,7 @@ describe('Model', function() {
       // when setting a non-existent key to null
       // should have no effect, and the key should be removed
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         non_existent_key: null,
@@ -257,7 +258,7 @@ describe('Model', function() {
         }
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         object: {
           foo: 'i should also show up'
@@ -268,6 +269,7 @@ describe('Model', function() {
 
     it('should set nested attribute of empty object', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         object_defaults_empty: {
@@ -285,7 +287,7 @@ describe('Model', function() {
         }
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         object_defaults_empty: {
           first: {
@@ -302,8 +304,9 @@ describe('Model', function() {
       });
     });
 
-    it('should unset with null', function() {
+    it('should reset to defaults with null', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         string: null,
@@ -314,27 +317,33 @@ describe('Model', function() {
         boolean: null
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
 
       assert.deepEqual(attrs, {
-        string: null,
-        integer: null,
-        timestamp: null,
-        object: null,
-        array_strings: null,
-        boolean: null
+        string: 'i am a string',
+        integer: -1234,
+        timestamp: 1407396108803,
+        object: {
+          foo: 'bar',
+          omg: {
+            wtf: 'bbq'
+          }
+        },
+        array_strings: [],
+        boolean: true
       });
     });
 
 
     it('should coerce invalid value type', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         string: 1234
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         string: '1234'
       });
@@ -342,34 +351,37 @@ describe('Model', function() {
 
     it('should ignore invalid key', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         invalid_key: 'asdf'
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {});
     });
 
     it('should not allow negative timestamp', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         timestamp: -123
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {});
     });
 
     it('should cast ISO8601 date string', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         date: '2014-08-07T07:49:53.555Z'
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         date: new Date('2014-08-07T07:49:53.555Z')
       });
@@ -377,6 +389,7 @@ describe('Model', function() {
 
     it('should allow setting anything into empty object', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var date = new Date();
       var attrs = {
@@ -388,7 +401,7 @@ describe('Model', function() {
         }
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         object_empty: {
           n: 1,
@@ -401,6 +414,7 @@ describe('Model', function() {
 
     it('should deep validate object', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         object: {
@@ -409,7 +423,7 @@ describe('Model', function() {
         }
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         object: {
           foo: 'baz'
@@ -419,6 +433,7 @@ describe('Model', function() {
 
     it('should allow setting anything into empty array', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_empty: ['any', 'thing', 1, {
@@ -426,7 +441,7 @@ describe('Model', function() {
         }]
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         array_empty: ['any', 'thing', 1, {
           foo: 'bar'
@@ -436,12 +451,13 @@ describe('Model', function() {
 
     it('should validate array of strings', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_strings: ['z', 'x', 1, 'v']
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         array_strings: ['z', 'x', '1', 'v']
       });
@@ -449,32 +465,35 @@ describe('Model', function() {
 
     it('should validate array of uintegers', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_numbers: [5, 6, 'a', 8]
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
-        array_numbers: [5, 6, 0, 8]
+        array_numbers: [5, 6, 8]
       });
     });
 
     it('should validate array of booleans', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_booleans: [true, false, 1, 0, 'true']
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
-        array_booleans: [true, false, true, false, true]
+        array_booleans: [true, false]
       });
     });
 
     it('should validate array of objects that are empty', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_objects_empty: [{
@@ -484,7 +503,7 @@ describe('Model', function() {
         }]
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         array_objects_empty: [{
           foo: 'bar'
@@ -496,6 +515,7 @@ describe('Model', function() {
 
     it('should validate array of objects', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_objects: [{
@@ -509,7 +529,7 @@ describe('Model', function() {
         }]
       };
 
-      testModel._validateAttributes(attrs, schema);
+      testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
         array_objects: [{
           foo: 'bar'
@@ -521,6 +541,7 @@ describe('Model', function() {
 
     it('should validate array of objects with defaults', function() {
       var schema = testModel.schema();
+      var defaults = testModel.defaults();
 
       var attrs = {
         array_objects: [{
@@ -790,7 +811,7 @@ describe('Model', function() {
       });
     });
 
-    it('unset', function() {
+    it('unset should revert to defaults', function() {
       var body = {
         string: null,
         integer: null,
@@ -801,11 +822,25 @@ describe('Model', function() {
 
       testModel.setFromRequest(body);
 
-      assert.isNull(testModel.get('string'));
-      assert.isNull(testModel.get('timestamp'));
-      assert.isNull(testModel.get('object'));
-      assert.isNull(testModel.get('integer'));
-      assert.isNull(testModel.get('boolean'));
+      var attrs = _.pick(testModel.attributes, [
+        'string',
+        'integer',
+        'timestamp',
+        'object',
+        'boolean'
+      ]);
+      assert.deepEqual(attrs, {
+        string: 'i am a string',
+        integer: -1234,
+        timestamp: 1407396108803,
+        object: {
+          foo: 'bar',
+          omg: {
+            wtf: 'bbq'
+          }
+        },
+        boolean: true
+      });
     });
 
     // this is no longer the case
