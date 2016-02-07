@@ -10,13 +10,10 @@ var debug = require('./debug');
 var Mixins = require('./mixins');
 var MuniError = require('./error');
 
-// The promisified method name will be
-// the original method name suffixed with "Async".
-Bluebird.promisifyAll(MongoClient);
-
 // Object `options` are used for mongodb connection options
 var Mongo = module.exports = function(url, options) {
   this.options = options || {};
+  this.options.promiseLibrary = Bluebird;
 
   var defaultConnectionOptions = {
     poolSize: 1,
@@ -63,7 +60,7 @@ _.assign(Mongo.prototype, {
 
     // Open a reuseable connection
     debug.log('#connect: %s', this.url);
-    return MongoClient.connectAsync(
+    return MongoClient.connect(
       this.url,
       this.options
     ).bind(this).then(function(db) {
@@ -168,7 +165,6 @@ _.assign(Mongo.prototype, {
       collection: collectionName
     }).bind(this).then(function() {
       var collection = this.db.collection(collectionName);
-      Bluebird.promisifyAll(collection);
       callback && callback(null, collection);
       return collection;
     }).catch(function(err) {
@@ -190,25 +186,6 @@ _.assign(Mongo.prototype, {
 
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.find(query, this._findOptions(options));
-    }).then(function(cursor) {
-      Bluebird.promisifyAll(cursor);
-
-      cursor.nextObjectAsync = function() {
-        var deferred = Bluebird.defer();
-
-        cursor.nextObject(function(err, doc) {
-          if (err) {
-            return deferred.reject(err);
-          }
-
-          // Uncast and return the document
-          return deferred.resolve(this.uncast(doc));
-        }.bind(this));
-
-        return deferred.promise;
-      }.bind(this);
-
-      return cursor;
     });
   }),
 
@@ -251,7 +228,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(query)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.countAsync(query, this._countOptions(options));
+      return collection.count(query, this._countOptions(options));
     }).then(function(count) {
       var total = count;
       var page = options.limit && options.limit <= total ? options.limit : total;
@@ -289,7 +266,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(query)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.countAsync(query, this._countOptions(options));
+      return collection.count(query, this._countOptions(options));
     }).then(function(count) {
       callback && callback(null, count);
       return count;
@@ -332,12 +309,12 @@ _.assign(Mongo.prototype, {
       if (!count) {
         return;
       }
-      return cursor.countAsync(false).tap(function(count) {
+      return cursor.count(false).tap(function(count) {
         total = count;
       });
     }).then(function(cursor) {
-      return cursor.toArrayAsync().tap(function() {
-        cursor.closeAsync();
+      return cursor.toArray().tap(function() {
+        cursor.close();
       });
     }).then(function(docs) {
       return this.uncast(docs);
@@ -373,7 +350,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(query)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.findOneAsync(query, this._findOptions(options));
+      return collection.findOne(query, this._findOptions(options));
     }).then(function(doc) {
       return this.uncast(doc);
     }).then(function(doc) {
@@ -411,7 +388,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.insertAsync(obj, options);
+      return collection.insert(obj, options);
     }).then(function(result) {
       return this.uncast(result.ops);
     }).then(function(docs) {
@@ -450,7 +427,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).then(function(collection) {
-      return collection.updateAsync(query, obj, options);
+      return collection.update(query, obj, options);
     }).then(function(result) {
       var num = result.result.n;
       if (!num && require) {
@@ -504,7 +481,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.findAndModifyAsync(query, [], obj, options);
+      return collection.findAndModify(query, [], obj, options);
     }).then(function(result) {
       return this.uncast(result.value);
     }).then(function(doc) {
@@ -542,7 +519,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(query)
     );
     return this._collection(collectionName).then(function(collection) {
-      return collection.removeAsync(query, options);
+      return collection.remove(query, options);
     }).then(function(result) {
       var num = result.result.n;
       callback && callback(null, num);
@@ -573,7 +550,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.aggregateAsync(pipeline, options);
+      return collection.aggregate(pipeline, options);
     }).then(function(result) {
       return this.uncast(result);
     }).then(function(result) {
@@ -616,7 +593,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.mapReduceAsync(map, reduce, options);
+      return collection.mapReduce(map, reduce, options);
     }).then(function(result) {
       return this.uncast(result);
     }).then(function(result) {
@@ -689,7 +666,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(keys)
     );
     return this._collection(collectionName).then(function(collection) {
-      return collection.createIndexAsync(keys, options);
+      return collection.createIndex(keys, options);
     }).then(function(result) {
       callback && callback(null, result);
       return result;
@@ -713,7 +690,7 @@ _.assign(Mongo.prototype, {
 
     debug.info('#dropIndex: %s for index: %s', collectionName, indexName);
     return this._collection(collectionName).then(function(collection) {
-      return collection.dropIndexAsync(indexName);
+      return collection.dropIndex(indexName);
     }).then(function(result) {
       callback && callback(null, result);
       return result;
@@ -731,7 +708,7 @@ _.assign(Mongo.prototype, {
 
     debug.info('#dropAllIndexes: %s', collectionName);
     return this._collection(collectionName).then(function(collection) {
-      return collection.dropAllIndexesAsync();
+      return collection.dropAllIndexes();
     }).then(function(success) {
       callback && callback(null, success);
       return success;
@@ -753,7 +730,7 @@ _.assign(Mongo.prototype, {
     options = _.pick(options, ['full']);
 
     return this._collection(collectionName).then(function(collection) {
-      return collection.indexInformationAsync(options);
+      return collection.indexInformation(options);
     }).then(function(indexInformation) {
       callback && callback(null, indexInformation);
       return indexInformation;
