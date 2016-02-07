@@ -260,8 +260,10 @@ module.exports = Backbone.Model.extend({
         case 'date':
           // Also support ISO8601 strings, convert to date
           if (Mixins.isValidISO8601String(attrs[key])) {
+            console.log('A')
             attrs[key] = new Date(attrs[key]);
-          } else {
+          } else if (!_.isDate(attrs[key])) {
+            console.log('B')
             delete attrs[key];
           }
           break;
