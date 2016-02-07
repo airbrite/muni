@@ -228,22 +228,22 @@ module.exports = Backbone.Model.extend({
           }
           break;
         case 'integer':
-          if (!_.parseInt(attrs[key])) {
+          if (_.isNaN(_.parseInt(attrs[key]))) {
             delete attrs[key];
           }
           break;
         case 'uinteger':
-          if (!_.parseInt(attrs[key]) || attrs[key] < 0) {
+          if (_.isNaN(_.parseInt(attrs[key])) || attrs[key] < 0) {
             delete attrs[key];
           }
           break;
         case 'float':
-          if (!parseFloat(attrs[key])) {
+          if (_.isNaN(parseFloat(attrs[key]))) {
             delete attrs[key];
           }
           break;
         case 'ufloat':
-          if (!parseFloat(attrs[key]) || attrs[key] < 0) {
+          if (_.isNaN(parseFloat(attrs[key])) || attrs[key] < 0) {
             delete attrs[key];
           }
           break;

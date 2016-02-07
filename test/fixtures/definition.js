@@ -18,6 +18,9 @@ module.exports = function() {
       type: 'uinteger',
       default: 1234
     },
+    integer_no_default: {
+      type: 'integer'
+    },
     float: {
       type: 'float',
       default: -12.34
@@ -26,9 +29,15 @@ module.exports = function() {
       type: 'ufloat',
       default: 12.34
     },
+    float_no_default: {
+      type: 'float'
+    },
     boolean: {
       type: 'boolean',
       default: true
+    },
+    boolean_no_default: {
+      type: 'boolean'
     },
     timestamp: {
       type: 'timestamp',

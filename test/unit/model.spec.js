@@ -578,6 +578,30 @@ describe('Model', function() {
       testModel = new TestModel();
     });
 
+    it('should set integer without default', function() {
+      return testModel.setFromRequest({
+        integer_no_default: 0,
+      }).then(function() {
+        assert.deepEqual(testModel.get('integer_no_default'), 0);
+      });
+    });
+
+    it('should set float without default', function() {
+      return testModel.setFromRequest({
+        float_no_default: 0,
+      }).then(function() {
+        assert.deepEqual(testModel.get('float_no_default'), 0);
+      });
+    });
+
+    it('should set boolean without default', function() {
+      return testModel.setFromRequest({
+        boolean_no_default: 0,
+      }).then(function() {
+        assert.deepEqual(testModel.get('boolean_no_default'), false);
+      });
+    });
+
     it('should set an empty array', function() {
       return testModel.setFromRequest({
         array_strings: []
