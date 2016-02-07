@@ -77,7 +77,7 @@ module.exports = Backbone.Model.extend({
       }
 
       // Support nested object
-      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
+      if (_.isPlainObject(val) && !_.isArray(val) && _.isPlainObject(shouldRemove)) {
         return this._removeAttributes(val, shouldRemove);
       }
 
@@ -105,13 +105,13 @@ module.exports = Backbone.Model.extend({
       }
 
       // Support nested object
-      if (_.isObject(val) && !_.isArray(val) && _.isObject(shouldRemove)) {
+      if (_.isPlainObject(val) && !_.isArray(val) && _.isPlainObject(shouldRemove)) {
         return this._removeExpandableAttributes(val, shouldRemove);
       }
 
       // Make sure attribute is an object
       // Strip all nested properties except for `_id`
-      if (_.isObject(attrs[key]) && shouldRemove) {
+      if (_.isPlainObject(attrs[key]) && shouldRemove) {
         attrs[key] = _.pick(attrs[key], ['_id']);
       }
     }.bind(this));
@@ -130,6 +130,7 @@ module.exports = Backbone.Model.extend({
    */
 
   _validateAttributes: function(attrs, schema, defaults) {
+    // NOTE: `attrs` can be either an Object or Array
     if (!_.isObject(attrs) ||
       _.isUndefined(schema) ||
       _.isNull(schema) ||
@@ -137,11 +138,11 @@ module.exports = Backbone.Model.extend({
       return;
     }
 
+    // Iterate over all attributes
     _.forEach(attrs, function(val, key) {
-      var isValid = false;
-      // schema might be either an object or a string
-      var schemaType = _.isObject(schema) ? schema[key] : schema;
-      var schemaDefault = _.isObject(defaults) ? defaults[key] : defaults;
+      // NOTE: `schema` might be either an Object or String
+      var schemaType = _.isPlainObject(schema) ? schema[key] : schema;
+      var schemaDefault = _.isPlainObject(defaults) ? defaults[key] : defaults;
 
       // if the schema for this key does not exist
       // remove it as a property completely
@@ -150,9 +151,14 @@ module.exports = Backbone.Model.extend({
         return;
       }
 
-      // Allow the use of `null` to unset
+      debug.info(
+        'SCHEMA TYPE -> %s, DEFAULT -> %s, KEY -> %s, VAL -> %s',
+        schemaType, schemaDefault, key, val
+      );
+
+      // Allow the use of `null` to unset back to default
       if (_.isNull(val) || _.isUndefined(val)) {
-        attrs[key] = null;
+        attrs[key] = schemaDefault;
         return;
       }
 
@@ -173,18 +179,20 @@ module.exports = Backbone.Model.extend({
 
         // Array with an empty object, no-op
         // Ex. [{}]
-        if (_.isObject(schemaType) && _.isEmpty(schemaType)) {
+        if (_.isPlainObject(schemaType) && _.isEmpty(schemaType)) {
           return;
         }
 
         // Iteratively recursively validate inside each object in the array
         // Ex. [{...}]
-        if (_.isObject(schemaType)) {
+        if (_.isPlainObject(schemaType)) {
           _.forEach(val, function(arrVal) {
             // Apply defaults to each object value
             if (schemaDefault) {
               _.defaultsDeep(arrVal, schemaDefault);
             }
+
+            // Recursively validate the array values
             this._validateAttributes(arrVal, schemaType, schemaDefault);
           }.bind(this));
           return;
@@ -192,79 +200,75 @@ module.exports = Backbone.Model.extend({
 
         // Recursively validate the array
         // Ex: ['string'] or ['integer']
-        return this._validateAttributes(val, schemaType, schemaDefault);
-      } else if (_.isObject(schemaType)) {
-        // Empty object is a loosely defined schema, no-op
-        // That means allow anything inside
-        // Ex: {}
-        if (_.isEmpty(schemaType)) {
-          return;
-        }
+        this._validateAttributes(val, schemaType, schemaDefault);
 
+        // Remove `null` and `undefined` from array values
+        attrs[key] = _.without(attrs[key], null, undefined);
+        return;
+      } else if (_.isPlainObject(schemaType)) {
+        // Ex. {...}
         // Recursively validate the object
-        // Ex: {...}
-        return this._validateAttributes(val, schemaType, schemaDefault);
+        this._validateAttributes(val, schemaType, schemaDefault);
+        return
       }
 
       // All other types are defined as a string
       switch (schemaType) {
         case 'id':
-          isValid = Mixins.isObjectId(val);
+          if (!Mixins.isObjectId(attrs[key])) {
+            delete attrs[key];
+          }
           break;
         case 'string':
-          // coerce value into string
-          attrs[key] = val = val.toString();
-          isValid = _.isString(val);
+          // try to coerce to string
+          if (_.hasIn(attrs[key], 'toString')) {
+            attrs[key] = attrs[key].toString();
+          } else {
+            delete attrs[key];
+          }
           break;
         case 'integer':
-          // coerce value into integer
-          attrs[key] = val = _.parseInt(val) || 0;
-          isValid = _.isNumber(val) && !_.isNaN(val);
+          if (!_.parseInt(attrs[key])) {
+            delete attrs[key];
+          }
           break;
         case 'uinteger':
-          // coerce value into integer
-          attrs[key] = val = _.parseInt(val) || 0;
-          isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
+          if (!_.parseInt(attrs[key]) || attrs[key] < 0) {
+            delete attrs[key];
+          }
           break;
         case 'float':
-          // coerce value into float
-          attrs[key] = val = parseFloat(val) || 0;
-          isValid = _.isNumber(val) && !_.isNaN(val);
+          if (!parseFloat(attrs[key])) {
+            delete attrs[key];
+          }
           break;
         case 'ufloat':
-          // coerce value into float
-          attrs[key] = val = parseFloat(val) || 0;
-          isValid = _.isNumber(val) && !_.isNaN(val) && val >= 0;
+          if (!parseFloat(attrs[key]) || attrs[key] < 0) {
+            delete attrs[key];
+          }
           break;
         case 'boolean':
-          // coerce value into a boolean
-          attrs[key] = val = !!val;
-          isValid = _.isBoolean(val);
+          if (!_.isBoolean(attrs[key])) {
+            delete attrs[key];
+          }
           break;
         case 'timestamp':
-          isValid = Mixins.isTimestamp(val);
+          if (!Mixins.isTimestamp(attrs[key])) {
+            delete attrs[key];
+          }
           break;
         case 'date':
           // Also support ISO8601 strings, convert to date
-          if (_.isString(val) && Mixins.isValidISO8601String(val)) {
-            attrs[key] = val = new Date(val);
+          if (Mixins.isValidISO8601String(attrs[key])) {
+            attrs[key] = new Date(attrs[key]);
+          } else {
+            delete attrs[key];
           }
-          isValid = _.isDate(val);
           break;
         default:
-          isValid = false;
-          break;
-      }
-
-      // Invalid value for schema type
-      // Array elements default to `null` if invalid
-      // Other keys are deleted
-      if (!isValid) {
-        if (_.isArray(attrs)) {
-          attrs[key] = null;
-        } else {
+          // Unsupported type
           delete attrs[key];
-        }
+          break;
       }
     }.bind(this));
   },
@@ -928,7 +932,7 @@ module.exports = Backbone.Model.extend({
 
   read: Bluebird.method(function(model, options) {
     var query = {};
-    if (_.isObject(options.query)) {
+    if (_.isPlainObject(options.query)) {
       // Build query
       query = options.query;
     } else {
