@@ -228,26 +228,36 @@ module.exports = Backbone.Model.extend({
           }
           break;
         case 'integer':
-          if (_.isNaN(_.parseInt(attrs[key]))) {
+          attrs[key] = _.parseInt(attrs[key]);
+          if (!_.isFinite(attrs[key])) {
             delete attrs[key];
           }
           break;
         case 'uinteger':
-          if (_.isNaN(_.parseInt(attrs[key])) || attrs[key] < 0) {
+          attrs[key] = _.parseInt(attrs[key]);
+          if (!_.isFinite(attrs[key]) || attrs[key] < 0) {
             delete attrs[key];
           }
           break;
         case 'float':
-          if (_.isNaN(parseFloat(attrs[key]))) {
+          attrs[key] = parseFloat(attrs[key]);
+          if (!_.isFinite(attrs[key])) {
             delete attrs[key];
           }
           break;
         case 'ufloat':
-          if (_.isNaN(parseFloat(attrs[key])) || attrs[key] < 0) {
+          attrs[key] = parseFloat(attrs[key]);
+          if (!_.isFinite(attrs[key]) || attrs[key] < 0) {
             delete attrs[key];
           }
           break;
         case 'boolean':
+          if (attrs[key] === 'true' || attrs[key] === 1) {
+            attrs[key] = true;
+          }
+          if (attrs[key] === 'false' || attrs[key] === false) {
+            attrs[key] = false;
+          }
           if (!_.isBoolean(attrs[key])) {
             delete attrs[key];
           }
