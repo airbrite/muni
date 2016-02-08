@@ -44,12 +44,6 @@
     "sinon": "*",
     "sinon-as-promised": "*"
   },
-  "peerDependencies": {
-    "backbone": "~1.2.3",
-    "bluebird": "~3.2.2",
-    "express": "~4.13.4",
-    "lodash": "~4.2.1"
-  },
   "author": {
     "name": "Peter Shih",
     "web": "https://github.com/ptshih"
