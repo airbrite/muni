@@ -255,7 +255,7 @@ module.exports = Backbone.Model.extend({
           if (attrs[key] === 'true' || attrs[key] === 1) {
             attrs[key] = true;
           }
-          if (attrs[key] === 'false' || attrs[key] === false) {
+          if (attrs[key] === 'false' || attrs[key] === false || attrs[key] === 0) {
             attrs[key] = false;
           }
           if (!_.isBoolean(attrs[key])) {

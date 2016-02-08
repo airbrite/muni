@@ -487,7 +487,7 @@ describe('Model', function() {
 
       testModel._validateAttributes(attrs, schema, defaults);
       assert.deepEqual(attrs, {
-        array_booleans: [true, false]
+        array_booleans: [true, false, true, false, true]
       });
     });
 
