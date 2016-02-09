@@ -550,7 +550,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.aggregate(pipeline, options);
+      return collection.aggregate(pipeline, options).toArray();
     }).then(function(result) {
       return this.uncast(result);
     }).then(function(result) {
