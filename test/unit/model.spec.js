@@ -320,16 +320,11 @@ describe('Model', function() {
       testModel._validateAttributes(attrs, schema, defaults);
 
       assert.deepEqual(attrs, {
-        string: 'i am a string',
+        string: null,
         integer: -1234,
-        timestamp: 1407396108803,
-        object: {
-          foo: 'bar',
-          omg: {
-            wtf: 'bbq'
-          }
-        },
-        array_strings: [],
+        timestamp: null,
+        object: null,
+        array_strings: null,
         boolean: true
       });
     });
@@ -854,15 +849,10 @@ describe('Model', function() {
         'boolean'
       ]);
       assert.deepEqual(attrs, {
-        string: 'i am a string',
+        string: null,
         integer: -1234,
-        timestamp: 1407396108803,
-        object: {
-          foo: 'bar',
-          omg: {
-            wtf: 'bbq'
-          }
-        },
+        timestamp: null,
+        object: null,
         boolean: true
       });
     });
