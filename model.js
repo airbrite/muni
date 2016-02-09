@@ -156,9 +156,21 @@ module.exports = Backbone.Model.extend({
         schemaType, schemaDefault, key, val
       );
 
-      // Allow the use of `null` to unset back to default
+      // Allow the use of `null` to unset
       if (_.isNull(val) || _.isUndefined(val)) {
-        attrs[key] = schemaDefault;
+        switch (schemaType) {
+          case 'integer':
+          case 'uinteger':
+          case 'float':
+          case 'ufloat':
+          case 'boolean':
+            // Certain types cannot be null
+            attrs[key] = schemaDefault;
+            break;
+          default:
+            attrs[key] = null;
+            break;
+        }
         return;
       }
 
