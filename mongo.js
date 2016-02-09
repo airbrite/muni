@@ -595,10 +595,12 @@ _.assign(Mongo.prototype, {
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.mapReduce(map, reduce, options);
     }).then(function(result) {
-      return this.uncast(result);
-    }).then(function(result) {
-      callback && callback(null, result);
-      return result;
+      return result.results;
+    }).then(function(results) {
+      return this.uncast(results);
+    }).then(function(results) {
+      callback && callback(null, results);
+      return results;
     }).catch(function(err) {
       callback && callback(err);
       throw err;
