@@ -151,11 +151,6 @@ module.exports = Backbone.Model.extend({
         return;
       }
 
-      debug.info(
-        'SCHEMA TYPE -> %s, DEFAULT -> %s, KEY -> %s, VAL -> %s',
-        schemaType, schemaDefault, key, val
-      );
-
       // Allow the use of `null` to unset
       if (_.isNull(val) || _.isUndefined(val)) {
         switch (schemaType) {
