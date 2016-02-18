@@ -17,7 +17,9 @@ var Mongo = module.exports = function(url, options) {
 
   var defaultConnectionOptions = {
     poolSize: 1,
+    reconnectTries: 1,
     socketOptions: {
+      keepAlive: 120,
       connectTimeoutMS: 30000,
       socketTimeoutMS: 300000,
     },
@@ -168,6 +170,9 @@ _.assign(Mongo.prototype, {
       callback && callback(null, collection);
       return collection;
     }).catch(function(err) {
+      debug.error('#_collection error: %s', err.message);
+      // Reset the saved `db` instance so the next `connect` will reconnect
+      this.db = null;
       callback && callback(err);
       throw err;
     });
@@ -345,9 +350,10 @@ _.assign(Mongo.prototype, {
     }
 
     debug.info(
-      '#findOne: %s with query: %s',
+      '#findOne: %s with query: %s with options: %s',
       collectionName,
-      JSON.stringify(query)
+      JSON.stringify(query),
+      JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.findOne(query, this._findOptions(options));
