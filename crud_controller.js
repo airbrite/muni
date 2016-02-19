@@ -154,11 +154,11 @@ module.exports = Controller.extend({
     options = options || {};
     _.merge(options, this.parseQueryString(req));
 
-    return collection.count(options).then(function(total) {
+    collection.count(options).then(function(total) {
       res.data = {
         total: total
       };
-      return next();
+      next();
     }).catch(next);
   },
 
@@ -173,7 +173,7 @@ module.exports = Controller.extend({
       options.fields = fields;
     }
 
-    return collection.fetch(options).bind(this).tap(function() {
+    collection.fetch(options).bind(this).tap(function() {
       res.paging = {
         total: collection.total,
         count: collection.count,
@@ -188,8 +188,7 @@ module.exports = Controller.extend({
 
       // Optionally restrict fields for response
       res.data = this._restrictFields(req.query.fields, res.data);
-
-      return next();
+      next();
     }).catch(next);
   },
 
@@ -206,25 +205,23 @@ module.exports = Controller.extend({
       options.fields = fields;
     }
 
-    return model.fetch(options).bind(this).then(function(model) {
+    model.fetch(options).bind(this).then(function(model) {
       res.data = model.render();
 
       // Optionally restrict fields for response
       res.data = this._restrictFields(req.query.fields, res.data);
-
-      return next();
+      next();
     }).catch(next);
   },
 
   create: function(req, res, next) {
     var model = this.setupModel(req);
 
-    return model.setFromRequest(req.body).then(function() {
+    model.setFromRequest(req.body).then(function() {
       return model.save();
     }).then(function(model) {
       res.data = model.render();
-
-      return next();
+      next();
     }).catch(next);
   },
 
@@ -236,14 +233,13 @@ module.exports = Controller.extend({
       require: true
     });
 
-    return model.fetch(options).then(function() {
+    model.fetch(options).then(function() {
       return model.setFromRequest(req.body);
     }).then(function() {
       return model.save(null, options);
     }).then(function(model) {
       res.data = model.render();
-
-      return next();
+      next();
     }).catch(next);
   },
 
@@ -252,11 +248,12 @@ module.exports = Controller.extend({
 
     return model.destroy().then(function(resp) {
       if (resp === 0) {
-        return next(new MuniError('Document not found.', 404));
+        next(new MuniError('Document not found.', 404));
+        return;
       }
 
       res.code = 204;
-      return next();
+      next();
     }).catch(next);
   }
 });

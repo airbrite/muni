@@ -99,12 +99,13 @@ module.exports = function(options) {
           // respond with an error before routing
           var missingParams = router._buildMissingParams(req, requiredParams);
           if (missingParams.length) {
-            return next(router._buildMissingParamsError(missingParams));
+            next(router._buildMissingParamsError(missingParams));
+            return;
           }
         }
 
         // Execute the route for the request
-        return routeOptions.action.call(controller, req, res, next);
+        routeOptions.action.call(controller, req, res, next);
       };
     },
 

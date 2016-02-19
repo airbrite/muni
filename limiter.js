@@ -62,11 +62,12 @@ function middleware(req, res, next) {
   });
 
   if (!bypass && options.reject && client.used >= client.limit) {
-    return rejected(req, res, next);
+    rejected(req, res, next);
+    return;
   }
 
   client.used++;
-  return next();
+  next();
 }
 
 function rejected(req, res, next) {

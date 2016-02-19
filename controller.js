@@ -302,7 +302,8 @@ module.exports = Backbone.Model.extend({
 
   prepareResponse: function(modelOrCollection, req, res, next) {
     if (!modelOrCollection) {
-      return next();
+      next();
+      return;
     }
 
     if (modelOrCollection instanceof Model) {
@@ -316,7 +317,7 @@ module.exports = Backbone.Model.extend({
       res.data = modelOrCollection;
     }
 
-    return next();
+    next();
   },
 
   /**
@@ -347,7 +348,7 @@ module.exports = Backbone.Model.extend({
       res.data = envelope;
     }
 
-    return next();
+    next();
   },
 
   /**
@@ -383,7 +384,7 @@ module.exports = Backbone.Model.extend({
     res.code = err.code;
     res.data = envelope;
 
-    return next();
+    next();
   },
 
   /**
