@@ -22,11 +22,11 @@
   "dependencies": {
     "accounting": "~0.4.1",
     "backbone": "~1.2.3",
-    "bluebird": "~3.2.2",
+    "bluebird": "~3.3.1",
     "debug": "~2.2.0",
     "express": "~4.13.4",
     "kerberos": "~0.0.18",
-    "lodash": "~4.3.0",
+    "lodash": "~4.5.0",
     "moment": "~2.11.2",
     "mongodb": "~2.1.6",
     "mongodb-objectid-helper": "~1.0.1",
@@ -36,13 +36,13 @@
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
-    "chai": "*",
-    "chai-as-promised": "*",
-    "chai-datetime": "*",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.2.0",
+    "chai-datetime": "^1.4.1",
     "eyes": "git://github.com/airbrite/eyes.js.git",
-    "mocha": "*",
-    "sinon": "*",
-    "sinon-as-promised": "*"
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3",
+    "sinon-as-promised": "^4.0.0"
   },
   "author": {
     "name": "Peter Shih",
