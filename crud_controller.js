@@ -154,6 +154,10 @@ module.exports = Controller.extend({
     options = options || {};
     _.merge(options, this.parseQueryString(req));
 
+    // Remove these attributes, otherwise count will max out at the limit
+    delete options.limit;
+    delete options.skip;
+
     return collection.count(options).then(function(total) {
       res.data = {
         total: total
