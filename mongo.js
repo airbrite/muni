@@ -556,7 +556,7 @@ _.assign(Mongo.prototype, {
       JSON.stringify(options)
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
-      return collection.aggregate(pipeline, options).toArray();
+      return collection.aggregate(pipeline, options);
     }).then(function(result) {
       return this.uncast(result);
     }).then(function(result) {
@@ -600,8 +600,6 @@ _.assign(Mongo.prototype, {
     );
     return this._collection(collectionName).bind(this).then(function(collection) {
       return collection.mapReduce(map, reduce, options);
-    }).then(function(result) {
-      return result.results;
     }).then(function(results) {
       return this.uncast(results);
     }).then(function(results) {
