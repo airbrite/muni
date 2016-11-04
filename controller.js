@@ -151,7 +151,8 @@ module.exports = Backbone.Model.extend({
   xmlBuilder: new xml2js.Builder({
     renderOpts: {
       pretty: false
-    }
+    },
+    allowSurrogateChars: true,
   }),
 
   /**
